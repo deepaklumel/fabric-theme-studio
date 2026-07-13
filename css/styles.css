@@ -166,7 +166,13 @@ svg text{font-family:var(--font-family)}
    pattern as the floating toolbar — while the layout-switcher button
    (flex:none below) always stays fully visible, since its dropdown
    must never be cropped. */
-.mod-switch-outer{position:relative;flex:1 1 auto;min-width:0;overflow:hidden}
+/* flex:0 1 auto (not flex-grow:1) — this only needs to SHRINK on a
+   narrow screen (enabling the internal scroll), not grow to fill the
+   row on a wide one. Growing pushed the layout-switcher dropdown far
+   to the right of the pills with a large visual gap, hurting
+   discoverability (it read as an unrelated, disconnected control
+   instead of sitting right beside the type switcher). */
+.mod-switch-outer{position:relative;flex:0 1 auto;min-width:0;overflow:hidden}
 .mod-switch-fade{height:100%}
 .mod-switch{display:inline-flex;background:#eeeeee;border-radius:8px;padding:3px;gap:2px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;max-width:100%}
 .mod-switch::-webkit-scrollbar{display:none}
@@ -185,7 +191,13 @@ svg text{font-family:var(--font-family)}
 .pt-layout-pick{position:relative;margin-left:10px;flex:none}
 .pt-layout-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid #d1d1d1;background:#fff;border-radius:8px;cursor:pointer;font-family:var(--f-font);font-size:12.5px;font-weight:500;color:#242424}
 .pt-layout-btn:hover{border-color:#8a8886}
-.pt-layout-drop{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.14);min-width:150px;display:none;z-index:50;padding:4px}
+/* right:0 (not left:0) — this dropdown tends to sit toward the right
+   side of the mod-switch-bar, so anchoring its left edge to the
+   button caused it to extend further right and get cropped by the
+   viewport/container edge. Anchoring to the button's right edge and
+   opening leftward keeps it fully on-screen regardless of where the
+   button lands in the row. */
+.pt-layout-drop{position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.14);min-width:180px;display:none;z-index:50;padding:4px}
 .pt-layout-drop.open{display:block}
 .pt-layout-opt{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:7px 10px;border:none;background:none;border-radius:5px;cursor:pointer;font-family:var(--f-font);font-size:12.5px;color:#242424}
 .pt-layout-opt svg{flex:none;color:#616161}
@@ -281,6 +293,16 @@ svg text{font-family:var(--font-family)}
 .swblock .cd{position:absolute;top:8px;right:8px;width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,255,255,.6);pointer-events:none}
 .swblock .rst{position:absolute;bottom:5px;right:5px;width:20px;height:20px;display:grid;place-items:center;border-radius:var(--f-radius);opacity:0;cursor:pointer;border:none;background:rgba(255,255,255,.18)}
 .swblock:hover .rst{opacity:1} .swblock .rst:hover{background:rgba(255,255,255,.32)}
+/* Drag-to-reorder for primary-colour cards — same whole-card press-
+   and-drag interaction as the New Theme wizard's palette preview, no
+   gripper icon: press-and-move reorders, a plain click still opens
+   the colour picker. touch-action:none keeps touch scrolling from
+   fighting the drag; the rest mirrors the wizard's .ntm-row-dragging
+   hover-suppression trick since this grid has its own hover reveal
+   (the reset button) that would otherwise flicker mid-drag. */
+.swblock.swblock-reorderable{touch-action:none}
+.swblock.dragging{opacity:.35}
+.swcards-dragging .swblock:hover .rst{opacity:0}
 
 /* Property rows (Page / Elements / Typo tabs) */
 .prop-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;min-height:32px}
@@ -361,7 +383,7 @@ svg text{font-family:var(--font-family)}
 .ntm-close:hover{background:#f5f5f5;color:#242424}
 
 /* Two-column body */
-.ntm-body{display:grid;grid-template-columns:320px 1fr;flex:1;min-height:0;overflow:hidden}
+.ntm-body{display:grid;grid-template-columns:380px 1fr;flex:1;min-height:0;overflow:hidden}
 .ntm-left{padding:20px 24px;overflow-y:auto;border-right:1px solid #e0e0e0;display:flex;flex-direction:column;gap:14px}
 .ntm-right{padding:16px 20px;overflow-y:auto;background:#fafafa;display:flex;flex-direction:column;gap:12px}
 
@@ -379,15 +401,12 @@ svg text{font-family:var(--font-family)}
 
 /* Starting point selection — Fabric card pattern */
 /* Segmented control replaces tall cards */
-.ntm-source-row{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #d1d1d1;border-radius:4px;overflow:hidden}
-.ntm-source-card{display:flex;align-items:center;justify-content:center;gap:5px;height:32px;border:none;border-right:1px solid #d1d1d1;border-bottom:1px solid #d1d1d1;background:#fff;cursor:pointer;font-size:12px;font-weight:500;font-family:"Segoe UI",sans-serif;color:#424242;transition:background .1s,color .1s;padding:0 8px;position:relative}
-.ntm-source-card:nth-child(3n){border-right:none}
-.ntm-source-card:nth-last-child(-n+3){border-bottom:none}
-.ntm-source-card:last-child{border-right:none}
-.ntm-source-card:hover{background:#f5f5f5;color:#242424}
-.ntm-source-card.selected{background:#f0faf7;color:#117865;font-weight:600}
-.ntm-source-card.selected::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:#117865}
-.ntm-source-title{font-size:13px;font-weight:inherit;color:inherit;font-family:"Segoe UI",sans-serif}
+.ntm-source-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ntm-source-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:60px;border:1px solid #d1d1d1;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;font-weight:500;font-family:"Segoe UI",sans-serif;color:#424242;transition:background .1s,color .1s,border-color .1s;padding:6px;position:relative}
+.ntm-source-card svg{width:22px;height:22px;flex:none}
+.ntm-source-card:hover{background:#f5f5f5;color:#242424;border-color:#b3b0ad}
+.ntm-source-card.selected{background:#f0faf7;color:#117865;font-weight:600;border-color:#117865}
+.ntm-source-title{font-size:12.5px;font-weight:inherit;color:inherit;font-family:"Segoe UI",sans-serif;white-space:nowrap}
 
 /* Brand colour row — Fabric input pattern */
 .ntm-brand-row{display:flex;align-items:center;gap:8px}
@@ -396,13 +415,6 @@ svg text{font-family:var(--font-family)}
 .ntm-hex-input:focus{border-color:#d1d1d1;box-shadow:inset 0 -2px 0 0 #117865}
 
 /* Preset grid */
-.ntm-preset-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.ntm-preset-item{border:1px solid #d1d1d1;border-radius:4px;padding:8px;cursor:pointer;transition:border-color .1s,background .1s;background:#fff}
-.ntm-preset-item:hover{border-color:#8a8886;background:#f5f5f5}
-.ntm-preset-item.selected{border-color:#117865;background:#f0faf7;box-shadow:inset 0 0 0 1px #117865}
-.ntm-preset-swatches{display:flex;gap:2px;margin-bottom:6px}
-.ntm-preset-swatches span{width:10px;height:10px;border-radius:2px;border:1px solid rgba(0,0,0,.08)}
-.ntm-preset-name{font-size:10.5px;font-weight:600;color:#242424;font-family:"Segoe UI",sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Tone — Fabric ToggleButton pattern */
 .ntm-tone-row{display:flex;gap:0;border:1px solid #d1d1d1;border-radius:4px;overflow:hidden}
@@ -453,12 +465,18 @@ svg text{font-family:var(--font-family)}
 .ntm-swatch-hex{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:9px;font-family:"Consolas","Courier New",monospace;color:#616161;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .1s;background:#fff;padding:1px 4px;border-radius:3px;border:1px solid #e0e0e0;z-index:3}
 .ntm-pal-swatch:hover .ntm-swatch-hex{opacity:1}
 
-/* Drag-to-reorder handle on primary swatches */
-.ntm-drag-handle{position:absolute;top:3px;right:3px;width:14px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.85);background:rgba(0,0,0,.18);cursor:grab;opacity:0;transition:opacity .12s;z-index:4}
-.ntm-reorderable:hover .ntm-drag-handle{opacity:1}
-.ntm-drag-handle:active{cursor:grabbing}
+/* Drag-to-reorder — no gripper: the whole swatch is the drag surface
+   (see attachSwatchDrag()). touch-action:none stops the browser's own
+   touch-scroll/zoom gestures from competing with the drag. */
+.ntm-reorderable{touch-action:none}
 .ntm-pal-swatch.dragging{opacity:.35}
-.ntm-pal-swatch.drag-over{box-shadow:0 0 0 2.5px #117865,0 0 0 5px rgba(17,120,101,.25)}
+/* While a drag is in progress, swatches get physically shuffled in the
+   DOM underneath a mouse cursor that hasn't actually moved — which
+   means whichever swatch slides back under the stationary pointer
+   picks up a genuine, unwanted :hover state (scale/ring). Mute all
+   hover-triggered visuals row-wide for the duration of the drag. */
+.ntm-row-dragging .ntm-pal-swatch:hover{transform:none;box-shadow:none;z-index:auto}
+.ntm-row-dragging .ntm-pal-swatch:hover .ntm-swatch-hex{opacity:0}
 
 /* Edit hint */
 .ntm-edit-hint{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#8a8886;font-family:var(--f-font);margin-bottom:14px;background:#f5f5f5;border-radius:6px;padding:7px 11px}
@@ -475,7 +493,7 @@ svg text{font-family:var(--font-family)}
 .ftb-btn-create:hover{background:#f0faf7;color:#0d6054}
 .modal-bg.show{display:grid}
 .modal{background:#fff;border-radius:var(--f-radius-lg);box-shadow:0 8px 32px rgba(0,0,0,.22);width:520px;max-width:calc(100vw - 32px);max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
-.ntm{width:clamp(320px,94vw,1100px);height:50vh;min-height:420px;max-height:90vh;display:flex;flex-direction:column}
+.ntm{width:clamp(320px,94vw,1100px);height:78vh;min-height:560px;max-height:90vh;display:flex;flex-direction:column}
 
 /* New Theme wizard — tablet/mobile: stop forcing a two-column layout
    and a 700px width floor onto viewports that can't fit it. Below
@@ -489,7 +507,7 @@ svg text{font-family:var(--font-family)}
   .ntm-right{overflow-y:visible}
 }
 @media (max-width:520px){
-  .ntm-preset-grid{grid-template-columns:repeat(2,1fr)}
+  .ntm-source-row{grid-template-columns:repeat(2,1fr)}
   .ntm-body{gap:0}
   .ntm-left,.ntm-right{padding:14px 16px}
 }

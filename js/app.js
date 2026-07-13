@@ -218,18 +218,27 @@ function updateThemeIcon(){
   if(f4)f4.style.color=c4;
 }
 
-/* ── Tooltip ── */
+/* ── Tooltip ──
+   Contrast is checked against the CURRENT theme's own canvas
+   background (not a hardcoded white), so a dark theme's swatches get
+   judged against its actual dark backdrop instead of always failing
+   against white regardless of what the theme really looks like. */
 const tipEl=$('#tip');let _tipTarget=null,_tipHex=null;
-function tipHTML(hex){
-  const bg='#FFFFFF';const r=cr2(hex,bg);
+function currentCanvasBg(){
+  try{return(T&&T.theme&&T.theme.page&&T.theme.page.canvas&&T.theme.page.canvas.background&&T.theme.page.canvas.background.color)||'#FFFFFF';}
+  catch(e){return'#FFFFFF';}
+}
+function tipHTML(hex,bg){
+  bg=bg||currentCanvasBg();
+  const r=cr2(hex,bg);
   const line=(lbl,t)=>{const ok=r>=t;return `<div class="chk"><span class="m ${ok?'pass':'fail'}">${ok?'✓':'✕'}</span><span>${lbl}</span></div>`;};
   const st=r>=4.5?['AA','#107c10']:r>=3?['AA large','#8a6d00']:['Fail','#c50f1f'];
   return `<div class="th"><span class="sw" style="background:${hex}"></span><span class="hx">${hex}</span><span class="st" style="background:color-mix(in srgb,${st[1]} 15%,#fff);color:${st[1]}">${st[0]}</span></div>
-    <div class="ratio">Contrast vs white: <b>${r.toFixed(2)}:1</b></div>
+    <div class="ratio">Contrast vs canvas: <b>${r.toFixed(2)}:1</b></div>
     ${line('Normal text — 4.5:1',4.5)}${line('Large / UI — 3:1',3)}${line('AAA — 7:1',7)}
-    <div class="cmp"><span class="sw" style="background:#fff"></span>Compared vs #FFFFFF</div>`;}
-function attachTip(el,getHex){
-  el.addEventListener('mouseenter',()=>{_tipTarget=el;_tipHex=getHex;tipEl.innerHTML=tipHTML(getHex());tipEl.classList.add('show');plTip(el);});
+    <div class="cmp"><span class="sw" style="background:${bg}"></span>Compared vs ${bg.toUpperCase()}</div>`;}
+function attachTip(el,getHex,getBg){
+  el.addEventListener('mouseenter',()=>{_tipTarget=el;_tipHex=getHex;tipEl.innerHTML=tipHTML(getHex(),getBg?getBg():currentCanvasBg());tipEl.classList.add('show');plTip(el);});
   el.addEventListener('mousemove',()=>plTip(el));
   el.addEventListener('mouseleave',()=>{tipEl.classList.remove('show');_tipTarget=null;});}
 function plTip(el){const r=el.getBoundingClientRect(),tw=tipEl.offsetWidth,th=tipEl.offsetHeight;let x=r.left+r.width/2-tw/2,y=r.top-th-8;if(y<8)y=r.bottom+8;x=Math.max(8,Math.min(x,innerWidth-tw-8));tipEl.style.left=x+'px';tipEl.style.top=y+'px';}
@@ -286,17 +295,124 @@ function buildColorGroup(host,name,items,renderFn,open){
   host.appendChild(sec);
   return{updatePreview(){const dots=sec.querySelectorAll('.cg-prev span');prev.forEach((_,i)=>{if(dots[i])dots[i].style.background=items[i]?Array.isArray(items[i])?items[i][2]:items[i]:prev[i];});}};
 }
-function mkSwblock(parent,label,def,getCurrent,setter){
+/* ── Drag-to-reorder for primary-colour cards — same whole-card
+   press-and-drag interaction as the New Theme wizard's palette
+   preview (no gripper icon; a plain click still opens the colour
+   picker underneath). Operates directly on T.theme.colors and
+   THEME_ORIGIN (moved in lockstep so each card's "reset to original"
+   value keeps following that same card), then reuses the normal
+   applyTheme()/pushUndo()/buildColors() flow like any other edit. ── */
+let sideDragSourceEl=null;
+function sideLiveReorderSwatch(dragEl,targetEl){
+  if(!dragEl||!targetEl||dragEl===targetEl)return;
+  const row=dragEl.parentElement;
+  if(!row||targetEl.parentElement!==row)return;
+  const items=[...row.querySelectorAll('.swblock-reorderable')];
+  const firstRects=new Map(items.map(el=>[el,el.getBoundingClientRect()]));
+  const dragRect=dragEl.getBoundingClientRect();
+  const targetRect=targetEl.getBoundingClientRect();
+  // Grid is 2 columns: prefer comparing rows first, fall back to
+  // horizontal position when drag/target share a row.
+  const sameRow=Math.abs(dragRect.top-targetRect.top)<=4;
+  const goesBefore=sameRow?dragRect.left<targetRect.left:dragRect.top<targetRect.top;
+  row.insertBefore(dragEl,goesBefore?targetEl.nextSibling:targetEl);
+  items.forEach(el=>{
+    const beforeRect=firstRects.get(el);
+    const afterRect=el.getBoundingClientRect();
+    const dx=beforeRect.left-afterRect.left,dy=beforeRect.top-afterRect.top;
+    if(dx||dy){
+      el.style.transition='none';
+      el.style.transform=`translate(${dx}px,${dy}px)`;
+      requestAnimationFrame(()=>{el.style.transition='transform 160ms ease';el.style.transform='';});
+    }
+  });
+}
+function sideCommitDragReorder(dragEl){
+  if(!dragEl)return;
+  dragEl.classList.remove('dragging');
+  const row=dragEl.parentElement;
+  if(!row)return;
+  row.classList.remove('swcards-dragging');
+  const finalItems=[...row.querySelectorAll('.swblock-reorderable')];
+  const toIdx=finalItems.indexOf(dragEl);
+  const fromIdx=parseInt(dragEl.dataset.reorderIndex,10);
+  if(isNaN(fromIdx)||isNaN(toIdx)||fromIdx===toIdx)return;
+  const arr=T.theme.colors.primaryColors;
+  if(fromIdx<0||fromIdx>=arr.length||toIdx<0||toIdx>=arr.length)return;
+  const[movedVal]=arr.splice(fromIdx,1);
+  arr.splice(toIdx,0,movedVal);
+  // Deliberately do NOT reorder THEME_ORIGIN's array to match — it must
+  // stay a pristine, untouched snapshot of the theme as originally
+  // loaded (that's what isDirty()/pushUndo() diff against to decide
+  // whether Save/Save-as-copy should appear, and what per-slot reset
+  // buttons restore to). Moving it in lockstep with T made every
+  // reorder invisible to the dirty-check, since T and THEME_ORIGIN
+  // would end up shuffled identically and compare as unchanged. Each
+  // "Color N" slot's reset button now resets to whatever was
+  // originally in position N — consistent with how every other edit
+  // (recolouring a swatch) already behaves.
+  applyTheme();
+  pushUndo();
+  buildColors();
+}
+const SIDE_SWATCH_DRAG_THRESHOLD=6;
+function attachSideSwatchDrag(el){
+  let startX=0,startY=0,dragging=false,suppressClick=false;
+  function onMove(e){
+    if(!dragging){
+      if(Math.hypot(e.clientX-startX,e.clientY-startY)<SIDE_SWATCH_DRAG_THRESHOLD)return;
+      dragging=true;suppressClick=true;
+      sideDragSourceEl=el;
+      el.classList.add('dragging');
+      if(el.parentElement)el.parentElement.classList.add('swcards-dragging');
+    }
+    e.preventDefault();
+    const target=document.elementFromPoint(e.clientX,e.clientY);
+    const over=target&&target.closest('.swblock-reorderable');
+    if(over&&sideDragSourceEl&&over!==sideDragSourceEl)sideLiveReorderSwatch(sideDragSourceEl,over);
+  }
+  function onUp(){
+    document.removeEventListener('pointermove',onMove);
+    document.removeEventListener('pointerup',onUp);
+    document.removeEventListener('pointercancel',onCancel);
+    if(dragging){sideCommitDragReorder(el);sideDragSourceEl=null;dragging=false;}
+  }
+  function onCancel(){
+    document.removeEventListener('pointermove',onMove);
+    document.removeEventListener('pointerup',onUp);
+    document.removeEventListener('pointercancel',onCancel);
+    el.classList.remove('dragging');
+    if(el.parentElement)el.parentElement.classList.remove('swcards-dragging');
+    sideDragSourceEl=null;dragging=false;
+  }
+  el.addEventListener('pointerdown',e=>{
+    if(e.button!==undefined&&e.button!==0)return;
+    startX=e.clientX;startY=e.clientY;dragging=false;suppressClick=false;
+    document.addEventListener('pointermove',onMove);
+    document.addEventListener('pointerup',onUp);
+    document.addEventListener('pointercancel',onCancel);
+  });
+  el.addEventListener('click',e=>{
+    if(suppressClick){e.preventDefault();e.stopPropagation();suppressClick=false;}
+  },true);
+}
+
+function mkSwblock(parent,label,def,getCurrent,setter,opts={}){
   const el=document.createElement('div');el.className='swblock';
   const cur=getCurrent();
   el.innerHTML=`<input type="color" value="${cur}"><div class="info"><span class="lbl">${label}</span><span class="hx">${cur}</span></div><span class="cd"></span><span class="rst" title="Reset">${IC.reset}</span>`;
   const inp=el.querySelector('input'),hx=el.querySelector('.hx'),info=el.querySelector('.info'),cd=el.querySelector('.cd'),rst=el.querySelector('.rst');
-  function paint(v){el.style.background=v;const t=tc(v);info.style.color=t;rst.style.color=t;hx.textContent=v.toUpperCase();const r=cr2(v,'#FFFFFF');cd.className='cd';cd.style.background=r>=4.5?'#3fbf3f':r>=3?'#f5a623':'#c8c6c4';}
+  function paint(v){el.style.background=v;const t=tc(v);info.style.color=t;rst.style.color=t;hx.textContent=v.toUpperCase();const r=cr2(v,currentCanvasBg());cd.className='cd';cd.style.background=r>=4.5?'#3fbf3f':r>=3?'#f5a623':'#c8c6c4';}
   function apply(v){const n=norm(v);if(!n)return;setter(n);inp.value=n;applyTheme();paint(n);}
   inp.addEventListener('input',()=>apply(inp.value));
   inp.addEventListener('change',()=>pushUndo());
   rst.addEventListener('click',e=>{e.stopPropagation();apply(def);pushUndo();});
   attachTip(el,()=>inp.value);
+  if(opts.reorderIndex!==undefined){
+    el.classList.add('swblock-reorderable');
+    el.dataset.reorderIndex=String(opts.reorderIndex);
+    attachSideSwatchDrag(el);
+  }
   paint(cur);parent.appendChild(el);
   return{reset:()=>apply(def),refresh(){inp.value=getCurrent();paint(inp.value);}};
 }
@@ -304,29 +420,42 @@ function mkSwblock(parent,label,def,getCurrent,setter){
 let refreshers=[];
 
 function buildColors(){
-  const host=$('#tp-colors');host.innerHTML='';refreshers=refreshers.filter(r=>r.tab!=='colors');
+  const host=$('#tp-colors');
+  // Rebuilding wipes and recreates every accordion section from
+  // scratch, which used to always re-collapse them (hardcoded
+  // `false`) regardless of what the user had open — most noticeable
+  // right after a drag-to-reorder, since that also calls buildColors().
+  // Remember which sections were open beforehand and restore that.
+  const openNames=new Set([...host.querySelectorAll('.cgroup.open .cg-name')].map(el=>el.textContent));
+  // Also, if a swatch's accessibility tooltip happened to be showing
+  // (mouse still "over" a swatch that's about to be deleted), force it
+  // closed first — innerHTML='' below removes the element without
+  // ever firing a real mouseleave, so the shared tooltip would
+  // otherwise stay stuck on screen with nothing left to dismiss it.
+  if(typeof tipEl!=='undefined'){tipEl.classList.remove('show');_tipTarget=null;}
+  host.innerHTML='';refreshers=refreshers.filter(r=>r.tab!=='colors');
   const c=T.theme.colors;
 
   buildColorGroup(host,'Primary Colors',c.primaryColors,(body,resets)=>{
     const grid=document.createElement('div');grid.className='swcards';
     c.primaryColors.forEach((v,i)=>{
-      const ctrl=mkSwblock(grid,'Color '+(i+1),THEME_ORIGIN.theme.colors.primaryColors[i],()=>c.primaryColors[i],v=>{c.primaryColors[i]=v;});
+      const ctrl=mkSwblock(grid,'Color '+(i+1),THEME_ORIGIN.theme.colors.primaryColors[i],()=>c.primaryColors[i],v=>{c.primaryColors[i]=v;},{reorderIndex:i});
       resets.push(ctrl.reset);refreshers.push({tab:'colors',fn:ctrl.refresh});});
-    body.appendChild(grid);},false);
+    body.appendChild(grid);},openNames.has('Primary Colors'));
 
   buildColorGroup(host,'Structural Colors',Object.values(c.structuralColors),(body,resets)=>{
     const grid=document.createElement('div');grid.className='swcards';
     [['outline1','Outline 1'],['outline2','Outline 2'],['background','Background'],['icon','Icon'],['accent','Accent'],['subtleFill','Subtle Fill']].forEach(([k,l])=>{
       const ctrl=mkSwblock(grid,l,THEME_ORIGIN.theme.colors.structuralColors[k],()=>c.structuralColors[k],v=>{c.structuralColors[k]=v;});
       resets.push(ctrl.reset);refreshers.push({tab:'colors',fn:ctrl.refresh});});
-    body.appendChild(grid);},false);
+    body.appendChild(grid);},openNames.has('Structural Colors'));
 
   buildColorGroup(host,'Semantic Colors',Object.values(c.semantic),(body,resets)=>{
     const grid=document.createElement('div');grid.className='swcards';
     [['positive','Positive'],['negative','Negative'],['neutral','Neutral']].forEach(([k,l])=>{
       const ctrl=mkSwblock(grid,l,THEME_ORIGIN.theme.colors.semantic[k],()=>c.semantic[k],v=>{c.semantic[k]=v;});
       resets.push(ctrl.reset);refreshers.push({tab:'colors',fn:ctrl.refresh});});
-    body.appendChild(grid);},false);
+    body.appendChild(grid);},openNames.has('Semantic Colors'));
 }
 
 /* ── Property helpers ── */
@@ -2181,6 +2310,88 @@ const MAGIC_ALIASES={
   game:'gaming',videogame:'gaming',
   ship:'logistics',shipping:'logistics',delivery:'logistics',
   warehouse:'manufacturing',factory:'manufacturing',
+
+  /* ── Nature / elements — additional synonyms ── */
+  sea:'ocean',marine:'ocean',aquatic:'ocean',
+  deepsea:'underwater',submerged:'underwater',
+  twilight:'dusk',daybreak:'dawn',morning:'dawn',
+  woods:'forest',woodland:'forest',jungle:'rainforest',
+  sahara:'desert',arid:'desert',
+  clouds:'sky',heavens:'sky',
+  thunder:'storm',tempest:'storm',hurricane:'storm',tornado:'storm',
+  fall:'autumn',
+  iceberg:'glacier',frost:'ice',frozen:'ice',
+  eruption:'volcano',lava:'volcano',
+  tropics:'tropical',
+  polar:'arctic',antarctic:'arctic',
+  reef:'coral',
+  pond:'lake',
+  creek:'river',stream:'river',
+  shore:'beach',seaside:'beach',coastal:'beach',
+  soil:'earth',ground:'earth',land:'earth',
+  flame:'fire',blaze:'fire',ember:'fire',
+  night:'midnight',
+
+  /* ── Industries — additional synonyms ── */
+  payments:'fintech',investment:'fintech',trading:'fintech',
+  health:'healthcare',wellness:'healthcare',doctor:'healthcare',nurse:'healthcare',
+  boutique:'retail',mall:'retail',marketplace:'retail',
+  power:'energy',electricity:'energy',solar:'energy',renewable:'energy',oil:'energy',gas:'energy',
+  industrial:'manufacturing',production:'manufacturing',assembly:'manufacturing',
+  business:'corporate',office:'corporate',enterprise:'corporate',
+  savings:'banking',loan:'banking',
+  insurer:'insurance',policy:'insurance',claims:'insurance',
+  digital:'technology',app:'technology',saas:'technology',cloud:'technology',ai:'technology',data:'technology',
+  academic:'education',college:'education',student:'education',teacher:'education',
+  municipal:'government',federal:'government',civic:'government',
+  hotel:'hospitality',resort:'hospitality',restaurant:'hospitality',travel:'hospitality',tourism:'hospitality',
+  freight:'logistics',courier:'logistics',
+  agri:'agriculture',harvest:'agriculture',rural:'agriculture',
+  litigation:'legal',compliance:'legal',
+  aircraft:'aviation',airport:'aviation',pilot:'aviation',
+  architecture:'construction',infrastructure:'construction',engineering:'construction',
+  network:'telecom',wireless:'telecom',broadband:'telecom',
+  pharmaceutical:'pharma',biotech:'pharma',vaccine:'pharma',
+  auto:'automotive',motor:'automotive',racing:'automotive',
+  realty:'real estate',housing:'real estate',apartment:'real estate',
+  ngo:'nonprofit',foundation:'nonprofit',philanthropy:'nonprofit',
+  esports:'gaming',arcade:'gaming',console:'gaming',
+
+  /* ── Moods — additional synonyms ── */
+  soothing:'calm',gentle:'calm',mellow:'calm',
+  dynamic:'energetic',active:'energetic',upbeat:'energetic',
+  simple:'minimal',modern:'minimal',streamlined:'minimal',
+  strong:'bold',daring:'bold',striking:'bold',
+  fun:'playful',whimsical:'playful',quirky:'playful',
+  formal:'serious',stern:'serious',grave:'serious',
+  lavish:'luxury',exclusive:'luxury',
+  refined:'elegant',graceful:'elegant',chic:'elegant',
+  crisp:'fresh',invigorating:'fresh',
+  cozy:'warm',toasty:'warm',inviting:'warm',
+  chill:'cool',
+  colorful:'vibrant',colourful:'vibrant',bright:'vibrant',dazzling:'vibrant',
+  brooding:'moody',dramatic:'moody',atmospheric:'moody',
+  hopeful:'optimistic',positive:'optimistic',sunny:'optimistic',
+  businesslike:'professional',polished:'professional',
+  dependable:'trustworthy',secure:'trustworthy',
+  'cutting-edge':'innovative',creative:'innovative',inventive:'innovative',
+  scifi:'futuristic','sci-fi':'futuristic',advanced:'futuristic',
+  retro:'nostalgic',vintage:'nostalgic',oldschool:'nostalgic',
+  ethereal:'dreamy',fantastical:'dreamy',
+  enigmatic:'mysterious',secretive:'mysterious',shadowy:'mysterious',
+  jolly:'cheerful',merry:'cheerful',
+  urbane:'sophisticated',cultured:'sophisticated',
+  welcoming:'friendly',approachable:'friendly',genial:'friendly',
+  hygienic:'clean',pristine:'clean',spotless:'clean',
+
+  /* ── Direct colour words — additional synonyms/shades ── */
+  golden:'gold',petrol:'teal',scarlet:'crimson',ruby:'crimson',jade:'emerald',
+  lilac:'purple',rose:'pink',blush:'pink',tangerine:'orange',apricot:'orange',
+  lemon:'yellow',sunflower:'yellow',cherry:'red',rouge:'red',cobalt:'blue',sapphire:'blue',
+  sage:'green',chestnut:'brown',coffee:'brown',ash:'gray',slate:'gray',
+  oxblood:'maroon',spearmint:'mint',honey:'amber',denim:'indigo',
+  graphite:'charcoal',cream:'ivory',eggshell:'ivory',sand:'beige',
+  wine:'burgundy',merlot:'burgundy',
 };
 
 /* Simple iterative Levenshtein (edit) distance — used only as a last
@@ -2418,7 +2629,6 @@ async function callGeminiForSeed(text){
 
 /* ── State ── */
 let ntmMode=null;         // 'brand' | 'preset' | 'coolors' | 'image' | 'json' | 'magic'
-let ntmPresetIdx=null;
 let ntmBrandColor='#117865';
 let ntmCoolorsHexes=[];   // parsed palette from the Coolors import box
 let ntmImageHexes=[];     // extracted palette from the uploaded image
@@ -2431,6 +2641,7 @@ let ntmMagicAiPending=false; // true while a Gemini request is in flight
 let ntmMagicAiDebounce=null;
 let ntmMagicAiReqId=0;    // guards against a stale response landing after newer input
 let ntmTone='light';
+let ntmToneManual=false; // true once the user explicitly clicks a tone button
 let ntmGenerated=null;
 let ntmTouched={};        // which swatches the user has manually edited
 let ntmDebounce=null;
@@ -2442,11 +2653,28 @@ const previewName=document.getElementById('ntmPreviewName');
 const previewEmpty=document.getElementById('ntmPreviewEmpty');
 const palettePreview=document.getElementById('ntmPalettePreview');
 
+/* ── Tone inference: guess Dark when the chosen source carries an actual
+   canvas/luminance signal, otherwise fall back to Light. Never overrides
+   a tone the user has explicitly clicked. ── */
+function inferTone(){
+  if(ntmToneManual)return;
+  let detected=null;
+  if(ntmMode==='json'&&ntmJsonParsed){
+    const canvasCol=(ntmJsonParsed.theme&&ntmJsonParsed.theme.page&&ntmJsonParsed.theme.page.canvas&&ntmJsonParsed.theme.page.canvas.background&&ntmJsonParsed.theme.page.canvas.background.color)||null;
+    if(canvasCol){const[cL]=hexToOklch(canvasCol);detected=cL<0.5?'dark':'light';}
+  } else if(ntmMode==='image'&&ntmImageHexes.length){
+    const avgL=ntmImageHexes.reduce((s,h)=>s+hexToOklch(h)[0],0)/ntmImageHexes.length;
+    detected=avgL<0.5?'dark':'light';
+  }
+  ntmTone=detected||'light';
+  document.querySelectorAll('.ntm-tone-btn').forEach(b=>b.classList.toggle('active',b.dataset.tone===ntmTone));
+  document.getElementById('ntmToneDesc').textContent=ntmTone==='dark'?'Dark surfaces — near-black canvas, charcoal wallpaper, light text':'Light surfaces — white canvas, light wallpaper, dark text';
+}
+
 /* ── Enable/disable Apply button ── */
 function canApply(){
-  const hasName=document.getElementById('ntmThemeName').value.trim().length>0;
-  const hasSource=ntmMode!==null&&(ntmMode==='brand'||(ntmMode==='preset'&&ntmPresetIdx!==null)||(ntmMode==='coolors'&&ntmCoolorsHexes.length>0)||(ntmMode==='image'&&ntmImageHexes.length>0)||(ntmMode==='json'&&ntmJsonParsed!==null)||(ntmMode==='magic'&&ntmMagicParams!==null));
-  applyBtn.disabled=!(hasName&&hasSource);
+  const hasSource=ntmMode!==null&&(ntmMode==='brand'||(ntmMode==='coolors'&&ntmCoolorsHexes.length>0)||(ntmMode==='image'&&ntmImageHexes.length>0)||(ntmMode==='json'&&ntmJsonParsed!==null)||(ntmMode==='magic'&&ntmMagicParams!==null));
+  applyBtn.disabled=!hasSource;
   applyBtn.style.opacity=applyBtn.disabled?'.45':'1';
   applyBtn.style.cursor=applyBtn.disabled?'not-allowed':'pointer';
 }
@@ -2460,15 +2688,6 @@ function generate(){
     if(!n)return;
     ntmBrandColor=n;
     base=generateTheme(ntmBrandColor,ntmTone,name);
-  } else if(ntmMode==='preset'&&ntmPresetIdx!==null){
-    base=JSON.parse(JSON.stringify(PRESETS[ntmPresetIdx]));
-    base.label=name;
-    if(ntmTone==='dark'&&base.theme.page.canvas.background.color==='#FFFFFF'){
-      base.theme.page.canvas.background.color='#1E1E1E';
-      base.theme.page.wallpaper.color='#121212';
-      base.theme.elements.background.color='#2A2A2A';
-      base.theme.typography.color='#E8E8E8';
-    }
   } else if(ntmMode==='coolors'){
     if(!ntmCoolorsHexes.length)return;
     base=generateThemeFromPalette(ntmCoolorsHexes,ntmTone,name);
@@ -2503,9 +2722,118 @@ function generate(){
   previewName.textContent=name;
   previewEmpty.style.display='none';
   palettePreview.style.display='flex';
+  document.getElementById('ntmResetGen').style.display='';
+  document.getElementById('ntmEditHint').style.display='';
 }
 
 /* ── makeSwatch: click-to-edit coloured box ── */
+/* ── Live drag-to-reorder ──────────────────────────────────────────
+   While a swatch is being dragged (mouse or touch), the other swatches
+   physically move apart in the DOM right away — leaving a gap where
+   the dragged one will land — instead of only snapping into place on
+   release. This is a small FLIP animation: record each swatch's
+   position before the DOM move, perform the move, then animate from
+   the old position to the new one. The underlying data array (and the
+   "touched" overrides that freeze it) is only committed once via
+   reorderPrimaries() when the drag ends. */
+let dragSourceEl=null;
+
+function liveReorderSwatch(dragEl,targetEl){
+  if(!dragEl||!targetEl||dragEl===targetEl)return;
+  const row=dragEl.parentElement;
+  if(!row||targetEl.parentElement!==row)return;
+  const items=[...row.querySelectorAll('.ntm-reorderable')];
+  const firstRects=new Map(items.map(el=>[el,el.getBoundingClientRect()]));
+  const dragRect=dragEl.getBoundingClientRect();
+  const targetRect=targetEl.getBoundingClientRect();
+  row.insertBefore(dragEl,dragRect.left<targetRect.left?targetEl.nextSibling:targetEl);
+  items.forEach(el=>{
+    const before=firstRects.get(el);
+    const after=el.getBoundingClientRect();
+    const dx=before.left-after.left,dy=before.top-after.top;
+    if(dx||dy){
+      el.style.transition='none';
+      el.style.transform=`translate(${dx}px,${dy}px)`;
+      requestAnimationFrame(()=>{
+        el.style.transition='transform 160ms ease';
+        el.style.transform='';
+      });
+    }
+  });
+}
+
+/* Commit the live DOM order back into the real data array. dragEl's
+   dataset.reorderIndex still holds its ORIGINAL committed index (it's
+   never rewritten mid-drag), and its final position among the row's
+   .ntm-reorderable children — after all the live shifting above — is
+   the index we want it to end up at. */
+function commitDragReorder(dragEl){
+  if(!dragEl)return;
+  dragEl.classList.remove('dragging');
+  const row=dragEl.parentElement;
+  if(!row)return;
+  row.classList.remove('ntm-row-dragging');
+  const finalItems=[...row.querySelectorAll('.ntm-reorderable')];
+  const toIdx=finalItems.indexOf(dragEl);
+  const fromIdx=parseInt(dragEl.dataset.reorderIndex,10);
+  if(!isNaN(fromIdx)&&!isNaN(toIdx))reorderPrimaries(fromIdx,toIdx);
+}
+
+/* Wire up whole-element press-and-drag reordering via Pointer Events
+   (one code path for mouse, touch, and pen). A short movement
+   threshold distinguishes "click" (let it through to whatever's
+   underneath, e.g. an <input type=color>) from "drag" (reorder). */
+const SWATCH_DRAG_THRESHOLD=6;
+function attachSwatchDrag(el){
+  let startX=0,startY=0,dragging=false,suppressClick=false;
+  function onMove(e){
+    if(!dragging){
+      if(Math.hypot(e.clientX-startX,e.clientY-startY)<SWATCH_DRAG_THRESHOLD)return;
+      dragging=true;
+      suppressClick=true;
+      dragSourceEl=el;
+      el.classList.add('dragging');
+      if(el.parentElement)el.parentElement.classList.add('ntm-row-dragging');
+    }
+    e.preventDefault();
+    const target=document.elementFromPoint(e.clientX,e.clientY);
+    const over=target&&target.closest('.ntm-reorderable');
+    if(over&&dragSourceEl&&over!==dragSourceEl)liveReorderSwatch(dragSourceEl,over);
+  }
+  function onUp(){
+    document.removeEventListener('pointermove',onMove);
+    document.removeEventListener('pointerup',onUp);
+    document.removeEventListener('pointercancel',onCancel);
+    if(dragging){
+      commitDragReorder(el);
+      dragSourceEl=null;
+      dragging=false;
+    }
+  }
+  function onCancel(){
+    document.removeEventListener('pointermove',onMove);
+    document.removeEventListener('pointerup',onUp);
+    document.removeEventListener('pointercancel',onCancel);
+    el.classList.remove('dragging');
+    if(el.parentElement)el.parentElement.classList.remove('ntm-row-dragging');
+    dragSourceEl=null;
+    dragging=false;
+  }
+  el.addEventListener('pointerdown',e=>{
+    if(e.button!==undefined&&e.button!==0)return;
+    startX=e.clientX;startY=e.clientY;dragging=false;suppressClick=false;
+    document.addEventListener('pointermove',onMove);
+    document.addEventListener('pointerup',onUp);
+    document.addEventListener('pointercancel',onCancel);
+  });
+  // A drag release still synthesizes a click on whatever's under the
+  // finger/cursor — suppress just that one click so a reorder doesn't
+  // also pop open the colour picker underneath it.
+  el.addEventListener('click',e=>{
+    if(suppressClick){e.preventDefault();e.stopPropagation();suppressClick=false;}
+  },true);
+}
+
 function mkSw(col,label,touchKey,setter,opts={}){
   const wrap=document.createElement('div');
   wrap.className='ntm-pal-swatch';
@@ -2540,35 +2868,16 @@ function mkSw(col,label,touchKey,setter,opts={}){
     if(ntmGenerated)previewName.textContent=ntmGenerated.label;
   });
 
-  // Drag-to-reorder handle (primary swatches only — pass opts.reorderIndex)
+  // Drag-to-reorder (primary swatches only — pass opts.reorderIndex).
+  // No separate gripper handle: the swatch itself is the drag surface.
+  // A press that doesn't move (or barely moves) is left alone so the
+  // underlying colour <input> still opens its picker normally on
+  // click; a press that moves past a small threshold becomes a drag
+  // instead. Pointer Events unify mouse/touch/pen in one code path.
   if(opts.reorderIndex!==undefined){
     wrap.classList.add('ntm-reorderable');
-    const handle=document.createElement('span');
-    handle.className='ntm-drag-handle';
-    handle.draggable=true;
-    handle.title='Drag to reorder';
-    handle.innerHTML='<svg viewBox="0 0 10 16" width="8" height="13" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="2" cy="14" r="1.3"/><circle cx="8" cy="14" r="1.3"/></svg>';
-    handle.addEventListener('dragstart',e=>{
-      e.stopPropagation();
-      e.dataTransfer.effectAllowed='move';
-      e.dataTransfer.setData('text/plain',String(opts.reorderIndex));
-      wrap.classList.add('dragging');
-    });
-    handle.addEventListener('dragend',()=>wrap.classList.remove('dragging'));
-    wrap.appendChild(handle);
-
-    wrap.addEventListener('dragover',e=>{
-      e.preventDefault();
-      e.dataTransfer.dropEffect='move';
-      wrap.classList.add('drag-over');
-    });
-    wrap.addEventListener('dragleave',()=>wrap.classList.remove('drag-over'));
-    wrap.addEventListener('drop',e=>{
-      e.preventDefault();
-      wrap.classList.remove('drag-over');
-      const fromIdx=parseInt(e.dataTransfer.getData('text/plain'),10);
-      if(!isNaN(fromIdx))reorderPrimaries(fromIdx,opts.reorderIndex);
-    });
+    wrap.dataset.reorderIndex=String(opts.reorderIndex);
+    attachSwatchDrag(wrap);
   }
 
   return wrap;
@@ -2637,19 +2946,18 @@ function scheduleGenerate(delay=300){
 }
 
 /* ── Source card selection ── */
-['Brand','Preset','Coolors','Image','Json','Magic'].forEach(m=>{
+['Brand','Coolors','Image','Json','Magic'].forEach(m=>{
   document.getElementById('ntmCard'+m).addEventListener('click',()=>{
     document.querySelectorAll('.ntm-source-card').forEach(c=>c.classList.remove('selected'));
     document.getElementById('ntmCard'+m).classList.add('selected');
     ntmMode=m.toLowerCase();
     document.getElementById('ntmBrandInput').style.display=ntmMode==='brand'?'':'none';
-    document.getElementById('ntmPresetPick').style.display=ntmMode==='preset'?'':'none';
     document.getElementById('ntmCoolorsInput').style.display=ntmMode==='coolors'?'':'none';
     document.getElementById('ntmImageInput').style.display=ntmMode==='image'?'':'none';
     document.getElementById('ntmJsonInput').style.display=ntmMode==='json'?'':'none';
     document.getElementById('ntmMagicInput').style.display=ntmMode==='magic'?'':'none';
-    if(ntmMode==='preset')buildPresetGrid();
     ntmTouched={};
+    inferTone();
     scheduleGenerate(0);
   });
 });
@@ -2720,6 +3028,7 @@ ntmImageFile.addEventListener('change',()=>{
     } else {
       status.textContent=`Found ${ntmImageHexes.length} distinct colours — palette complete.`;
     }
+    inferTone();
     scheduleGenerate(0);
   };
   img.onerror=()=>{status.textContent='Could not read this image — try another file.';};
@@ -2757,6 +3066,7 @@ document.getElementById('ntmJsonText').addEventListener('input',e=>{
     renderJsonSwatches([]);
     status.textContent='⚠ '+err.message;
   }
+  inferTone();
   scheduleGenerate(300);
 });
 
@@ -2885,29 +3195,11 @@ picker.addEventListener('input',()=>syncBrand(picker.value));
 hexIn.addEventListener('input',()=>{if(hexIn.value.length===7)syncBrand(hexIn.value);});
 hexIn.addEventListener('blur',()=>syncBrand(hexIn.value));
 
-/* ── Preset grid ── */
-function buildPresetGrid(){
-  const grid=document.getElementById('ntmPresetGrid');
-  grid.innerHTML='';
-  PRESETS.forEach((p,i)=>{
-    const el=document.createElement('div');
-    el.className='ntm-preset-item'+(ntmPresetIdx===i?' selected':'');
-    const cols=(p.theme&&p.theme.colors&&p.theme.colors.primaryColors||[]).slice(0,5);
-    el.innerHTML=`<div class="ntm-preset-swatches">${cols.map(c=>`<span style="background:${c}"></span>`).join('')}</div><div class="ntm-preset-name">${p.label}</div>`;
-    el.addEventListener('click',()=>{
-      ntmPresetIdx=i;ntmTouched={};
-      document.querySelectorAll('.ntm-preset-item').forEach(x=>x.classList.remove('selected'));
-      el.classList.add('selected');
-      scheduleGenerate(0);
-    });
-    grid.appendChild(el);
-  });
-}
-
 /* ── Tone ── */
 document.querySelectorAll('.ntm-tone-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     ntmTone=btn.dataset.tone;
+    ntmToneManual=true;
     document.querySelectorAll('.ntm-tone-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('ntmToneDesc').textContent=ntmTone==='dark'?'Dark surfaces — near-black canvas, charcoal wallpaper, light text':'Light surfaces — white canvas, light wallpaper, dark text';
@@ -2929,9 +3221,10 @@ document.getElementById('ntmThemeName').addEventListener('input',()=>{
   if(ntmGenerated){ntmGenerated.label=n||'My Theme';}
   // Always sync preview name live even before palette generated
   const pn=document.getElementById('ntmPreviewName');
-  if(pn)pn.textContent=n||'—';
+  if(pn)pn.textContent=n||'';
   canApply();
 });
+document.getElementById('ntmThemeName').addEventListener('focus',e=>{e.target.select();});
 
 /* ── Reset to generated ── */
 document.getElementById('ntmResetGen').addEventListener('click',()=>{
@@ -2972,16 +3265,23 @@ let ntmEditLibIdx=null; // index in lib[] when editing, null when creating
 function setWizardMode(isEdit){
   document.querySelector('.ntm-title').textContent=isEdit?'Edit theme':'Create new theme';
   document.querySelector('.ntm-subtitle').textContent=isEdit?'Modify this theme\u2019s colours and settings':'Configure your theme and preview it live before applying';
-  applyBtn.textContent=isEdit?'Save changes':'Apply theme';
+  applyBtn.textContent=isEdit?'Save changes':'Create theme';
+}
+
+function nextUntitledName(){
+  let existing;
+  try{existing=new Set(libLoad().map(x=>x.label));}catch(e){existing=new Set();}
+  let n=1;
+  while(existing.has('Untitled Theme '+n))n++;
+  return 'Untitled Theme '+n;
 }
 
 function openWizard(){
   ntmEditLibIdx=null;
-  ntmMode=null;ntmPresetIdx=null;ntmBrandColor='#117865';ntmCoolorsHexes=[];ntmImageHexes=[];ntmJsonParsed=null;ntmMagicParams=null;ntmMagicJitter={hue:0,light:0};ntmMagicAiHex=null;ntmMagicAiPending=false;ntmMagicAiReqId++;clearTimeout(ntmMagicAiDebounce);ntmTone='light';ntmGenerated=null;ntmTouched={};
+  ntmMode=null;ntmBrandColor='#117865';ntmCoolorsHexes=[];ntmImageHexes=[];ntmJsonParsed=null;ntmMagicParams=null;ntmMagicJitter={hue:0,light:0};ntmMagicAiHex=null;ntmMagicAiPending=false;ntmMagicAiReqId++;clearTimeout(ntmMagicAiDebounce);ntmTone='light';ntmToneManual=false;ntmGenerated=null;ntmTouched={};
   if(ntmImageObjectUrl){URL.revokeObjectURL(ntmImageObjectUrl);ntmImageObjectUrl=null;}
   document.querySelectorAll('.ntm-source-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById('ntmBrandInput').style.display='none';
-  document.getElementById('ntmPresetPick').style.display='none';
   document.getElementById('ntmCoolorsInput').style.display='none';
   document.getElementById('ntmCoolorsText').value='';
   document.getElementById('ntmCoolorsSwatchRow').innerHTML='';
@@ -3004,12 +3304,14 @@ function openWizard(){
   setMagicBadge(null);
   document.getElementById('ntmMagicKeyWrap').style.display='none';
   document.getElementById('ntmMagicAiHelper').style.display='none';
-  document.getElementById('ntmThemeName').value='';
-  document.querySelectorAll('.ntm-tone-btn').forEach(b=>b.classList.toggle('active',b.dataset.tone==='light'));
-  document.getElementById('ntmToneDesc').textContent='Light surfaces — white canvas, light wallpaper, dark text';
+  document.getElementById('ntmThemeName').value=nextUntitledName();
+  document.querySelectorAll('.ntm-tone-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('ntmToneDesc').textContent='Choose a starting point to preview tone';
+  document.getElementById('ntmResetGen').style.display='none';
+  document.getElementById('ntmEditHint').style.display='none';
   palettePreview.innerHTML='';palettePreview.style.display='none';
   previewEmpty.style.display='flex';
-  previewName.textContent='—';
+  previewName.textContent='';
   setWizardMode(false);
   canApply();
   modal.classList.add('show');
@@ -3025,6 +3327,7 @@ window.openWizardEdit=function openWizardEdit(item, libIdx){
   const canvasCol=item.theme&&item.theme.page&&item.theme.page.canvas&&item.theme.page.canvas.background&&item.theme.page.canvas.background.color||'#FFFFFF';
   const[cL]=hexToOklch(canvasCol);
   ntmTone=cL<0.5?'dark':'light';
+  ntmToneManual=true;
   document.querySelectorAll('.ntm-tone-btn').forEach(b=>b.classList.toggle('active',b.dataset.tone===ntmTone));
   document.getElementById('ntmToneDesc').textContent=ntmTone==='dark'?'Dark surfaces — near-black canvas, charcoal wallpaper, light text':'Light surfaces — white canvas, light wallpaper, dark text';
   // Detect starting point: if brand colour P1 is recognisable, use brand mode
@@ -3035,7 +3338,6 @@ window.openWizardEdit=function openWizardEdit(item, libIdx){
   document.querySelectorAll('.ntm-source-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById('ntmCardBrand').classList.add('selected');
   document.getElementById('ntmBrandInput').style.display='';
-  document.getElementById('ntmPresetPick').style.display='none';
   document.getElementById('ntmCoolorsInput').style.display='none';
   document.getElementById('ntmImageInput').style.display='none';
   document.getElementById('ntmJsonInput').style.display='none';
@@ -3055,6 +3357,8 @@ window.openWizardEdit=function openWizardEdit(item, libIdx){
   previewName.textContent=item.label||'';
   previewEmpty.style.display='none';
   palettePreview.style.display='flex';
+  document.getElementById('ntmResetGen').style.display='';
+  document.getElementById('ntmEditHint').style.display='';
   setWizardMode(true);
   canApply();
   modal.classList.add('show');
@@ -3607,15 +3911,20 @@ $('#exportShareUrl').addEventListener('click',()=>{
     const textCol=typo.color||'#242424';
     const wallpaper=p.wallpaper.color||'#F5F5F5';
 
+    // Every pair is checked against this theme's own actual
+    // backgrounds (canvas/element/wallpaper) — never a hardcoded
+    // white — so a dark theme's colours get judged against its real
+    // dark backdrop instead of failing against a background it never
+    // actually appears on.
     const pairs=[
       {name:'Text on Canvas',fg:textCol,bg:canvasBg,size:'normal'},
       {name:'Text on Element BG',fg:textCol,bg:elBg,size:'normal'},
       {name:'Text on Wallpaper',fg:textCol,bg:wallpaper,size:'normal'},
-      ...c.primaryColors.map((col,i)=>({name:`Primary ${i+1} on White`,fg:col,bg:'#FFFFFF',size:'large'})),
       ...c.primaryColors.map((col,i)=>({name:`Primary ${i+1} on Canvas`,fg:col,bg:canvasBg,size:'large'})),
-      {name:'Positive on White',fg:c.semantic.positive,bg:'#FFFFFF',size:'large'},
-      {name:'Negative on White',fg:c.semantic.negative,bg:'#FFFFFF',size:'large'},
-      {name:'Neutral on White',fg:c.semantic.neutral,bg:'#FFFFFF',size:'large'},
+      ...c.primaryColors.map((col,i)=>({name:`Primary ${i+1} on Element BG`,fg:col,bg:elBg,size:'large'})),
+      {name:'Positive on Canvas',fg:c.semantic.positive,bg:canvasBg,size:'large'},
+      {name:'Negative on Canvas',fg:c.semantic.negative,bg:canvasBg,size:'large'},
+      {name:'Neutral on Canvas',fg:c.semantic.neutral,bg:canvasBg,size:'large'},
     ];
 
     let pass=0,fail=0;
