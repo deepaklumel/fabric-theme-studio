@@ -712,7 +712,16 @@ svg text{font-family:var(--font-family)}
 /* Stage & Report */
 .stage{background:var(--wallpaper);overflow:hidden;height:100%;display:flex;align-items:flex-start;justify-content:center;padding:20px;transition:background .25s}
 .scaler{transform-origin:top center;will-change:transform;backface-visibility:hidden}
-.report{width:1160px;height:780px;background:var(--canvas-bg);border:var(--canvas-border-w) solid var(--canvas-border-color);border-radius:var(--canvas-radius);box-shadow:var(--canvas-shadow);padding:16px 20px;display:flex;flex-direction:column;gap:var(--vgap);overflow:hidden}
+.report{width:1160px;height:780px;background:var(--canvas-bg);border:var(--canvas-border-w) solid var(--canvas-border-color);border-radius:var(--canvas-radius);box-shadow:var(--canvas-shadow);padding:16px 20px;display:flex;flex-direction:column;gap:var(--vgap);overflow:hidden;scrollbar-width:thin;scrollbar-color:var(--out2) transparent}
+/* Theme every internal scroll container (tables, Gantt, Kanban, tree, etc.)
+   instead of leaving the browser's default scrollbar, which doesn't adapt
+   to dark themes and can look like a stray border. */
+#report *{scrollbar-width:thin;scrollbar-color:var(--out2) transparent}
+#report ::-webkit-scrollbar{width:8px;height:8px}
+#report ::-webkit-scrollbar-track{background:transparent}
+#report ::-webkit-scrollbar-thumb{background:var(--out2);border-radius:4px}
+#report ::-webkit-scrollbar-thumb:hover{background:var(--out1)}
+#report ::-webkit-scrollbar-corner{background:transparent}
 
 /* Dashboard elements */
 .rheader{display:flex;align-items:center;gap:12px;background:var(--struct-bg);border:1px solid var(--out2);border-radius:8px;padding:12px 16px;min-height:60px}

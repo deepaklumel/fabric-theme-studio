@@ -1876,10 +1876,11 @@ const DESIGN_W=1160,DESIGN_H=780;
 function fit(){
   const aw=stage.clientWidth-40;
   const ah=stage.clientHeight-40; /* 20 top + 20 bottom padding */
-  /* Scales to fill the stage on any viewport, including large/2K+
-     monitors — no upper clamp, since the product requirement is for
-     the canvas to always occupy the available space without gaps. */
-  const s=Math.min(aw/DESIGN_W,ah/DESIGN_H);
+  /* Scales to fill the stage, but never upscales past MAX_SCALE —
+     beyond that point transform:scale() rasterizes the canvas and
+     stretches it, which blurs text/lines on large/2K+ monitors. */
+  const MAX_SCALE=1.15;
+  const s=Math.min(aw/DESIGN_W,ah/DESIGN_H,MAX_SCALE);
   scaler.style.transform='scale('+s+')';
   scaler.style.width=DESIGN_W+'px';
   scaler.style.height=DESIGN_H+'px';
