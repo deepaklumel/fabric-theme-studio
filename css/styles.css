@@ -1039,10 +1039,10 @@ table.pt tbody tr:hover td{filter:brightness(.97)}
 .ptgr{display:flex;flex-direction:column;min-width:max-content}
 .ptgr-row{display:flex;align-items:stretch;border-bottom:1px solid var(--out2)}
 .ptgr-row.head{position:sticky;top:0;z-index:3;background:var(--struct-bg)}
-.ptgr-info{flex:0 0 340px;box-sizing:border-box;padding:10px 16px;display:flex;align-items:center;gap:8px;position:sticky;left:0;z-index:2;background:var(--canvas-bg);border-right:1px solid var(--out1)}
-/* Audit finding #9: same fix as .pt-gantt-info — a 340px sticky rail
+.ptgr-info{flex:0 0 220px;box-sizing:border-box;padding:10px 16px;display:flex;align-items:center;gap:8px;position:sticky;left:0;z-index:2;background:var(--canvas-bg);border-right:1px solid var(--out1)}
+/* Audit finding #9: same fix as .pt-gantt-info — a wide sticky rail
    can exceed a narrow phone viewport outright. */
-@media (max-width:640px){.ptgr-info{flex-basis:200px;padding:10px 12px}}
+@media (max-width:640px){.ptgr-info{flex-basis:180px;padding:10px 12px}}
 .ptgr-row.head .ptgr-info{background:var(--struct-bg);z-index:4;font-weight:600;color:var(--text-color);font-size:13px;line-height:1.3}
 .ptgr-row.group .ptgr-info{font-weight:600;font-size:14px;color:var(--text-color);cursor:pointer}
 .ptgr-row.group .ptgr-info .chev{width:14px;height:14px;color:var(--struct-icon);flex:none}

@@ -1407,7 +1407,7 @@ function clampDropdown(btn,drop){
   const tableView=document.getElementById('planTableView');
   if(!pick||!btn||!drop||!matrixView||!treeView||!tableView)return;
 
-  const LABELS={matrix:'Hierarchy',tree:'Tree view',table:'Table view'};
+  const LABELS={matrix:'Hierarchy',tree:'Tree',table:'Table'};
   window._planShowLayoutPicker=function(show){
     pick.style.display=show?'block':'none';
   };
@@ -1441,7 +1441,7 @@ function clampDropdown(btn,drop){
   const ganttResView=document.getElementById('ptGanttResView');
   if(!pick||!btn||!drop||!tableView||!kanbanView||!ganttView||!calendarView||!ganttResView)return;
 
-  const LABELS={table:'Table layout',kanban:'Kanban layout',gantt:'Gantt layout',calendar:'Calendar view',ganttres:'Gantt resources'};
+  const LABELS={table:'Table',kanban:'Kanban',gantt:'Gantt',calendar:'Calendar',ganttres:'Gantt resources'};
   window._ptShowLayoutPicker=function(show){
     pick.style.display=show?'block':'none';
   };
@@ -1457,7 +1457,7 @@ function clampDropdown(btn,drop){
     ganttResView.style.display=name==='ganttres'?'flex':'none';
     drop.classList.remove('open');
     const sub=document.getElementById('pgSub');
-    if(sub)sub.textContent='Task tracker · '+name+' layout';
+    if(sub)sub.textContent='Task tracker · '+(LABELS[name]||LABELS.table);
     requestAnimationFrame(()=>requestAnimationFrame(fit));
   }
   btn.addEventListener('click',e=>{e.stopPropagation();drop.classList.toggle('open');if(drop.classList.contains('open'))clampDropdown(btn,drop);});
@@ -1876,11 +1876,10 @@ const DESIGN_W=1160,DESIGN_H=780;
 function fit(){
   const aw=stage.clientWidth-40;
   const ah=stage.clientHeight-40; /* 20 top + 20 bottom padding */
-  /* Audit finding #7: clamped to 1 so the report never upscales past
-     its true 1160×780 design size on large viewports — without this,
-     a big monitor would blow the report canvas up beyond its designed
-     resolution, making everything look blurry/oversized. */
-  const s=Math.min(aw/DESIGN_W,ah/DESIGN_H,1);
+  /* Scales to fill the stage on any viewport, including large/2K+
+     monitors — no upper clamp, since the product requirement is for
+     the canvas to always occupy the available space without gaps. */
+  const s=Math.min(aw/DESIGN_W,ah/DESIGN_H);
   scaler.style.transform='scale('+s+')';
   scaler.style.width=DESIGN_W+'px';
   scaler.style.height=DESIGN_H+'px';
@@ -3824,7 +3823,7 @@ const PAGE_META=[
   {title:'Product Deep Dive',sub:'FY25 · distribution, relationship &amp; density'},
   {title:'Planning & Forecast',sub:'FY25 · writeback, actuals vs plan vs forecast'},
   {title:'Planning',sub:'Profit, Sales, Year, Category, Sub-Category'},
-  {title:'PowerTable',sub:'Task tracker · table layout'}
+  {title:'PowerTable',sub:'Task tracker · Table'}
 ];
 PAGES.push('pg4','pg5');
 function showPage(idx){
