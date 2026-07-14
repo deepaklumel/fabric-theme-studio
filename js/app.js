@@ -838,7 +838,6 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
       <svg class="chev" style="width:12px;height:12px;flex:none;display:inline-block" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
       ${label}<span class="cnt">${count}</span>
       <span class="sp"></span>
-      <svg class="kebab" style="width:13px;height:13px;flex:none;display:inline-block" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="4.5" r="1.4"/><circle cx="10" cy="10" r="1.4"/><circle cx="10" cy="15.5" r="1.4"/></svg>
     </div>`;
   }
 
@@ -1536,11 +1535,12 @@ function clampDropdown(btn,drop){
     if(typeof window._setVisualsTabEnabled==='function')window._setVisualsTabEnabled(name==='intelligence');
   }
   btns.forEach(b=>b.addEventListener('click',()=>selectModule(b.dataset.module)));
-  // Default landing module is Planning. Deferred to the next tick since
-  // showPage() depends on the PAGES const declared later in this script
-  // (would otherwise throw a temporal-dead-zone ReferenceError if called
-  // synchronously here, before that declaration has run).
-  setTimeout(()=>selectModule('planning'),0);
+  // Default landing module is Intelligence — it's where a theme gets the
+  // most real-world use, so it's shown first. Deferred to the next tick
+  // since showPage() depends on the PAGES const declared later in this
+  // script (would otherwise throw a temporal-dead-zone ReferenceError if
+  // called synchronously here, before that declaration has run).
+  setTimeout(()=>selectModule('intelligence'),0);
 })();
 
 /* ── Pivot tabs ── */
@@ -1873,15 +1873,24 @@ function clampDropdown(btn,drop){
 /* ── Scale to fit both width AND height ── */
 const stage=$('#stage'),scaler=$('#scaler'),report=$('#report');
 const DESIGN_W=1160,DESIGN_H=780;
+const SUPPORTS_ZOOM='zoom' in document.documentElement.style;
 function fit(){
   const aw=stage.clientWidth-40;
   const ah=stage.clientHeight-40; /* 20 top + 20 bottom padding */
-  /* Scales to fill the stage, but never upscales past MAX_SCALE —
-     beyond that point transform:scale() rasterizes the canvas and
-     stretches it, which blurs text/lines on large/2K+ monitors. */
-  const MAX_SCALE=1.15;
-  const s=Math.min(aw/DESIGN_W,ah/DESIGN_H,MAX_SCALE);
-  scaler.style.transform='scale('+s+')';
+  const s=Math.min(aw/DESIGN_W,ah/DESIGN_H);
+  /* Prefer CSS zoom over transform:scale() — zoom makes the browser
+     genuinely re-layout and re-rasterize the canvas at the new size, so
+     it stays crisp at any scale, including well past 1x. transform:scale()
+     instead stretches an already-rendered bitmap, which blurs text/lines
+     on large/2K+ monitors. zoom isn't supported on older Firefox, so fall
+     back to transform:scale() there. */
+  if(SUPPORTS_ZOOM){
+    scaler.style.transform='';
+    scaler.style.zoom=s;
+  }else{
+    scaler.style.zoom='';
+    scaler.style.transform='scale('+s+')';
+  }
   scaler.style.width=DESIGN_W+'px';
   scaler.style.height=DESIGN_H+'px';
 }
@@ -2067,11 +2076,24 @@ function parseColorList(str){
    chosen to maximize its minimum perceptual distance to every hue already
    in the set (given + already-generated), so added colours read as a
    natural extension of the pasted palette rather than a jarring add-on. ── */
+/* A colour pulled straight from a source (uploaded image, pasted Coolors
+   list, JSON import) is used as-is in light mode, but in dark mode a
+   too-dark colour sitting on a near-black canvas is a contrast problem —
+   not a style choice. Only lift colours that are actually too dark to
+   read; anything already light enough is left untouched so the palette
+   still looks like it came from the source. */
+function ensureChartLForTone(hex,dark){
+  if(!dark)return hex;
+  const [L,C,H]=hexToOklch(hex);
+  if(L>=CHART_L_MIN)return hex;
+  const newL=clamp(L+RULES.chartL_dark_boost,CHART_L_MIN+0.08,CHART_L_MAX+0.10);
+  return oklchToHex(newL,C,H);
+}
 function generateThemeFromPalette(hexList,tone,name){
   const dark=tone==='dark';
   const existing=(hexList||[]).map(norm).filter(Boolean).slice(0,8);
   if(!existing.length)return null;
-  let primaries=existing.slice();
+  let primaries=existing.map(h=>ensureChartLForTone(h,dark));
   if(existing.length<8){
     const oklchs=existing.map(hexToOklch);
     const hues=oklchs.map(o=>o[2]);
@@ -2208,16 +2230,50 @@ function extractPaletteFromImage(img,k=8){
   const samples=samplePixelsFromImage(img);
   if(!samples.length)return[];
   const labPoints=samples.map(([r,g,b])=>rgbToOklab(r,g,b));
-  const clusters=kmeansOklab(labPoints,k);
-  const merged=[];
-  for(const c of clusters){
-    const [L,a,b]=c.lab;
-    const C=Math.sqrt(a*a+b*b),H=(Math.atan2(b,a)*180/Math.PI+360)%360;
-    const dupe=merged.find(m=>Math.abs(m.L-L)<0.045&&perceptualDist(m.H,H)<9);
-    if(dupe)continue;
-    merged.push({L,H,hex:oklabToHex(L,a,b)});
+  /* Cluster into a richer CANDIDATE pool than the final palette size —
+     a gradient/glow (like light falling off from an orange logo mark to
+     a black background) genuinely contains many distinct in-between
+     shades, and clustering straight to k=8 collapses those into just
+     "orange" and "black" before we ever get a chance to notice them. */
+  const candidateK=Math.min(Math.max(k*3,20),labPoints.length);
+  const clusters=kmeansOklab(labPoints,candidateK); // sorted by weight, most dominant first
+  /* Drop only true single-pixel/anti-aliasing noise — real gradient and
+     accent colours (a highlight, a stray coloured particle) can be a
+     tiny fraction of the pixels and are still worth keeping. */
+  const MIN_WEIGHT_FRAC=0.004;
+  const totalWeight=clusters.reduce((s,c)=>s+c.weight,0)||1;
+  const candidates=clusters.filter((c,i)=>i===0||c.weight/totalWeight>=MIN_WEIGHT_FRAC);
+  /* Greedy weighted farthest-point selection: start with the most
+     dominant real colour, then repeatedly add whichever remaining
+     candidate is most perceptually different from every colour already
+     picked. This is what actually produces a "distinctive, usable"
+     palette straight from the image — dominant colour first, then the
+     real accents/gradient-steps that contrast with it — instead of
+     merge-then-synthesize, which can throw away genuine image colour
+     and replace it with maths-derived filler. MERGE_DIST is only used
+     as a stopping condition: once nothing left is meaningfully
+     different from what's already picked, the image simply doesn't
+     have more distinct colour to offer, and the caller's fill-in logic
+     (generateThemeFromPalette) takes over for the remaining slots. */
+  const MERGE_DIST=0.06;
+  const dist=(c1,c2)=>{
+    const dl=c1.lab[0]-c2.lab[0],da=c1.lab[1]-c2.lab[1],db=c1.lab[2]-c2.lab[2];
+    return Math.sqrt(dl*dl+da*da+db*db);
+  };
+  const picked=candidates.length?[candidates[0]]:[];
+  const remaining=candidates.slice(1);
+  while(picked.length<k&&remaining.length){
+    let bestIdx=-1,bestScore=-1;
+    for(let i=0;i<remaining.length;i++){
+      let minD=Infinity;
+      for(const p of picked){const d=dist(remaining[i],p);if(d<minD)minD=d;}
+      if(minD>bestScore){bestScore=minD;bestIdx=i;}
+    }
+    if(bestIdx<0||bestScore<MERGE_DIST)break;
+    picked.push(remaining[bestIdx]);
+    remaining.splice(bestIdx,1);
   }
-  return merged.map(m=>m.hex);
+  return picked.map(c=>oklabToHex(c.lab[0],c.lab[1],c.lab[2]));
 }
 
 /* ══════════════════════════════════════════════════════════
