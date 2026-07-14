@@ -33,7 +33,6 @@ const PRESETS=[
   ,{...{"label":"Horizon","themeType":8,"theme":{"colors":{"primaryColors":["#7D72F9","#2AE5FF","#5DB1F2","#E686FC","#A3D7F6","#B7A9FF","#AEE4F2","#EDF3FF"],"structuralColors":{"outline1":"#ADADAD","outline2":"#E0E0E0","background":"#F5F5F5","accent":"#0078D4","icon":"#242424","subtleFill":"#FFFFFF"},"semantic":{"positive":"#00C48C","negative":"#FF5B5C","neutral":"#B8C2CC"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#EEF0F0","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#D1D1D1","iconColor":"#616161"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#242424"}},"typography":{"autoFontColor":false,"color":"#242424","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
 ];
 let T=JSON.parse(JSON.stringify(PRESETS[0]));
-let activePresetIdx=null;
 // THEME_ORIGIN: snapshot of the theme at time of load/switch
 // All per-swatch, per-group and global resets restore to this.
 let THEME_ORIGIN=JSON.parse(JSON.stringify(DEFAULTS));
@@ -284,11 +283,13 @@ function buildColorGroup(host,name,items,renderFn,open){
     <span class="cg-name">${name}</span>
     <span class="cg-count">${items.length}</span>
     <span class="cg-prev">${prev.map(c=>`<span style="background:${c}"></span>`).join('')}</span>
-    <button class="cg-reset f-btn-subtle" title="Reset ${name}">${IC.reset}</button>
+    <button class="cg-reset f-btn-subtle" title="Reset ${name}" aria-label="Reset ${name}">${IC.reset}</button>
   </div><div class="cgbody"></div>`;
   const head=sec.querySelector('.cghead'),body=sec.querySelector('.cgbody'),resetBtn=sec.querySelector('.cg-reset');
-  head.addEventListener('click',e=>{if(e.target.closest('.cg-reset'))return;sec.classList.toggle('open');});
-  head.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('.cg-reset')){e.preventDefault();sec.classList.toggle('open');}});
+  head.setAttribute('aria-expanded',sec.classList.contains('open')?'true':'false');
+  function toggleOpen(){sec.classList.toggle('open');head.setAttribute('aria-expanded',sec.classList.contains('open')?'true':'false');}
+  head.addEventListener('click',e=>{if(e.target.closest('.cg-reset'))return;toggleOpen();});
+  head.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('.cg-reset')){e.preventDefault();toggleOpen();}});
   const resets=[];
   renderFn(body,resets);
   resetBtn.addEventListener('click',e=>{e.stopPropagation();resets.forEach(fn=>fn());});
@@ -436,26 +437,26 @@ function buildColors(){
   host.innerHTML='';refreshers=refreshers.filter(r=>r.tab!=='colors');
   const c=T.theme.colors;
 
-  buildColorGroup(host,'Primary Colors',c.primaryColors,(body,resets)=>{
+  buildColorGroup(host,'Primary',c.primaryColors,(body,resets)=>{
     const grid=document.createElement('div');grid.className='swcards';
     c.primaryColors.forEach((v,i)=>{
       const ctrl=mkSwblock(grid,'Color '+(i+1),THEME_ORIGIN.theme.colors.primaryColors[i],()=>c.primaryColors[i],v=>{c.primaryColors[i]=v;},{reorderIndex:i});
       resets.push(ctrl.reset);refreshers.push({tab:'colors',fn:ctrl.refresh});});
-    body.appendChild(grid);},openNames.has('Primary Colors'));
+    body.appendChild(grid);},openNames.has('Primary'));
 
-  buildColorGroup(host,'Structural Colors',Object.values(c.structuralColors),(body,resets)=>{
+  buildColorGroup(host,'Structural',Object.values(c.structuralColors),(body,resets)=>{
     const grid=document.createElement('div');grid.className='swcards';
     [['outline1','Outline 1'],['outline2','Outline 2'],['background','Background'],['icon','Icon'],['accent','Accent'],['subtleFill','Subtle Fill']].forEach(([k,l])=>{
       const ctrl=mkSwblock(grid,l,THEME_ORIGIN.theme.colors.structuralColors[k],()=>c.structuralColors[k],v=>{c.structuralColors[k]=v;});
       resets.push(ctrl.reset);refreshers.push({tab:'colors',fn:ctrl.refresh});});
-    body.appendChild(grid);},openNames.has('Structural Colors'));
+    body.appendChild(grid);},openNames.has('Structural'));
 
-  buildColorGroup(host,'Semantic Colors',Object.values(c.semantic),(body,resets)=>{
+  buildColorGroup(host,'Semantic',Object.values(c.semantic),(body,resets)=>{
     const grid=document.createElement('div');grid.className='swcards';
     [['positive','Positive'],['negative','Negative'],['neutral','Neutral']].forEach(([k,l])=>{
       const ctrl=mkSwblock(grid,l,THEME_ORIGIN.theme.colors.semantic[k],()=>c.semantic[k],v=>{c.semantic[k]=v;});
       resets.push(ctrl.reset);refreshers.push({tab:'colors',fn:ctrl.refresh});});
-    body.appendChild(grid);},openNames.has('Semantic Colors'));
+    body.appendChild(grid);},openNames.has('Semantic'));
 }
 
 /* ── Property helpers ── */
@@ -476,7 +477,7 @@ function mkNum(p,label,get,set,min,max,unit){
   // SpinButton: input + up/down arrow buttons (Fabric iconography)
   const upSVG=`<svg viewBox="0 0 9 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6L4.5 3L7.5 6"/></svg>`;
   const dnSVG=`<svg viewBox="0 0 9 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 3L4.5 6L7.5 3"/></svg>`;
-  row.innerHTML=`<span class="prop-lbl">${label}</span><div class="f-spinbtn"><input class="f-input num" type="number" value="${get()}" min="${mn}" max="${mx}" step="1"><div class="f-spin-arrows"><button class="f-spin-arrow" tabindex="-1" title="Increase">${upSVG}</button><button class="f-spin-arrow" tabindex="-1" title="Decrease">${dnSVG}</button></div></div>${unit?`<span class="unit">${unit}`+'</span>':''}`;
+  row.innerHTML=`<span class="prop-lbl">${label}</span><div class="f-spinbtn"><input class="f-input num" type="number" value="${get()}" min="${mn}" max="${mx}" step="1" aria-label="${label}"><div class="f-spin-arrows"><button class="f-spin-arrow" tabindex="-1" title="Increase ${label}" aria-label="Increase ${label}">${upSVG}</button><button class="f-spin-arrow" tabindex="-1" title="Decrease ${label}" aria-label="Decrease ${label}">${dnSVG}</button></div></div>${unit?`<span class="unit">${unit}`+'</span>':''}`;
   const inp=row.querySelector('input');
   const [up,dn]=row.querySelectorAll('.f-spin-arrow');
   function commit(v){const c=Math.max(mn,Math.min(mx,Math.round(Number(v)||0)));inp.value=c;set(c);applyTheme();}
@@ -503,7 +504,14 @@ const FONT_LABELS={
 };
 function mkSelect(p,label,opts,get,set){
   const row=document.createElement('div');row.className='prop-row';
-  row.innerHTML=`<span class="prop-lbl">${label}</span><select class="f-select">${opts.map(o=>`<option value="${o}"${o===get()?' selected':''}>${FONT_LABELS[o]||o}</option>`).join('')}</select>`;
+  // Font-family values like '"Segoe UI", ...sans-serif' contain literal
+  // double quotes (required for the quoted CSS family name) — building
+  // the value="..." attribute without escaping them truncates the
+  // attribute at the first embedded quote, silently producing an
+  // empty value for exactly those options (Segoe UI, DIN). Escape
+  // before interpolating so the option's value survives round-trip.
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+  row.innerHTML=`<span class="prop-lbl">${label}</span><select class="f-select">${opts.map(o=>`<option value="${esc(o)}"${o===get()?' selected':''}>${FONT_LABELS[o]||o}</option>`).join('')}</select>`;
   const sel=row.querySelector('select');
   sel.addEventListener('change',()=>{set(sel.value);applyTheme();pushUndo();});
   p.appendChild(row);return{refresh(){sel.value=get();}};
@@ -511,9 +519,12 @@ function mkSelect(p,label,opts,get,set){
 
 function buildSection(host,name,open,builderFn,defaults){
   const sec=document.createElement('section');sec.className='cgroup'+(open?' open':'');
-  sec.innerHTML=`<div class="cghead" role="button" tabindex="0"><span class="chev">${IC.chevRight}</span><span class="cg-name">${name}</span><button class="cg-reset" title="Reset ${name}">${IC.reset}</button></div><div class="cgbody"></div>`;
+  sec.innerHTML=`<div class="cghead" role="button" tabindex="0" aria-expanded="false"><span class="chev">${IC.chevRight}</span><span class="cg-name">${name}</span><button class="cg-reset" title="Reset ${name}" aria-label="Reset ${name}">${IC.reset}</button></div><div class="cgbody"></div>`;
   const head=sec.querySelector('.cghead'),body=sec.querySelector('.cgbody'),resetBtn=sec.querySelector('.cg-reset');
-  head.addEventListener('click',e=>{if(e.target.closest('.cg-reset'))return;sec.classList.toggle('open');});
+  head.setAttribute('aria-expanded',open?'true':'false');
+  function toggleOpen(){sec.classList.toggle('open');head.setAttribute('aria-expanded',sec.classList.contains('open')?'true':'false');}
+  head.addEventListener('click',e=>{if(e.target.closest('.cg-reset'))return;toggleOpen();});
+  head.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('.cg-reset')){e.preventDefault();toggleOpen();}});
   const sectionResets=[];
   builderFn(body,sectionResets);
   resetBtn.addEventListener('click',e=>{
@@ -570,7 +581,7 @@ function buildElements(){
       const cell=document.createElement('div');cell.className='pad-cell';
       const upSVG=`<svg viewBox="0 0 9 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6L4.5 3L7.5 6"/></svg>`;
       const dnSVG=`<svg viewBox="0 0 9 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 3L4.5 6L7.5 3"/></svg>`;
-      cell.innerHTML=`<span class="pad-cell-lbl">${lbl}</span><div class="f-spinbtn" style="justify-content:center"><input class="f-input num" type="number" value="${get()}" min="0" max="40" step="1" style="width:44px"><div class="f-spin-arrows"><button class="f-spin-arrow" tabindex="-1">${upSVG}</button><button class="f-spin-arrow" tabindex="-1">${dnSVG}</button></div></div>`;
+      cell.innerHTML=`<span class="pad-cell-lbl">${lbl}</span><div class="f-spinbtn" style="justify-content:center"><input class="f-input num" type="number" value="${get()}" min="0" max="40" step="1" style="width:44px" aria-label="${lbl} padding"><div class="f-spin-arrows"><button class="f-spin-arrow" tabindex="-1" title="Increase ${lbl}" aria-label="Increase ${lbl}">${upSVG}</button><button class="f-spin-arrow" tabindex="-1" title="Decrease ${lbl}" aria-label="Decrease ${lbl}">${dnSVG}</button></div></div>`;
       const inp=cell.querySelector('input');
       const [up,dn]=cell.querySelectorAll('.f-spin-arrow');
       function commit(v){const c=Math.max(0,Math.min(40,Math.round(Number(v)||0)));inp.value=c;set(c);applyTheme();}
@@ -590,15 +601,31 @@ function buildElements(){
     mkColorRow(b,'Text color',()=>e.tooltip.color,v=>{e.tooltip.color=v;});});
 }
 function buildTypo(){
+  // Font tab has only 5 fields total, so it's just a plain flat list —
+  // no card/border wrapper, no accordion. A single small reset link
+  // sits above the rows and restores all 5 fields at once, since
+  // there's no per-subsection grouping left to reset individually.
   const host=$('#tp-font');host.innerHTML='';const ty=T.theme.typography;
-  buildSection(host,'Font Family',false,b=>{
-    mkSelect(b,'Family',['"Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif','Arial, sans-serif','Tahoma, sans-serif','"DIN", sans-serif'],()=>ty.fontFamily,v=>{ty.fontFamily=v;});});
-  buildSection(host,'Size & Color',false,b=>{
-    mkNum(b,'Font size',()=>ty.fontSize,v=>{ty.fontSize=v;},8,28,'px');
-    mkColorRow(b,'Text color',()=>ty.color,v=>{ty.color=v;});});
-  buildSection(host,'Options',false,b=>{
-    mkToggle(b,'Auto font color',()=>ty.autoFontColor,v=>{ty.autoFontColor=v;});
-    mkToggle(b,'Responsive size',()=>ty.responsiveFontSize,v=>{ty.responsiveFontSize=v;});});
+  const orig=THEME_ORIGIN.theme.typography;
+  const resets=[];
+
+  const famCtrl=mkSelect(host,'Family',['"Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif','Arial, sans-serif','Tahoma, sans-serif','"DIN", sans-serif'],()=>ty.fontFamily,v=>{ty.fontFamily=v;});
+  resets.push(()=>{ty.fontFamily=orig.fontFamily;famCtrl.refresh();});
+  const sizeCtrl=mkNum(host,'Font size',()=>ty.fontSize,v=>{ty.fontSize=v;},8,28,'px');
+  resets.push(()=>{ty.fontSize=orig.fontSize;sizeCtrl.refresh();});
+  const colorCtrl=mkColorRow(host,'Text color',()=>ty.color,v=>{ty.color=v;});
+  resets.push(()=>{ty.color=orig.color;colorCtrl.refresh();});
+  const autoCtrl=mkToggle(host,'Auto font color',()=>ty.autoFontColor,v=>{ty.autoFontColor=v;});
+  resets.push(()=>{ty.autoFontColor=orig.autoFontColor;autoCtrl.refresh();});
+  const respCtrl=mkToggle(host,'Responsive size',()=>ty.responsiveFontSize,v=>{ty.responsiveFontSize=v;});
+  resets.push(()=>{ty.responsiveFontSize=orig.responsiveFontSize;respCtrl.refresh();});
+
+  // Reset button lives in the shared panel title bar (#panelBodyReset),
+  // not inside this tab's own content — assigned via onclick (not
+  // addEventListener) since buildTypo() re-runs on every theme
+  // load/undo/reset, and onclick= safely replaces rather than stacking.
+  const resetEl=document.getElementById('panelBodyReset');
+  if(resetEl)resetEl.onclick=()=>{resets.forEach(fn=>fn());applyTheme();pushUndo();};
 }
 
 function buildAll(){buildColors();buildPage();buildElements();buildTypo();updatePanelFoot();}
@@ -799,14 +826,6 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
       <span class="pt-stack-space"></span>
       <svg class="pt-stack-icon" style="${ICSTYLE}" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v12M4 10h12"/></svg>
       <svg class="pt-stack-icon" style="${ICSTYLE}" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="4.5" r="1.4"/><circle cx="10" cy="10" r="1.4"/><circle cx="10" cy="15.5" r="1.4"/></svg>
-    </div>`;
-  }
-  function groupHead(label,count){
-    return `<div class="pt-group-head">
-      <svg class="chev" style="width:11px;height:11px;flex:none;display:inline-block" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
-      ${label}<span class="cnt">${count}</span>
-      <span class="sp"></span>
-      <svg class="kebab" style="width:13px;height:13px;flex:none;display:inline-block" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="4.5" r="1.4"/><circle cx="10" cy="10" r="1.4"/><circle cx="10" cy="15.5" r="1.4"/></svg>
     </div>`;
   }
   const addCard=`<div class="pt-add-card"><svg style="${ICSTYLE}" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg></div>`;
@@ -1225,38 +1244,49 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
 })();
 
 /* ── Planning "Tree view" ──
-   Root "All" card fans out via curved connectors to one card per
-   product category — realistic Sum of Sales / Sum of Profit figures
-   (in the same domain as the Planning matrix: Region>Country>
-   Category>Sub-Category), not the placeholder "Course-N" data from
-   the reference screenshot. */
+   Three real levels — All > product Group > Category — instead of the
+   old flat "All" fanning out directly to 10 categories at once. Reuses
+   the exact same Group>Category figures as the Planning "Table view"
+   below (GROUPS), so the two views agree with each other, and reads
+   as an actual drill-down hierarchy instead of one wide, shallow fan. */
 (function(){
   const root=document.getElementById('planTree');
   if(!root)return;
-  const CATS=[
-    {name:'Electronics',sales:482.3,profit:86.4},
-    {name:'Furniture',sales:210.5,profit:38.9},
-    {name:'Office Supplies',sales:96.7,profit:17.2},
-    {name:'Personal Care',sales:143.2,profit:25.6},
-    {name:'Apparel',sales:305.8,profit:54.3},
-    {name:'Footwear',sales:178.4,profit:31.0},
-    {name:'Home Appliances',sales:264.9,profit:47.8},
-    {name:'Sporting Goods',sales:132.6,profit:22.4},
-    {name:'Beauty & Wellness',sales:198.3,profit:35.6},
-    {name:'Automotive Accessories',sales:87.5,profit:15.8}
+  const GROUPS=[
+    {name:'Hard Goods',cats:[
+      {name:'Electronics',sales:482.3,profit:86.4},
+      {name:'Home Appliances',sales:264.9,profit:47.8},
+      {name:'Automotive Accessories',sales:87.5,profit:15.8}
+    ]},
+    {name:'Soft Goods',cats:[
+      {name:'Apparel',sales:305.8,profit:54.3},
+      {name:'Footwear',sales:178.4,profit:31.0},
+      {name:'Personal Care',sales:143.2,profit:25.6}
+    ]},
+    {name:'Office & Living',cats:[
+      {name:'Furniture',sales:210.5,profit:38.9},
+      {name:'Office Supplies',sales:96.7,profit:17.2}
+    ]},
+    {name:'Sports & Leisure',cats:[
+      {name:'Sporting Goods',sales:132.6,profit:22.4},
+      {name:'Beauty & Wellness',sales:198.3,profit:35.6}
+    ]}
   ];
-  const totalSales=CATS.reduce((s,c)=>s+c.sales,0);
-  const totalProfit=CATS.reduce((s,c)=>s+c.profit,0);
   function fmt(v){return v>=1000?(v/1000).toFixed(2)+'M':v.toFixed(2)+'k';}
+  GROUPS.forEach(g=>{
+    g.sales=g.cats.reduce((s,c)=>s+c.sales,0);
+    g.profit=g.cats.reduce((s,c)=>s+c.profit,0);
+  });
+  const totalSales=GROUPS.reduce((s,g)=>s+g.sales,0);
+  const totalProfit=GROUPS.reduce((s,g)=>s+g.profit,0);
 
-  const CARD_W=260, CARD_H=92, GAP_Y=16, GAP_X=90, LEFT_X=40;
-  const rightX=LEFT_X+CARD_W+GAP_X;
-  const totalH=CATS.length*CARD_H+(CATS.length-1)*GAP_Y;
-  const rootY=Math.max(0,totalH/2-CARD_H/2);
+  const CARD_W=230, CARD_H=88, GAP_Y=14, GROUP_GAP=26, GAP_X=70, LEFT_X=32;
+  const col2X=LEFT_X+CARD_W+GAP_X;   // Group column
+  const col3X=col2X+CARD_W+GAP_X;    // Category column
   const topY=40;
 
-  function card(x,y,title,rows,isRoot){
-    return `<div class="plan-tree-card${isRoot?' root':''}" style="left:${x}px;top:${topY+y}px">
+  function card(x,y,title,rows,extraClass){
+    return `<div class="plan-tree-card${extraClass?' '+extraClass:''}" style="left:${x}px;top:${topY+y}px;width:${CARD_W}px">
       <div class="hd">${title}</div>
       ${rows.map(r=>`<div class="row"><span class="lbl">${r[0]}</span><span class="val">${r[1]}</span></div>`).join('')}
     </div>`;
@@ -1265,23 +1295,52 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
     const midX=(x1+x2)/2;
     return `<path d="M${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}"/>`;
   }
+  function countIcon(x,y){
+    return `<div class="plan-tree-count" style="left:${x-10}px;top:${y-10}px"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7.5 2.5L3 6l4.5 3.5"/></svg></div>`;
+  }
 
-  let cards=card(LEFT_X,rootY,'All',[['Sum of Sales','$'+fmt(totalSales)],['Sum of Profit','$'+fmt(totalProfit)]],true);
+  // Pass 1: lay out leaf Category cards top-to-bottom, grouped, with
+  // extra vertical space between groups so the clustering is legible
+  // at a glance. Track each group's vertical span as we go.
+  let cursorY=0;
+  const groupLayout=GROUPS.map(g=>{
+    const catYs=g.cats.map(()=>{const y=cursorY;cursorY+=CARD_H+GAP_Y;return y;});
+    cursorY+=GROUP_GAP-GAP_Y; // swap the last child's gap for the wider group gap
+    const startY=catYs[0], endY=catYs[catYs.length-1];
+    const groupY=(startY+endY)/2;
+    return{group:g,catYs,groupY};
+  });
+  cursorY-=GROUP_GAP;
+  const totalCatH=cursorY;
+
+  // Pass 2: root sits centered on the full span of group centers.
+  const groupCYs=groupLayout.map(gl=>gl.groupY+CARD_H/2);
+  const rootY=(Math.min(...groupCYs)+Math.max(...groupCYs))/2-CARD_H/2;
+
+  let cards=card(LEFT_X,rootY,'All',[['Sum of Sales','$'+fmt(totalSales)],['Sum of Profit','$'+fmt(totalProfit)]],'root');
   let conns='';
   const rootCX=LEFT_X+CARD_W, rootCY=topY+rootY+CARD_H/2;
-  CATS.forEach((c,i)=>{
-    const y=i*(CARD_H+GAP_Y);
-    cards+=card(rightX,y,c.name,[['Sum of Sales','$'+fmt(c.sales)],['Sum of Profit','$'+fmt(c.profit)]],false);
-    const childCY=topY+y+CARD_H/2;
-    conns+=bezier(rootCX,rootCY,rightX,childCY);
-  });
-  const countIcon=`<div class="plan-tree-count" style="left:${rootCX-10}px;top:${rootCY-10}px"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7.5 2.5L3 6l4.5 3.5"/></svg></div>`;
+  let icons=countIcon(rootCX,rootCY);
 
-  const totalWidth=rightX+CARD_W+60;
-  const totalHeightPx=topY+Math.max(totalH,rootY+CARD_H)+40;
+  groupLayout.forEach(gl=>{
+    const groupCY=topY+gl.groupY+CARD_H/2;
+    conns+=bezier(rootCX,rootCY,col2X,groupCY);
+    cards+=card(col2X,gl.groupY,gl.group.name,[['Sum of Sales','$'+fmt(gl.group.sales)],['Sum of Profit','$'+fmt(gl.group.profit)]]);
+    const groupCX=col2X+CARD_W;
+    icons+=countIcon(groupCX,groupCY);
+    gl.group.cats.forEach((c,ci)=>{
+      const y=gl.catYs[ci];
+      cards+=card(col3X,y,c.name,[['Sum of Sales','$'+fmt(c.sales)],['Sum of Profit','$'+fmt(c.profit)]]);
+      const childCY=topY+y+CARD_H/2;
+      conns+=bezier(groupCX,groupCY,col3X,childCY);
+    });
+  });
+
+  const totalWidth=col3X+CARD_W+60;
+  const totalHeightPx=topY+Math.max(totalCatH,rootY+CARD_H)+40;
   root.style.width=totalWidth+'px';
   root.style.height=totalHeightPx+'px';
-  root.innerHTML=`<svg class="plan-tree-conn" width="${totalWidth}" height="${totalHeightPx}">${conns}</svg>${cards}${countIcon}`;
+  root.innerHTML=`<svg class="plan-tree-conn" width="${totalWidth}" height="${totalHeightPx}">${conns}</svg>${cards}${icons}`;
 })();
 
 /* ── Planning Table view — flattened Group>Category hierarchy with
@@ -1323,11 +1382,25 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
   body.innerHTML=html;
 })();
 
+/* Shared helper: position a position:fixed dropdown (right-aligned to its
+   trigger button) clamped inside the viewport. Used by ptLayoutDrop /
+   planLayoutDrop / intelLayoutDrop, mirroring the #a11yDrop fix. */
+function clampDropdown(btn,drop){
+  const r=btn.getBoundingClientRect();
+  drop.style.top=(r.bottom+4)+'px';
+  const dw=Math.max(180,drop.offsetWidth||180);
+  let left=r.right-dw;
+  if(left<8)left=r.left;
+  if(left+dw>window.innerWidth-8)left=window.innerWidth-dw-8;
+  drop.style.left=Math.max(8,left)+'px';
+}
+
 /* ── Planning layout switcher (Matrix / Tree view) ── */
 (function(){
   const pick=document.getElementById('planLayoutPick');
   const btn=document.getElementById('planLayoutBtn');
   const label=document.getElementById('planLayoutLabel');
+  const icon=document.getElementById('planLayoutIcon');
   const drop=document.getElementById('planLayoutDrop');
   const matrixView=document.getElementById('planMatrixView');
   const treeView=document.getElementById('planTreeView');
@@ -1341,13 +1414,15 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
   function selectLayout(name){
     drop.querySelectorAll('.pt-layout-opt').forEach(o=>o.classList.toggle('active',o.dataset.layout===name));
     label.textContent=LABELS[name]||LABELS.matrix;
+    const activeOpt=drop.querySelector('.pt-layout-opt.active svg');
+    if(activeOpt&&icon)icon.innerHTML=activeOpt.outerHTML;
     matrixView.style.display=name==='matrix'?'flex':'none';
     treeView.style.display=name==='tree'?'flex':'none';
     tableView.style.display=name==='table'?'flex':'none';
     drop.classList.remove('open');
     requestAnimationFrame(()=>requestAnimationFrame(fit));
   }
-  btn.addEventListener('click',e=>{e.stopPropagation();drop.classList.toggle('open');});
+  btn.addEventListener('click',e=>{e.stopPropagation();drop.classList.toggle('open');if(drop.classList.contains('open'))clampDropdown(btn,drop);});
   drop.querySelectorAll('.pt-layout-opt').forEach(o=>o.addEventListener('click',()=>selectLayout(o.dataset.layout)));
   document.addEventListener('click',e=>{if(!pick.contains(e.target))drop.classList.remove('open');});
 })();
@@ -1357,6 +1432,7 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
   const pick=document.getElementById('ptLayoutPick');
   const btn=document.getElementById('ptLayoutBtn');
   const label=document.getElementById('ptLayoutLabel');
+  const icon=document.getElementById('ptLayoutIcon');
   const drop=document.getElementById('ptLayoutDrop');
   const tableView=document.getElementById('ptTableView');
   const kanbanView=document.getElementById('ptKanbanView');
@@ -1372,6 +1448,8 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
   function selectLayout(name){
     drop.querySelectorAll('.pt-layout-opt').forEach(o=>o.classList.toggle('active',o.dataset.layout===name));
     label.textContent=LABELS[name]||LABELS.table;
+    const activeOpt=drop.querySelector('.pt-layout-opt.active svg');
+    if(activeOpt&&icon)icon.innerHTML=activeOpt.outerHTML;
     tableView.style.display=name==='table'?'flex':'none';
     kanbanView.style.display=name==='kanban'?'flex':'none';
     ganttView.style.display=name==='gantt'?'flex':'none';
@@ -1382,7 +1460,7 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
     if(sub)sub.textContent='Task tracker · '+name+' layout';
     requestAnimationFrame(()=>requestAnimationFrame(fit));
   }
-  btn.addEventListener('click',e=>{e.stopPropagation();drop.classList.toggle('open');});
+  btn.addEventListener('click',e=>{e.stopPropagation();drop.classList.toggle('open');if(drop.classList.contains('open'))clampDropdown(btn,drop);});
   drop.querySelectorAll('.pt-layout-opt').forEach(o=>o.addEventListener('click',()=>selectLayout(o.dataset.layout)));
   document.addEventListener('click',e=>{if(!pick.contains(e.target))drop.classList.remove('open');});
 })();
@@ -1397,6 +1475,7 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
   const pick=document.getElementById('intelLayoutPick');
   const btn=document.getElementById('intelLayoutBtn');
   const label=document.getElementById('intelLayoutLabel');
+  const icon=document.getElementById('intelLayoutIcon');
   const drop=document.getElementById('intelLayoutDrop');
   if(!pick||!btn||!drop)return;
 
@@ -1407,6 +1486,8 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
   window._intelSyncTemplate=function(idx){
     drop.querySelectorAll('.pt-layout-opt').forEach(o=>o.classList.toggle('active',parseInt(o.dataset.pg)===idx));
     label.textContent=LABELS[idx]||LABELS[0];
+    const activeOpt=drop.querySelector('.pt-layout-opt.active svg');
+    if(activeOpt&&icon)icon.innerHTML=activeOpt.outerHTML;
   };
   function selectTemplate(idx){
     if(typeof showPage==='function')showPage(idx);
@@ -1414,7 +1495,7 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
     window._intelSyncTemplate(idx);
     drop.classList.remove('open');
   }
-  btn.addEventListener('click',e=>{e.stopPropagation();drop.classList.toggle('open');});
+  btn.addEventListener('click',e=>{e.stopPropagation();drop.classList.toggle('open');if(drop.classList.contains('open'))clampDropdown(btn,drop);});
   drop.querySelectorAll('.pt-layout-opt').forEach(o=>o.addEventListener('click',()=>selectTemplate(parseInt(o.dataset.pg))));
   document.addEventListener('click',e=>{if(!pick.contains(e.target))drop.classList.remove('open');});
 })();
@@ -1439,6 +1520,12 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
     });
     const pbtns=document.getElementById('pbtns');
     if(pbtns)pbtns.style.display=name==='intelligence'?'':'none';
+    // Randomize Data button: kept in the DOM and fully wired (VIZ
+    // registry + randomizer rules), just hidden for now per request —
+    // it shouldn't live inside the canvas/header. Re-enable by
+    // uncommenting the line below once it has a new home.
+    // const randBtn=document.getElementById('randomizeDataBtn');
+    // if(randBtn)randBtn.style.display=name==='intelligence'?'':'none';
     if(typeof showPage==='function'){
       showPage(name==='intelligence'?lastIntelligencePage:MODULE_PAGE[name]);
     }
@@ -1471,6 +1558,8 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
     $$('.tabpanel').forEach(t=>t.classList.remove('on'));
     $('#tp-'+tab).classList.add('on');
     if(titleEl)titleEl.textContent=TAB_NAMES[tab]||tab;
+    const resetEl=document.getElementById('panelBodyReset');
+    if(resetEl)resetEl.style.display=tab==='font'?'flex':'none';
     app.classList.add('panel-open');
     requestAnimationFrame(fit); setTimeout(fit,240);
     setTimeout(()=>{if(window._toolbarReflow)_toolbarReflow();},260);
@@ -1650,6 +1739,11 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
     if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key.toLowerCase()==='z'){e.preventDefault();redoAction();}
     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();redoAction();}
     if(e.key==='Escape'){document.querySelectorAll('.modal-bg.show').forEach(m=>m.classList.remove('show'));if(cbsimActive)cbsimHide();document.getElementById('ftbThemeDrop').classList.remove('open');
+      /* Audit finding #15: WCAG panel had no Escape handling, unlike
+         every other dismissible floating panel (Color Vision Sim,
+         modals, theme-picker dropdown). */
+      const wcagP=document.getElementById('wcagPanel');
+      if(wcagP)wcagP.classList.remove('show');
       const appEl=document.querySelector('.app');
       if(appEl&&appEl.classList.contains('narrow-shell')&&appEl.classList.contains('panel-open')&&window._closePanel)window._closePanel();
     }
@@ -1695,7 +1789,7 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
 
     // Search box
     const srch=document.createElement('div');srch.className='ftd-search';
-    srch.innerHTML=`<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#8a8886" stroke-width="1.5" stroke-linecap="round"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10 10l3.5 3.5"/></svg><input placeholder="Search themes…" id="ftdSearchInput">`;
+    srch.innerHTML=`<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#5c5c5c" stroke-width="1.5" stroke-linecap="round"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10 10l3.5 3.5"/></svg><input placeholder="Search themes…" id="ftdSearchInput">`;
     drop.appendChild(srch);
     const searchInput=srch.querySelector('input');
     searchInput.addEventListener('input',e=>{e.stopPropagation();renderCards(e.target.value.trim().toLowerCase());});
@@ -1747,7 +1841,7 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
         container.appendChild(ugrid);
       }
       if(!filtered.length&&!filteredLib.length){
-        const empty=document.createElement('div');empty.style.cssText='padding:16px;text-align:center;font-size:12px;color:#8a8886;font-family:var(--f-font)';empty.textContent='No themes match your search';container.appendChild(empty);
+        const empty=document.createElement('div');empty.style.cssText='padding:16px;text-align:center;font-size:12px;color:#5c5c5c;font-family:var(--f-font)';empty.textContent='No themes match your search';container.appendChild(empty);
       }
     }
 
@@ -1782,7 +1876,11 @@ const DESIGN_W=1160,DESIGN_H=780;
 function fit(){
   const aw=stage.clientWidth-40;
   const ah=stage.clientHeight-40; /* 20 top + 20 bottom padding */
-  const s=Math.min(aw/DESIGN_W,ah/DESIGN_H);
+  /* Audit finding #7: clamped to 1 so the report never upscales past
+     its true 1160×780 design size on large viewports — without this,
+     a big monitor would blow the report canvas up beyond its designed
+     resolution, making everything look blurry/oversized. */
+  const s=Math.min(aw/DESIGN_W,ah/DESIGN_H,1);
   scaler.style.transform='scale('+s+')';
   scaler.style.width=DESIGN_W+'px';
   scaler.style.height=DESIGN_H+'px';
@@ -2217,34 +2315,40 @@ const MOOD_DICTIONARY={
   friendly:{hueRange:[30,50],light:'bright',sat:'vivid'},
   clean:{hueRange:[195,210],light:'bright',sat:'muted'},
 
-  /* ── Direct colour words (fallback bucket) ── */
-  navy:{hueRange:[225,235],light:'dark',sat:'balanced'},
-  gold:{hueRange:[70,85],light:'bright',sat:'vivid'},
-  teal:{hueRange:[190,200],light:'balanced',sat:'balanced'},
-  crimson:{hueRange:[5,15],light:'dark',sat:'vivid'},
-  emerald:{hueRange:[150,160],light:'balanced',sat:'vivid'},
-  purple:{hueRange:[290,310],light:'balanced',sat:'vivid'},
-  pink:{hueRange:[340,355],light:'bright',sat:'vivid'},
-  orange:{hueRange:[40,55],light:'bright',sat:'vivid'},
-  yellow:{hueRange:[85,95],light:'bright',sat:'vivid'},
-  red:{hueRange:[15,25],light:'balanced',sat:'vivid'},
-  blue:{hueRange:[240,255],light:'balanced',sat:'balanced'},
-  green:{hueRange:[135,150],light:'balanced',sat:'balanced'},
-  brown:{hueRange:[45,60],light:'dark',sat:'muted'},
-  gray:{hueRange:[220,230],light:'balanced',sat:'muted'},
-  grey:{hueRange:[220,230],light:'balanced',sat:'muted'},
-  maroon:{hueRange:[0,10],light:'dark',sat:'vivid'},
-  turquoise:{hueRange:[175,190],light:'bright',sat:'vivid'},
-  lavender:{hueRange:[270,285],light:'bright',sat:'balanced'},
-  mint:{hueRange:[155,170],light:'bright',sat:'balanced'},
-  amber:{hueRange:[55,70],light:'bright',sat:'vivid'},
-  indigo:{hueRange:[255,270],light:'dark',sat:'vivid'},
-  magenta:{hueRange:[315,330],light:'balanced',sat:'vivid'},
-  charcoal:{hueRange:[220,230],light:'dark',sat:'muted'},
-  ivory:{hueRange:[50,65],light:'bright',sat:'muted'},
-  beige:{hueRange:[45,60],light:'bright',sat:'muted'},
-  cyan:{hueRange:[185,195],light:'bright',sat:'vivid'},
-  burgundy:{hueRange:[348,359],light:'dark',sat:'vivid'},
+  /* ── Direct colour words (fallback bucket) ──
+     isColor:true flags these (and the CSS corpus below, tagged in
+     magicAllKeys()) as literal colour names rather than mood/industry
+     words. parseDescription() uses that flag to detect when someone
+     names 2+ distinct colours explicitly ("navy and gold") and, in that
+     case, keeps them as separate palette seeds instead of averaging
+     them into one muddy blended hue. */
+  navy:{hueRange:[225,235],light:'dark',sat:'balanced',isColor:true},
+  gold:{hueRange:[70,85],light:'bright',sat:'vivid',isColor:true},
+  teal:{hueRange:[190,200],light:'balanced',sat:'balanced',isColor:true},
+  crimson:{hueRange:[5,15],light:'dark',sat:'vivid',isColor:true},
+  emerald:{hueRange:[150,160],light:'balanced',sat:'vivid',isColor:true},
+  purple:{hueRange:[290,310],light:'balanced',sat:'vivid',isColor:true},
+  pink:{hueRange:[340,355],light:'bright',sat:'vivid',isColor:true},
+  orange:{hueRange:[40,55],light:'bright',sat:'vivid',isColor:true},
+  yellow:{hueRange:[85,95],light:'bright',sat:'vivid',isColor:true},
+  red:{hueRange:[15,25],light:'balanced',sat:'vivid',isColor:true},
+  blue:{hueRange:[240,255],light:'balanced',sat:'balanced',isColor:true},
+  green:{hueRange:[135,150],light:'balanced',sat:'balanced',isColor:true},
+  brown:{hueRange:[45,60],light:'dark',sat:'muted',isColor:true},
+  gray:{hueRange:[220,230],light:'balanced',sat:'muted',isColor:true},
+  grey:{hueRange:[220,230],light:'balanced',sat:'muted',isColor:true},
+  maroon:{hueRange:[0,10],light:'dark',sat:'vivid',isColor:true},
+  turquoise:{hueRange:[175,190],light:'bright',sat:'vivid',isColor:true},
+  lavender:{hueRange:[270,285],light:'bright',sat:'balanced',isColor:true},
+  mint:{hueRange:[155,170],light:'bright',sat:'balanced',isColor:true},
+  amber:{hueRange:[55,70],light:'bright',sat:'vivid',isColor:true},
+  indigo:{hueRange:[255,270],light:'dark',sat:'vivid',isColor:true},
+  magenta:{hueRange:[315,330],light:'balanced',sat:'vivid',isColor:true},
+  charcoal:{hueRange:[220,230],light:'dark',sat:'muted',isColor:true},
+  ivory:{hueRange:[50,65],light:'bright',sat:'muted',isColor:true},
+  beige:{hueRange:[45,60],light:'bright',sat:'muted',isColor:true},
+  cyan:{hueRange:[185,195],light:'bright',sat:'vivid',isColor:true},
+  burgundy:{hueRange:[348,359],light:'dark',sat:'vivid',isColor:true},
 };
 
 /* Standard CSS/X11 extended colour-keyword corpus (~145 names → hex).
@@ -2441,7 +2545,7 @@ function magicAllKeys(){
   for(const name in CSS_COLOR_NAMES){
     if(name in MOOD_DICTIONARY)continue; // hand-tuned entry wins
     const[L,C,H]=hexToOklch(CSS_COLOR_NAMES[name]);
-    out.push({term:name,entry:{hueRange:[H,H],light:binLightness(L),sat:binSaturation(C)}});
+    out.push({term:name,entry:{hueRange:[H,H],light:binLightness(L),sat:binSaturation(C),isColor:true}});
   }
   _magicKeysCache=out;
   return out;
@@ -2452,6 +2556,22 @@ function magicAllKeys(){
    unrelated dictionary term (e.g. "over" is literally inside
    "government"), which pollutes the blend with irrelevant hues. */
 const MAGIC_STOPWORDS=new Set(['a','an','the','and','or','of','to','in','on','at','for','with','over','under','into','onto','from','by','is','this','that','my','our','your','it','its','be','as','about']);
+
+/* Negation words — "not navy", "no red", "avoid pink", "without blue".
+   Kept OUT of MAGIC_STOPWORDS on purpose (they still need to appear in
+   the token stream) so parseDescription() can look at the token right
+   before a match and drop it if one of these precedes it. */
+const MAGIC_NEGATORS=new Set(['not','no','avoid','without',"don't",'dont','never','skip','exclude']);
+
+/* Intensity modifiers — purely additive, offline, free. A modifier
+   found anywhere in the text nudges the final lightness/saturation
+   further from (intensifiers) or back toward (diminishers) the
+   dictionary's baseline, e.g. "very dark ocean" ends up darker than
+   plain "ocean", "slightly warm" ends up closer to neutral than plain
+   "warm". Global rather than per-token — simpler, and descriptions are
+   short enough that "very" almost always applies to the adjacent mood. */
+const MAGIC_INTENSIFIERS=new Set(['very','extremely','super','really','deeply','richly','intensely','ultra']);
+const MAGIC_DIMINISHERS=new Set(['slightly','somewhat','mildly','softly','subtly','a bit','lightly','faintly']);
 
 /* Parse a free-text description into blended seed parameters. Runs a
    layered pipeline entirely offline:
@@ -2476,10 +2596,41 @@ const MAGIC_STOPWORDS=new Set(['a','an','the','and','or','of','to','in','on','at
 function parseDescription(text){
   const norm=(text||'').toLowerCase().trim();
   if(!norm)return{hue:220,light:'balanced',sat:'balanced',matched:[],usedFallback:true};
+
+  // Intensity: a single global scalar from any intensifier/diminisher
+  // words present, independent of stopword filtering below (checked
+  // against the raw split so "very"/"slightly" are seen even though
+  // they'd never match a dictionary term themselves).
+  const rawTokens=norm.split(/[^a-z']+/).filter(Boolean);
+  let intensity=0;
+  for(const t of rawTokens){
+    if(MAGIC_INTENSIFIERS.has(t))intensity=1;
+    else if(MAGIC_DIMINISHERS.has(t)&&intensity===0)intensity=-1;
+  }
+  if(/\ba\s+bit\b/.test(norm)&&intensity===0)intensity=-1;
+
   const tokens=norm.split(/[^a-z]+/).filter(t=>t&&!MAGIC_STOPWORDS.has(t));
+  // A token counts as negated if a negator precedes it, skipping over
+  // any intervening intensity filler words — "not too bright" and "not
+  // very vivid" should both drop the target, not just "not bright".
+  const NEG_SKIP=new Set([...MAGIC_INTENSIFIERS,...MAGIC_DIMINISHERS,'too','so']);
+  const negatedAt=tokens.map((t,i)=>{
+    let j=i-1;
+    while(j>=0&&NEG_SKIP.has(tokens[j]))j--;
+    return j>=0&&MAGIC_NEGATORS.has(tokens[j]);
+  });
   const bigrams=[];
-  for(let i=0;i<tokens.length-1;i++)bigrams.push(tokens[i]+' '+tokens[i+1]);
-  const candidates=[...bigrams,...tokens];
+  for(let i=0;i<tokens.length-1;i++){
+    // A bigram is negated either because it follows a negator ("so not
+    // navy") or because its own first word IS the negator ("not navy"
+    // itself, where negatedAt[i] is false since i===0 has no
+    // predecessor).
+    bigrams.push({text:tokens[i]+' '+tokens[i+1],negated:negatedAt[i]||MAGIC_NEGATORS.has(tokens[i])});
+  }
+  const candidates=[
+    ...bigrams,
+    ...tokens.map((t,i)=>({text:t,negated:negatedAt[i]}))
+  ];
   const allKeys=magicAllKeys();
   const matches=[];
   const seen=new Set();
@@ -2492,9 +2643,18 @@ function parseDescription(text){
       // the alias "ship" is literally inside "dealership"). Require
       // the shorter string to be at least half the length of the
       // longer one, so only genuinely close matches count.
-      const shorter=Math.min(cand.length,term.length),longer=Math.max(cand.length,term.length);
-      const substringHit=shorter>=3&&(cand.includes(term)||term.includes(cand))&&(shorter/longer)>=0.5;
+      const shorter=Math.min(cand.text.length,term.length),longer=Math.max(cand.text.length,term.length);
+      // Short strings (≤4 chars) only match exactly or as a simple
+      // plural of each other — free containment at that length is too
+      // prone to coincidence ("very" is literally inside "delivery",
+      // "dark" is literally inside every CSS "dark*" name like
+      // "darkred"). Longer strings still allow full containment so
+      // other plurals/variants keep working ("oceanic" still matches
+      // "ocean").
+      const isSimplePlural=cand.text===term+'s'||term===cand.text+'s'||cand.text===term+'es'||term===cand.text+'es';
+      const substringHit=shorter>=3&&(shorter<=4?(cand.text===term||isSimplePlural):(cand.text.includes(term)||term.includes(cand.text))&&(shorter/longer)>=0.5);
       if(substringHit){
+        if(cand.negated)continue; // e.g. "not navy" — drop, don't blend, don't block later positive mentions
         matches.push({term,entry,specificity:term.length});
         seen.add(term);
       }
@@ -2508,7 +2668,9 @@ function parseDescription(text){
      coincidental matches. */
   if(!matches.length){
     let best=null,bestDist=Infinity;
-    for(const tok of tokens){
+    for(let ti=0;ti<tokens.length;ti++){
+      const tok=tokens[ti];
+      if(negatedAt[ti])continue; // e.g. "not bright" shouldn't fuzzy-rediscover "bright"
       if(tok.length<4)continue;
       for(const{term,entry}of allKeys){
         if(Math.abs(term.length-tok.length)>2)continue;
@@ -2529,8 +2691,35 @@ function parseDescription(text){
       light:lightOptions[(h>>>8)%3],
       sat:satOptions[(h>>>16)%3],
       matched:[],
-      usedFallback:true
+      usedFallback:true,
+      intensity
     };
+  }
+
+  // Explicit multi-colour request — e.g. "navy and gold" or "teal,
+  // coral and cream". If 2+ *literal colour words* were matched (not
+  // moods/industries) and their hues are far enough apart to be
+  // genuinely distinct rather than near-duplicates ("red and crimson"),
+  // treat this as "use these exact colours" rather than "blend them
+  // into one seed". Averaging navy + gold's hues would land on a
+  // muddy olive-brown that resembles neither — keeping them distinct
+  // and handing both to generateThemeFromPalette() is what a person
+  // asking for "navy and gold" actually wants.
+  const colorMatches=matches.filter(m=>m.entry.isColor);
+  const distinctColors=[];
+  for(const m of colorMatches){
+    const midHue=(m.entry.hueRange[0]+m.entry.hueRange[1])/2;
+    if(!distinctColors.some(d=>perceptualDist(d.midHue,midHue)<28)){
+      distinctColors.push({...m,midHue});
+    }
+  }
+  let multiHex=null;
+  if(distinctColors.length>=2){
+    multiHex=distinctColors.slice(0,8).map(m=>{
+      const L_MAP={dark:0.32,balanced:0.52,bright:0.72};
+      const C_MAP={muted:0.05,balanced:0.11,vivid:0.17};
+      return oklchToHex(applyIntensityL(L_MAP[m.entry.light],intensity),applyIntensityC(C_MAP[m.entry.sat],intensity),m.midHue);
+    });
   }
 
   const totalWeight=matches.reduce((s,m)=>s+m.specificity,0);
@@ -2554,8 +2743,25 @@ function parseDescription(text){
     light:pickBias('light',['dark','balanced','bright']),
     sat:pickBias('sat',['muted','balanced','vivid']),
     matched:matches.map(m=>m.term),
-    usedFallback:false
+    usedFallback:false,
+    intensity,
+    multiHex
   };
+}
+
+/* Shared intensity nudge — pulls lightness/saturation further from
+   (positive intensity) or back toward (negative intensity) the
+   dictionary baseline. Used by both the single-seed path
+   (seedParamsToHex) and the multi-colour path above, so "very" reads
+   the same whether one mood or several literal colours were named. */
+function applyIntensityL(L,intensity){
+  if(!intensity)return L;
+  const dir=L>=0.52?1:-1;
+  return clamp(L+dir*intensity*0.08,0.14,0.88);
+}
+function applyIntensityC(C,intensity){
+  if(!intensity)return C;
+  return clamp(C+intensity*0.03,0.02,0.20);
 }
 
 /* Convert blended seed params into a single seed hex colour via the
@@ -2565,7 +2771,7 @@ function parseDescription(text){
 function seedParamsToHex(params,jitter){
   const L_MAP={dark:0.32,balanced:0.52,bright:0.72};
   const C_MAP={muted:0.05,balanced:0.11,vivid:0.17};
-  let L=L_MAP[params.light],C=C_MAP[params.sat],H=params.hue;
+  let L=applyIntensityL(L_MAP[params.light],params.intensity),C=applyIntensityC(C_MAP[params.sat],params.intensity),H=params.hue;
   if(jitter){
     H=(H+(jitter.hue||0)+360)%360;
     L=clamp(L+(jitter.light||0),0.18,0.85);
@@ -2576,33 +2782,58 @@ function seedParamsToHex(params,jitter){
 /* Feed the seed straight into generateTheme() — the exact same
    OKLCH palette engine the Brand-colour flow uses. No separate colour
    logic; the only new part is the text→seed translation above. */
-function generateMagicTheme(text,tone,name,jitter){
-  const params=parseDescription(text);
-  const seedHex=seedParamsToHex(params,jitter);
-  return{theme:generateTheme(seedHex,tone,name),params,seedHex};
+/* ── Optional online tier: ask an LLM for a seed colour + mood label ──
+   Bring-your-own-key only (never hardcoded, never shipped in this file).
+   Supports three providers — Gemini, OpenAI, and Claude — each with its
+   own key stored separately in localStorage, so switching providers
+   never loses the other two keys. On any failure — missing key,
+   network error, non-2xx (incl. 429 rate-limit), bad JSON, or timeout —
+   the caller falls back to the deterministic engine above, exactly the
+   same way regardless of which provider was tried. */
+const AI_PROVIDERS={
+  gemini:{label:'Gemini AI',keyName:'ntmGeminiKey'},
+  openai:{label:'OpenAI',keyName:'ntmOpenAiKey'},
+  claude:{label:'Claude',keyName:'ntmClaudeKey'},
+};
+function getAiProvider(){
+  try{const p=(localStorage.getItem('ntmAiProvider')||'gemini').trim();return AI_PROVIDERS[p]?p:'gemini';}
+  catch(e){return 'gemini';}
+}
+function setAiProvider(p){
+  try{localStorage.setItem('ntmAiProvider',AI_PROVIDERS[p]?p:'gemini');}catch(e){}
+}
+function getAiKey(provider){
+  provider=provider||getAiProvider();
+  try{return (localStorage.getItem(AI_PROVIDERS[provider].keyName)||'').trim();}catch(e){return '';}
+}
+function setAiKey(provider,key){
+  try{localStorage.setItem(AI_PROVIDERS[provider].keyName,(key||'').trim());}catch(e){}
+}
+// Back-compat alias — existing code/readers may still call this name.
+function extractJsonHexMood(raw){
+  const match=(raw||'').match(/\{[^{}]*\}/);
+  if(!match)throw new Error('bad-response');
+  const parsed=JSON.parse(match[0]);
+  const hex=norm(parsed.hex);
+  if(!hex)throw new Error('bad-hex');
+  return{hex,mood:(parsed.mood||'').toString().slice(0,40)};
+}
+function seedPrompt(text){
+  return `You pick a single representative colour for a UI theme based on a short description.\nDescription: "${text}"\nRespond with ONLY a compact JSON object, no markdown, no code fences, in this exact shape:\n{"hex":"#RRGGBB","mood":"one or two word mood label"}\nThe hex must be a colour that visually evokes the description (consider its typical real-world colours, mood, and industry connotations).`;
 }
 
-/* ── Optional online tier: ask Gemini for a seed colour + mood label ──
-   Bring-your-own-key only (never hardcoded, never shipped in this file).
-   Key lives in localStorage on the user's own browser. On any failure —
-   missing key, network error, non-2xx (incl. 429 rate-limit), bad JSON,
-   or timeout — the caller falls back to the deterministic engine above. */
 const GEMINI_MODEL='gemini-2.0-flash';
-function getGeminiKey(){
-  try{return (localStorage.getItem('ntmGeminiKey')||'').trim();}catch(e){return '';}
-}
 async function callGeminiForSeed(text){
-  const key=getGeminiKey();
+  const key=getAiKey('gemini');
   if(!key)throw new Error('no-key');
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),7000);
   try{
     const url=`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-    const prompt=`You pick a single representative colour for a UI theme based on a short description.\nDescription: "${text}"\nRespond with ONLY a compact JSON object, no markdown, no code fences, in this exact shape:\n{"hex":"#RRGGBB","mood":"one or two word mood label"}\nThe hex must be a colour that visually evokes the description (consider its typical real-world colours, mood, and industry connotations).`;
     const res=await fetch(url,{
       method:'POST',
       headers:{'Content-Type':'application/json','x-goog-api-key':key},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}]}),
+      body:JSON.stringify({contents:[{parts:[{text:seedPrompt(text)}]}]}),
       signal:controller.signal
     });
     if(!res.ok){
@@ -2611,15 +2842,85 @@ async function callGeminiForSeed(text){
     }
     const data=await res.json();
     const raw=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
-    const match=raw.match(/\{[^{}]*\}/);
-    if(!match)throw new Error('bad-response');
-    const parsed=JSON.parse(match[0]);
-    const hex=norm(parsed.hex);
-    if(!hex)throw new Error('bad-hex');
-    return{hex,mood:(parsed.mood||'').toString().slice(0,40)};
+    return extractJsonHexMood(raw);
   }finally{
     clearTimeout(timeout);
   }
+}
+
+const OPENAI_MODEL='gpt-4o-mini';
+async function callOpenAIForSeed(text){
+  const key=getAiKey('openai');
+  if(!key)throw new Error('no-key');
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),7000);
+  try{
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({
+        model:OPENAI_MODEL,
+        messages:[{role:'user',content:seedPrompt(text)}],
+        response_format:{type:'json_object'},
+        max_tokens:60,
+      }),
+      signal:controller.signal
+    });
+    if(!res.ok){
+      if(res.status===429)throw new Error('rate-limited');
+      throw new Error('http-'+res.status);
+    }
+    const data=await res.json();
+    const raw=data?.choices?.[0]?.message?.content||'';
+    return extractJsonHexMood(raw);
+  }finally{
+    clearTimeout(timeout);
+  }
+}
+
+const CLAUDE_MODEL='claude-3-5-haiku-20241022';
+async function callClaudeForSeed(text){
+  const key=getAiKey('claude');
+  if(!key)throw new Error('no-key');
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),7000);
+  try{
+    // Anthropic's API is opt-in for direct browser calls via this header
+    // (it doesn't send permissive CORS headers otherwise, precisely to
+    // discourage exposing keys client-side by default) — needed here
+    // since this is exactly the bring-your-own-key browser use case.
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true',
+      },
+      body:JSON.stringify({
+        model:CLAUDE_MODEL,
+        max_tokens:60,
+        messages:[{role:'user',content:seedPrompt(text)}],
+      }),
+      signal:controller.signal
+    });
+    if(!res.ok){
+      if(res.status===429)throw new Error('rate-limited');
+      throw new Error('http-'+res.status);
+    }
+    const data=await res.json();
+    const raw=data?.content?.[0]?.text||'';
+    return extractJsonHexMood(raw);
+  }finally{
+    clearTimeout(timeout);
+  }
+}
+
+function callAIForSeed(text,provider){
+  provider=provider||getAiProvider();
+  if(provider==='openai')return callOpenAIForSeed(text);
+  if(provider==='claude')return callClaudeForSeed(text);
+  return callGeminiForSeed(text);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -2680,31 +2981,71 @@ function canApply(){
 }
 
 /* ── Generate and render preview ── */
+/* The empty-state prompt's wording depends on how far along the user
+   actually is — "Choose a starting point" is only accurate before a
+   source card has been picked at all. Once one IS picked but has no
+   data yet (no image uploaded, nothing typed, etc.), repeating that
+   same "choose a starting point" line reads as if the selection
+   didn't register, which is confusing since it clearly did (the card
+   shows as selected). Tell them what's actually still needed instead. */
+const EMPTY_PREVIEW_MSG={
+  brand:'Enter a brand colour to preview your palette',
+  coolors:'Paste a Coolors link or hex codes to preview your palette',
+  image:'Upload an image to preview your palette',
+  json:'Paste a theme JSON to preview your palette',
+  magic:'Describe your theme to preview your palette',
+};
+function updateEmptyPreviewText(){
+  const el=document.getElementById('ntmPreviewEmptyText');
+  if(el)el.textContent=EMPTY_PREVIEW_MSG[ntmMode]||'Choose a starting point to preview your palette';
+}
+
+/* Reset the right-hand preview column back to its empty prompt — used
+   whenever generate() has nothing to show yet for the currently
+   selected mode, so switching source cards (or clearing an input)
+   can't leave a stale palette from a PREVIOUS mode/selection sitting
+   on screen looking like it belongs to the current one. */
+function showEmptyPreview(){
+  ntmGenerated=null;
+  palettePreview.innerHTML='';palettePreview.style.display='none';
+  previewEmpty.style.display='flex';
+  previewName.textContent='';
+  document.getElementById('ntmResetGen').style.display='none';
+  document.getElementById('ntmEditHint').style.display='none';
+  updateEmptyPreviewText();
+}
+
 function generate(){
   const name=document.getElementById('ntmThemeName').value.trim()||'My Theme';
   let base;
   if(ntmMode==='brand'){
     const n=norm(document.getElementById('ntmBrandHex').value);
-    if(!n)return;
+    if(!n){showEmptyPreview();return;}
     ntmBrandColor=n;
     base=generateTheme(ntmBrandColor,ntmTone,name);
   } else if(ntmMode==='coolors'){
-    if(!ntmCoolorsHexes.length)return;
+    if(!ntmCoolorsHexes.length){showEmptyPreview();return;}
     base=generateThemeFromPalette(ntmCoolorsHexes,ntmTone,name);
-    if(!base)return;
+    if(!base){showEmptyPreview();return;}
   } else if(ntmMode==='image'){
-    if(!ntmImageHexes.length)return;
+    if(!ntmImageHexes.length){showEmptyPreview();return;}
     base=generateThemeFromPalette(ntmImageHexes,ntmTone,name);
-    if(!base)return;
+    if(!base){showEmptyPreview();return;}
   } else if(ntmMode==='json'){
-    if(!ntmJsonParsed)return;
+    if(!ntmJsonParsed){showEmptyPreview();return;}
     base=JSON.parse(JSON.stringify(ntmJsonParsed));
     base.label=name;
   } else if(ntmMode==='magic'){
-    if(!ntmMagicParams)return;
-    const seedHex=ntmMagicAiHex||seedParamsToHex(ntmMagicParams,ntmMagicJitter);
-    base=generateTheme(seedHex,ntmTone,name);
-  } else return;
+    if(!ntmMagicParams){showEmptyPreview();return;}
+    if(!ntmMagicAiHex&&ntmMagicParams.multiHex&&ntmMagicParams.multiHex.length>=2){
+      // Explicit multi-colour mention ("navy and gold") — keep the
+      // named colours distinct instead of blending to one seed hue.
+      base=generateThemeFromPalette(ntmMagicParams.multiHex,ntmTone,name);
+    } else {
+      const seedHex=ntmMagicAiHex||seedParamsToHex(ntmMagicParams,ntmMagicJitter);
+      base=generateTheme(seedHex,ntmTone,name);
+    }
+  } else {showEmptyPreview();return;}
 
   // Restore any manually touched swatches
   const c=base.theme.colors;
@@ -2958,6 +3299,7 @@ function scheduleGenerate(delay=300){
     document.getElementById('ntmMagicInput').style.display=ntmMode==='magic'?'':'none';
     ntmTouched={};
     inferTone();
+    updateEmptyPreviewText();
     scheduleGenerate(0);
   });
 });
@@ -3080,7 +3422,7 @@ function setMagicBadge(kind){
   if(!kind){magicBadge.style.display='none';return;}
   magicBadge.style.display='inline-block';
   magicBadge.className='ntm-magic-source-badge '+kind;
-  magicBadge.textContent=kind==='ai'?'Gemini AI':'Offline';
+  magicBadge.textContent=kind==='ai'?AI_PROVIDERS[getAiProvider()].label:'Offline';
 }
 
 function runMagicParse(text){
@@ -3093,7 +3435,7 @@ function runMagicParse(text){
     ntmMagicParams=null;
     variationBtn.disabled=true;
     setMagicBadge(null);
-    magicStatusText.textContent='Type a mood, industry, colour, or scene — we’ll turn it into a full palette instantly, no internet required.';
+    magicStatusText.textContent='Type a mood, industry, colour(s), or scene — try combining colours ("navy and gold"), adding "very"/"slightly", or excluding one with "not". Instant, no internet required.';
     return;
   }
   ntmMagicParams=parseDescription(raw);
@@ -3101,29 +3443,34 @@ function runMagicParse(text){
   variationBtn.disabled=false;
   if(ntmMagicParams.usedFallback){
     magicStatusText.textContent='No keyword match found — generated a palette from your text anyway. Try a mood, industry, colour, or scene for a more targeted result, e.g. "ocean" or "luxury fintech".';
+  } else if(ntmMagicParams.multiHex&&ntmMagicParams.multiHex.length>=2){
+    magicStatusText.textContent=`Matched: ${ntmMagicParams.matched.join(', ')} → kept as ${ntmMagicParams.multiHex.length} distinct colours.`;
   } else {
-    magicStatusText.textContent=`Matched: ${ntmMagicParams.matched.join(', ')} → ${ntmMagicParams.light} ${ntmMagicParams.sat} palette.`;
+    const tag=ntmMagicParams.intensity>0?' (intensified)':ntmMagicParams.intensity<0?' (softened)':'';
+    magicStatusText.textContent=`Matched: ${ntmMagicParams.matched.join(', ')} → ${ntmMagicParams.light} ${ntmMagicParams.sat} palette${tag}.`;
   }
-  setMagicBadge(getGeminiKey()?'offline':null);
+  setMagicBadge(getAiKey()?'offline':null);
 
-  // If the user has supplied a Gemini key, try the online tier in the
-  // background after a short pause in typing. The offline result above
-  // is already applied instantly, so there's nothing to wait on — this
-  // just upgrades the preview if/when the AI responds successfully.
+  // If the user has supplied a key for their selected provider, try the
+  // online tier in the background after a short pause in typing. The
+  // offline result above is already applied instantly, so there's
+  // nothing to wait on — this just upgrades the preview if/when the AI
+  // responds successfully.
   clearTimeout(ntmMagicAiDebounce);
-  if(getGeminiKey()){
+  if(getAiKey()){
     const reqId=ntmMagicAiReqId;
     ntmMagicAiDebounce=setTimeout(()=>tryMagicAi(raw,reqId),500);
   }
 }
 
 async function tryMagicAi(text,reqId){
+  const provider=getAiProvider();
   ntmMagicAiPending=true;
   magicSpinner.style.display='inline-block';
-  magicStatusText.textContent='Asking Gemini for a palette…';
+  magicStatusText.textContent=`Asking ${AI_PROVIDERS[provider].label} for a palette…`;
   setMagicBadge(null);
   try{
-    const result=await callGeminiForSeed(text);
+    const result=await callAIForSeed(text,provider);
     if(reqId!==ntmMagicAiReqId)return; // input changed while we were waiting
     ntmMagicAiHex=result.hex;
     magicStatusText.textContent=result.mood?`AI match: "${result.mood}" → ${result.hex}`:`AI match → ${result.hex}`;
@@ -3139,7 +3486,7 @@ async function tryMagicAi(text,reqId){
         :`Matched: ${ntmMagicParams.matched.join(', ')} → ${ntmMagicParams.light} ${ntmMagicParams.sat} palette.`;
     }
     setMagicBadge('offline');
-    console.warn('Gemini AI palette request '+reason+' — using offline generator instead.');
+    console.warn(AI_PROVIDERS[provider].label+' palette request '+reason+' — using offline generator instead.');
   }finally{
     if(reqId===ntmMagicAiReqId){ntmMagicAiPending=false;magicSpinner.style.display='none';}
   }
@@ -3153,30 +3500,49 @@ document.getElementById('ntmMagicVariation').addEventListener('click',()=>{
   if(!ntmMagicParams)return;
   ntmMagicAiHex=null;
   ntmMagicAiReqId++;
-  setMagicBadge(getGeminiKey()?'offline':null);
+  setMagicBadge(getAiKey()?'offline':null);
   ntmMagicJitter={hue:(Math.random()*2-1)*20,light:(Math.random()*2-1)*0.06};
   scheduleGenerate(0);
 });
 
-/* ── Gemini key toggle/entry (bring-your-own-key, localStorage only) ── */
+/* ── AI provider + key toggle/entry (bring-your-own-key, localStorage only) ── */
 const magicAiToggle=document.getElementById('ntmMagicAiToggle');
 const magicKeyWrap=document.getElementById('ntmMagicKeyWrap');
 const magicAiHelper=document.getElementById('ntmMagicAiHelper');
 const magicApiKeyInput=document.getElementById('ntmMagicApiKey');
-magicApiKeyInput.value=getGeminiKey();
+const magicAiProviderSelect=document.getElementById('ntmMagicAiProvider');
+const AI_KEY_PLACEHOLDERS={
+  gemini:'Paste your free Gemini API key',
+  openai:'Paste your OpenAI API key',
+  claude:'Paste your Claude API key',
+};
+magicAiProviderSelect.value=getAiProvider();
+magicApiKeyInput.value=getAiKey();
+magicApiKeyInput.placeholder=AI_KEY_PLACEHOLDERS[getAiProvider()];
 magicAiToggle.addEventListener('click',()=>{
   const showing=magicKeyWrap.style.display!=='none';
   magicKeyWrap.style.display=showing?'none':'flex';
   magicAiHelper.style.display=showing?'none':'block';
 });
-magicApiKeyInput.addEventListener('input',e=>{
-  try{localStorage.setItem('ntmGeminiKey',e.target.value.trim());}catch(err){}
+magicAiProviderSelect.addEventListener('change',e=>{
+  const provider=AI_PROVIDERS[e.target.value]?e.target.value:'gemini';
+  setAiProvider(provider);
+  magicApiKeyInput.value=getAiKey(provider);
+  magicApiKeyInput.placeholder=AI_KEY_PLACEHOLDERS[provider];
+  ntmMagicAiHex=null;
+  ntmMagicAiReqId++;
   const hasParams=!!ntmMagicParams;
-  setMagicBadge(hasParams?(ntmMagicAiHex?'ai':(getGeminiKey()?'offline':null)):null);
+  setMagicBadge(hasParams?(getAiKey(provider)?'offline':null):null);
+});
+magicApiKeyInput.addEventListener('input',e=>{
+  const provider=getAiProvider();
+  setAiKey(provider,e.target.value);
+  const hasParams=!!ntmMagicParams;
+  setMagicBadge(hasParams?(ntmMagicAiHex?'ai':(getAiKey(provider)?'offline':null)):null);
 });
 document.getElementById('ntmMagicKeyClear').addEventListener('click',()=>{
   magicApiKeyInput.value='';
-  try{localStorage.removeItem('ntmGeminiKey');}catch(err){}
+  setAiKey(getAiProvider(),'');
   ntmMagicAiHex=null;
   setMagicBadge(ntmMagicParams?null:null);
 });
@@ -3299,7 +3665,7 @@ function openWizard(){
   document.getElementById('ntmMagicInput').style.display='none';
   document.getElementById('ntmMagicText').value='';
   document.getElementById('ntmMagicVariation').disabled=true;
-  document.getElementById('ntmMagicStatusText').textContent='Type a mood, industry, colour, or scene — we’ll turn it into a full palette instantly, no internet required.';
+  document.getElementById('ntmMagicStatusText').textContent='Type a mood, industry, colour(s), or scene — try combining colours ("navy and gold"), adding "very"/"slightly", or excluding one with "not". Instant, no internet required.';
   document.getElementById('ntmMagicSpinner').style.display='none';
   setMagicBadge(null);
   document.getElementById('ntmMagicKeyWrap').style.display='none';
@@ -3312,6 +3678,7 @@ function openWizard(){
   palettePreview.innerHTML='';palettePreview.style.display='none';
   previewEmpty.style.display='flex';
   previewName.textContent='';
+  updateEmptyPreviewText();
   setWizardMode(false);
   canApply();
   modal.classList.add('show');
@@ -3415,7 +3782,7 @@ function showToast(msg,duration=2800){
   let t=document.getElementById('_toast');
   if(!t){
     t=document.createElement('div');t.id='_toast';
-    t.style.cssText='position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#242424;color:#fff;font-size:13px;font-family:var(--f-font);padding:10px 20px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:9999;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap';
+    t.style.cssText='position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#242424;color:#fff;font-size:13px;font-family:var(--f-font);padding:10px 20px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:var(--z-dropdown);opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap';
     document.body.appendChild(t);
   }
   t.textContent=msg;
@@ -3483,6 +3850,19 @@ function showPage(idx){
    (toggled by showPage() above) and no longer have a click handler;
    pointer-events:none in CSS backs this up so they can't be clicked. */
 
+/* ── Accessible names for icon-only controls ──
+   Audit finding: toolbar buttons only carry a hover-only `data-tip`
+   tooltip for their label; once the toolbar's progressive-disclosure
+   logic hides the visible <span> text at narrow widths (a very common
+   state, not just extreme mobile), those buttons become completely
+   unlabeled for keyboard/screen-reader users. Mirroring data-tip into
+   a real aria-label fixes this everywhere at once, present and future,
+   without touching each button's markup individually. Real aria-label
+   values already present are left alone. */
+document.querySelectorAll('[data-tip]').forEach(el=>{
+  if(!el.hasAttribute('aria-label'))el.setAttribute('aria-label',el.getAttribute('data-tip').replace(/\s+/g,' ').trim());
+});
+
 /* ── Shared UI wiring ── */
 document.querySelectorAll('.df-selects .fld .chev,.chev.p1c,.chev.p1c2').forEach(c=>c.innerHTML=IC.chevDown);
 document.querySelectorAll('.stepper,.p1s').forEach(s=>s.innerHTML='<span>'+IC.chevUpSm+'</span><span>'+IC.chevDownSm+'</span>');
@@ -3491,7 +3871,7 @@ document.querySelectorAll('.dot.neg').forEach(d=>d.innerHTML=IC.triDown);
 document.querySelectorAll('.dot.neu').forEach(d=>d.innerHTML=IC.dash);
 
 /* ── Multiselect component ── */
-function multiselect(mount,label,options,selected){const wrap=document.createElement('div');wrap.className='msel-wrap';wrap.innerHTML=`<div class="msel-lbl">${label}</div><div class="msel" tabindex="0"><span class="chev">${IC.chevDown}</span></div><div class="msel-pop"></div>`;const field=wrap.querySelector('.msel'),pop=wrap.querySelector('.msel-pop'),chev=wrap.querySelector('.chev');const sel=new Set(selected);function renderChips(){field.querySelectorAll('.mchip,.ph').forEach(n=>n.remove());if(sel.size===0){const ph=document.createElement('span');ph.className='ph';ph.textContent='Select…';field.insertBefore(ph,chev);}else options.filter(o=>sel.has(o)).forEach(o=>{const c=document.createElement('span');c.className='mchip';c.innerHTML=`${o}<span class="x">${IC.dismiss}</span>`;c.querySelector('.x').addEventListener('click',ev=>{ev.stopPropagation();sel.delete(o);sync();});field.insertBefore(c,chev);});}function renderPop(){pop.innerHTML='';options.forEach(o=>{const r=document.createElement('div');r.className='msel-opt'+(sel.has(o)?' sel':'');r.innerHTML=`<span class="mbox">${sel.has(o)?IC.check:''}</span>${o}`;r.addEventListener('click',ev=>{ev.stopPropagation();sel.has(o)?sel.delete(o):sel.add(o);sync();});pop.appendChild(r);});}function sync(){renderChips();renderPop();}field.addEventListener('click',()=>{const open=pop.classList.toggle('show');field.classList.toggle('open',open);});document.addEventListener('click',e=>{if(!wrap.contains(e.target)){pop.classList.remove('show');field.classList.remove('open');}});sync();mount.appendChild(wrap);}
+function multiselect(mount,label,options,selected){const wrap=document.createElement('div');wrap.className='msel-wrap';wrap.innerHTML=`<div class="msel-lbl">${label}</div><div class="msel" tabindex="0"><span class="chev">${IC.chevDown}</span></div><div class="msel-pop"></div>`;const field=wrap.querySelector('.msel'),pop=wrap.querySelector('.msel-pop'),chev=wrap.querySelector('.chev');const sel=new Set(selected);function renderChips(){field.querySelectorAll('.mchip,.ph').forEach(n=>n.remove());if(sel.size===0){const ph=document.createElement('span');ph.className='ph';ph.textContent='Select…';field.insertBefore(ph,chev);}else options.filter(o=>sel.has(o)).forEach(o=>{const c=document.createElement('span');c.className='mchip';c.innerHTML=`${o}<span class="x">${IC.dismiss}</span>`;c.querySelector('.x').addEventListener('click',ev=>{ev.stopPropagation();sel.delete(o);sync();});field.insertBefore(c,chev);});}function renderPop(){pop.innerHTML='';options.forEach(o=>{const r=document.createElement('div');r.className='msel-opt'+(sel.has(o)?' sel':'');r.innerHTML=`<span class="mbox">${sel.has(o)?IC.check:''}</span>${o}`;r.addEventListener('click',ev=>{ev.stopPropagation();sel.has(o)?sel.delete(o):sel.add(o);sync();});pop.appendChild(r);});}function sync(){renderChips();renderPop();}field.addEventListener('click',()=>{const open=pop.classList.toggle('show');field.classList.toggle('open',open);if(open){const r=field.getBoundingClientRect();const willOverflow=r.bottom+220+4>window.innerHeight;pop.classList.toggle('msel-pop-up',willOverflow);}});document.addEventListener('click',e=>{if(!wrap.contains(e.target)){pop.classList.remove('show');field.classList.remove('open');}});sync();mount.appendChild(wrap);}
 
 /* ── Page 1 filters ── */
 (function(){
@@ -3501,18 +3881,41 @@ function multiselect(mount,label,options,selected){const wrap=document.createEle
   multiselect(M,'Channel',['Direct','Partner','Online'],['Direct','Partner']);
 })();
 
+/* ══════════════════════════════════════════════════════════
+   VIZ REGISTRY — every Intelligence-module chart/KPI below is
+   refactored into a {data, render()} pair and registered here under
+   a stable key, instead of the old "compute once, bake into
+   SVG/HTML, never touch again" pattern. This is groundwork for a
+   future "Randomize Data" feature: render() always redraws from
+   whatever is currently in .data, so swapping in new (bounded,
+   plausible) numbers and calling render() again is all a randomizer
+   will need to do — no chart-specific DOM-rebuilding logic required
+   at that point, since every chart already owns that itself.
+   Each entry: {data, render, page} — page is the pg#/id the visual
+   lives on, so a future button can target "just this page".
+══════════════════════════════════════════════════════════ */
+window.VIZ=window.VIZ||{};
+
 /* ── Map (Page 1) ── */
 (function(){
   const svg=document.getElementById('map');if(!svg)return;
   const NS='http://www.w3.org/2000/svg';
   const el=(t,at)=>{const e=document.createElementNS(NS,t);for(const k in at)e.setAttribute(k,at[k]);return e;};
-  svg.appendChild(el('rect',{x:0,y:0,width:MAPDATA.W,height:MAPDATA.H,fill:'var(--struct-bg)'}));
-  MAPDATA.states.forEach(s=>{if(s.d)svg.appendChild(el('path',{d:s.d,fill:'var(--struct-subtle)',stroke:'var(--out2)','stroke-width':0.7,'stroke-linejoin':'round'}));});
-  const maxV=Math.max(...MAPDATA.cities.map(c=>c.v));
-  MAPDATA.cities.forEach(c=>{const r=6+(c.v/maxV)*16;
-    svg.appendChild(el('circle',{cx:c.x,cy:c.y,r,fill:'var(--p1)','fill-opacity':.55,stroke:'#fff','stroke-width':1.5}));
-    svg.appendChild(el('circle',{cx:c.x,cy:c.y,r:2,fill:'var(--p1)'}));
-  });
+  let data=MAPDATA;
+  function render(){
+    svg.innerHTML='';
+    svg.appendChild(el('rect',{x:0,y:0,width:data.W,height:data.H,fill:'var(--struct-bg)'}));
+    data.states.forEach(s=>{if(s.d)svg.appendChild(el('path',{d:s.d,fill:'var(--struct-subtle)',stroke:'var(--out2)','stroke-width':0.7,'stroke-linejoin':'round'}));});
+    const maxV=Math.max(...data.cities.map(c=>c.v));
+    data.cities.forEach(c=>{const r=6+(c.v/maxV)*16;
+      // Center dot removed — it was only there to mark the exact point
+      // under the semi-transparent fill; no longer needed now that
+      // there's just the one bubble per city.
+      svg.appendChild(el('circle',{cx:c.x,cy:c.y,r,fill:'var(--p1)','fill-opacity':.80,stroke:'#fff','stroke-width':1.5}));
+    });
+  }
+  render();
+  window.VIZ.map={page:'pg1',get data(){return data;},set data(d){data=d;},render};
 })();
 
 /* ── SVG helpers ── */
@@ -3528,123 +3931,164 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
   const svg=mkSVG('p0line');if(!svg)return;
   const W=520,H=200,pL=32,pB=26,pT=10,pR=10,plot=H-pB-pT,base=H-pB;
   const cats=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const series=[
-    {lbl:'AC',      col:'var(--p1)', data:[28,31,35,38,42,39,44,47,51,48,53,57]},
-    {lbl:'Plan',    col:'var(--p2)', data:[30,33,36,39,41,42,44,46,48,50,52,55],dash:'4 3'},
-    {lbl:'Prior Yr',col:'var(--p3)', data:[22,25,29,32,35,33,37,40,43,41,45,48],dash:'2 3'}
-  ];
-  const yMin=15,yMax=65;
-  const x=i=>pL+i*((W-pL-pR)/(cats.length-1));
-  const y=v=>base-((v-yMin)/(yMax-yMin))*plot;
-  [20,30,40,50,60].forEach(g=>{gridLine(svg,pL,y(g),W-pR,y(g));axLabel(svg,pL-5,y(g)+3,g,'end');});
-  axisLine(svg,pL,base,W-pR,base);
-  series.forEach(s=>{
-    const pts=s.data.map((v,i)=>x(i).toFixed(1)+','+y(v).toFixed(1)).join(' ');
-    const style=`stroke:${s.col};stroke-width:2;stroke-linejoin:round;stroke-linecap:round;fill:none${s.dash?';stroke-dasharray:'+s.dash:''}`;
-    svgEl(svg,'polyline',{points:pts,style});
-    s.data.forEach((v,i)=>{
-      const c=svgEl(svg,'circle',{cx:x(i),cy:y(v),r:5,style:`fill:${s.col};opacity:0`});
-      addChartTip(c,MONTHS[i],[{color:s.col,label:s.lbl,value:v}]);
-      svgEl(svg,'circle',{cx:x(i),cy:y(v),r:2.2,style:`fill:${s.col}`});
+  let data={
+    yMin:15,yMax:65,
+    series:[
+      {lbl:'AC',      col:'var(--p1)', data:[28,31,35,38,42,39,44,47,51,48,53,57]},
+      {lbl:'Plan',    col:'var(--p2)', data:[30,33,36,39,41,42,44,46,48,50,52,55],dash:'4 3'},
+      {lbl:'Prior Yr',col:'var(--p3)', data:[22,25,29,32,35,33,37,40,43,41,45,48],dash:'2 3'}
+    ]
+  };
+  function render(){
+    svg.innerHTML='';
+    const leg=document.getElementById('p0lineLeg');if(leg)leg.innerHTML='';
+    const{yMin,yMax,series}=data;
+    const x=i=>pL+i*((W-pL-pR)/(cats.length-1));
+    const y=v=>base-((v-yMin)/(yMax-yMin))*plot;
+    const step=Math.round((yMax-yMin)/5/5)*5||5;
+    const grid=[];for(let g=Math.ceil(yMin/step)*step;g<yMax;g+=step)grid.push(g);
+    grid.forEach(g=>{gridLine(svg,pL,y(g),W-pR,y(g));axLabel(svg,pL-5,y(g)+3,g,'end');});
+    axisLine(svg,pL,base,W-pR,base);
+    series.forEach(s=>{
+      const pts=s.data.map((v,i)=>x(i).toFixed(1)+','+y(v).toFixed(1)).join(' ');
+      const style=`stroke:${s.col};stroke-width:2;stroke-linejoin:round;stroke-linecap:round;fill:none${s.dash?';stroke-dasharray:'+s.dash:''}`;
+      svgEl(svg,'polyline',{points:pts,style});
+      s.data.forEach((v,i)=>{
+        const c=svgEl(svg,'circle',{cx:x(i),cy:y(v),r:5,style:`fill:${s.col};opacity:0`});
+        addChartTip(c,MONTHS[i],[{color:s.col,label:s.lbl,value:v}]);
+        svgEl(svg,'circle',{cx:x(i),cy:y(v),r:2.2,style:`fill:${s.col}`});
+      });
     });
-  });
-  cats.forEach((c,i)=>{if(i%2===0)axLabel(svg,x(i),base+15,c);});
-  mkLegH('p0lineLeg',series.map(s=>[s.lbl,s.col,!!s.dash]));
+    cats.forEach((c,i)=>{if(i%2===0)axLabel(svg,x(i),base+15,c);});
+    mkLegH('p0lineLeg',series.map(s=>[s.lbl,s.col,!!s.dash]));
+  }
+  render();
+  window.VIZ.p0line={page:'pg0',get data(){return data;},set data(d){data=d;},render};
 })();
 
 /* ── P0: Donut ── */
 (function(){
   const svg=mkSVG('p0pie');if(!svg)return;
   const cx=100,cy=100,ro=85,ri=38;
-  const slices=[
+  let data=[
     {lbl:'Bikes',      v:4.82},{lbl:'Clothing',v:2.31},{lbl:'Accessories',v:0.64},
     {lbl:'Components', v:1.44},{lbl:'Services', v:0.52},{lbl:'Parts',     v:0.38},
     {lbl:'Bundles',    v:0.24},{lbl:'Other',    v:0.17}
   ];
-  const tot=slices.reduce((a,b)=>a+b.v,0);
-  let a=-Math.PI/2;
-  const NS='http://www.w3.org/2000/svg';
-  const leg=document.getElementById('p0pieLeg');
-  slices.forEach((sl,i)=>{
-    const a2=a+sl.v/tot*2*Math.PI,lg=(a2-a)>Math.PI?1:0;
-    const x1=cx+ro*Math.cos(a),y1=cy+ro*Math.sin(a),x2=cx+ro*Math.cos(a2),y2=cy+ro*Math.sin(a2);
-    const ix1=cx+ri*Math.cos(a),iy1=cy+ri*Math.sin(a),ix2=cx+ri*Math.cos(a2),iy2=cy+ri*Math.sin(a2);
-    const p=document.createElementNS(NS,'path');
-    p.setAttribute('d',`M${ix1.toFixed(1)},${iy1.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)} A${ro},${ro} 0 ${lg} 1 ${x2.toFixed(1)},${y2.toFixed(1)} L${ix2.toFixed(1)},${iy2.toFixed(1)} A${ri},${ri} 0 ${lg} 0 ${ix1.toFixed(1)},${iy1.toFixed(1)} Z`);
-    p.setAttribute('style',`fill:var(--p${i+1});stroke:var(--canvas-bg);stroke-width:2`);
-    svg.appendChild(p);
-    addChartTip(p,sl.lbl,[{color:`var(--p${i+1})`,label:'Revenue',value:'$'+sl.v.toFixed(2)+'M'},{label:'Share',value:(sl.v/tot*100).toFixed(1)+'%'}]);
-    if(leg){const it=document.createElement('span');it.className='item';it.innerHTML=`<span class="sw" style="background:var(--p${i+1})"></span>${sl.lbl}`;leg.appendChild(it);}
-    a=a2;
-  });
+  function render(){
+    svg.innerHTML='';
+    const leg=document.getElementById('p0pieLeg');if(leg)leg.innerHTML='';
+    const slices=data;
+    const tot=slices.reduce((a,b)=>a+b.v,0);
+    let a=-Math.PI/2;
+    const NS='http://www.w3.org/2000/svg';
+    slices.forEach((sl,i)=>{
+      const a2=a+sl.v/tot*2*Math.PI,lg=(a2-a)>Math.PI?1:0;
+      const x1=cx+ro*Math.cos(a),y1=cy+ro*Math.sin(a),x2=cx+ro*Math.cos(a2),y2=cy+ro*Math.sin(a2);
+      const ix1=cx+ri*Math.cos(a),iy1=cy+ri*Math.sin(a),ix2=cx+ri*Math.cos(a2),iy2=cy+ri*Math.sin(a2);
+      const p=document.createElementNS(NS,'path');
+      p.setAttribute('d',`M${ix1.toFixed(1)},${iy1.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)} A${ro},${ro} 0 ${lg} 1 ${x2.toFixed(1)},${y2.toFixed(1)} L${ix2.toFixed(1)},${iy2.toFixed(1)} A${ri},${ri} 0 ${lg} 0 ${ix1.toFixed(1)},${iy1.toFixed(1)} Z`);
+      p.setAttribute('style',`fill:var(--p${i+1});stroke:var(--canvas-bg);stroke-width:2`);
+      svg.appendChild(p);
+      addChartTip(p,sl.lbl,[{color:`var(--p${i+1})`,label:'Revenue',value:'$'+sl.v.toFixed(2)+'M'},{label:'Share',value:(sl.v/tot*100).toFixed(1)+'%'}]);
+      if(leg){const it=document.createElement('span');it.className='item';it.innerHTML=`<span class="sw" style="background:var(--p${i+1})"></span>${sl.lbl}`;leg.appendChild(it);}
+      a=a2;
+    });
+  }
+  render();
+  window.VIZ.p0pie={page:'pg0',get data(){return data;},set data(d){data=d;},render};
 })();
 
 /* ── P0: Waterfall ── */
 (function(){
   const svg=mkSVG('p0wf');if(!svg)return;
   const W=1000,H=140,pL=38,pB=32,pT=10;
-  const nBars=10,gap=10;
-  const barW=(W-pL-8-(nBars-1)*gap)/nBars;
+  const gap=10;
   const base=H-pB;
-  const bars=[
-    {lbl:'PY Total',v:48,type:'total'},
-    {lbl:'Jan',v:+3,type:'pos'},{lbl:'Feb',v:-2,type:'neg'},
-    {lbl:'Mar',v:+5,type:'pos'},{lbl:'Apr',v:-1,type:'neg'},
-    {lbl:'May',v:+4,type:'pos'},{lbl:'Jun',v:-3,type:'neg'},
-    {lbl:'Jul',v:+6,type:'pos'},{lbl:'Aug',v:-2,type:'neg'},
-    {lbl:'AC Total',v:58,type:'total'}
-  ];
-  const yMin=38,yMax=68,plot=H-pB-pT;
-  const y=v=>base-((v-yMin)/(yMax-yMin))*plot;
-  [40,45,50,55,60,65].forEach(g=>{gridLine(svg,pL,y(g),W-8,y(g));axLabel(svg,pL-4,y(g)+3,g,'end');});
-  axisLine(svg,pL,base,W-8,base);
-  let running=48;
-  bars.forEach((b,i)=>{
-    const bx=pL+i*(barW+gap);
-    let top,bot,col;
-    if(b.type==='total'){top=y(b.v);bot=y(yMin+2);col='var(--p1)';}
-    else if(b.type==='pos'){top=y(running+b.v);bot=y(running);col='var(--pos)';}
-    else{top=y(running);bot=y(running+b.v);col='var(--neg)';}
-    const wr=svgEl(svg,'rect',{x:bx,y:top,width:barW,height:Math.max(2,bot-top),fill:col,rx:2});
-    addChartTip(wr,b.lbl,[{label:'Value',value:b.v>0?'+'+b.v:String(b.v)},{color:col,label:'Type',value:b.type==='pos'?'Positive':b.type==='neg'?'Negative':'Total'}]);
-    if(b.type!=='total'&&i<bars.length-1){
-      const nextX=bx+barW+gap;
-      const connY=b.v>0?top:bot;
-      svgEl(svg,'line',{x1:bx+barW,y1:connY,x2:nextX,y2:connY,style:'stroke:var(--out2);stroke-width:1;stroke-dasharray:3 2'});
-    }
-    axLabel(svg,bx+barW/2,base+14,b.lbl);
-    if(b.type!=='total'){const t=svgEl(svg,'text',{x:bx+barW/2,y:top-3,'text-anchor':'middle',class:'axis-label',style:`fill:${col};font-weight:600`});t.textContent=(b.v>0?'+':'')+b.v;}
-    if(b.type!=='total')running+=b.v;
-  });
+  let data={
+    yMin:38,yMax:68,
+    bars:[
+      {lbl:'PY Total',v:48,type:'total'},
+      {lbl:'Jan',v:+3,type:'pos'},{lbl:'Feb',v:-2,type:'neg'},
+      {lbl:'Mar',v:+5,type:'pos'},{lbl:'Apr',v:-1,type:'neg'},
+      {lbl:'May',v:+4,type:'pos'},{lbl:'Jun',v:-3,type:'neg'},
+      {lbl:'Jul',v:+6,type:'pos'},{lbl:'Aug',v:-2,type:'neg'},
+      {lbl:'AC Total',v:58,type:'total'}
+    ]
+  };
+  function render(){
+    svg.innerHTML='';
+    const{yMin,yMax,bars}=data;
+    const nBars=bars.length;
+    const barW=(W-pL-8-(nBars-1)*gap)/nBars;
+    const plot=H-pB-pT;
+    const y=v=>base-((v-yMin)/(yMax-yMin))*plot;
+    const step=Math.round((yMax-yMin)/6/5)*5||5;
+    const grid=[];for(let g=Math.ceil(yMin/step)*step;g<yMax;g+=step)grid.push(g);
+    grid.forEach(g=>{gridLine(svg,pL,y(g),W-8,y(g));axLabel(svg,pL-4,y(g)+3,g,'end');});
+    axisLine(svg,pL,base,W-8,base);
+    let running=bars[0].v;
+    bars.forEach((b,i)=>{
+      const bx=pL+i*(barW+gap);
+      let top,bot,col;
+      if(b.type==='total'){top=y(b.v);bot=y(yMin+2);col='var(--p1)';}
+      else if(b.type==='pos'){top=y(running+b.v);bot=y(running);col='var(--pos)';}
+      else{top=y(running);bot=y(running+b.v);col='var(--neg)';}
+      const wr=svgEl(svg,'rect',{x:bx,y:top,width:barW,height:Math.max(2,bot-top),fill:col,rx:2});
+      addChartTip(wr,b.lbl,[{label:'Value',value:b.v>0?'+'+b.v:String(b.v)},{color:col,label:'Type',value:b.type==='pos'?'Positive':b.type==='neg'?'Negative':'Total'}]);
+      if(b.type!=='total'&&i<bars.length-1){
+        const nextX=bx+barW+gap;
+        const connY=b.v>0?top:bot;
+        svgEl(svg,'line',{x1:bx+barW,y1:connY,x2:nextX,y2:connY,style:'stroke:var(--out2);stroke-width:1;stroke-dasharray:3 2'});
+      }
+      axLabel(svg,bx+barW/2,base+14,b.lbl);
+      if(b.type!=='total'){const t=svgEl(svg,'text',{x:bx+barW/2,y:top-3,'text-anchor':'middle',class:'axis-label',style:`fill:${col};font-weight:600`});t.textContent=(b.v>0?'+':'')+b.v;}
+      if(b.type!=='total')running+=b.v;
+    });
+  }
+  render();
+  window.VIZ.p0wf={page:'pg0',get data(){return data;},set data(d){data=d;},render};
 })();
 
 /* ── P1: Clustered bar (AC by region × channel) ── */
 (function(){
   const svg=mkSVG('p1bar');if(!svg)return;
   const W=540,H=120,pL=26,pB=20,pT=8,pR=8,plot=H-pB-pT,base=H-pB;
-  const regions=['NA','Europe','APAC','LATAM','MEA'];
-  const channels=['Direct','Partner','Online','Retail','Gov','Other'];
-  const data=[
-    [4.2,2.8,1.9,1.1,0.6,0.4],
-    [3.1,2.1,1.6,0.9,0.5,0.3],
-    [2.4,1.6,1.2,0.7,0.4,0.2],
-    [1.8,1.2,0.9,0.5,0.3,0.15],
-    [1.2,0.8,0.6,0.3,0.2,0.1]
-  ];
-  const yMax=5,nG=regions.length,nB=channels.length;
-  const groupW=(W-pL-pR)/nG,bw=(groupW-6)/nB;
-  const y=v=>base-((v/yMax)*plot);
-  [1,2,3,4,5].forEach(g=>{gridLine(svg,pL,y(g),W-pR,y(g));axLabel(svg,pL-4,y(g)+3,g,'end');});
-  axisLine(svg,pL,base,W-pR,base);
-  data.forEach((row,gi)=>{
-    const gx=pL+gi*groupW+3;
-    row.forEach((v,bi)=>{
-      const bx=gx+bi*bw;
-      svgEl(svg,'rect',{x:bx,y:y(v),width:Math.max(1,bw-1),height:base-y(v),fill:`var(--p${bi+1})`,rx:1});
+  let data={
+    yMax:5,
+    regions:['NA','Europe','APAC','LATAM','MEA'],
+    channels:['Direct','Partner','Online','Retail','Gov','Other'],
+    rows:[
+      [4.2,2.8,1.9,1.1,0.6,0.4],
+      [3.1,2.1,1.6,0.9,0.5,0.3],
+      [2.4,1.6,1.2,0.7,0.4,0.2],
+      [1.8,1.2,0.9,0.5,0.3,0.15],
+      [1.2,0.8,0.6,0.3,0.2,0.1]
+    ]
+  };
+  function render(){
+    svg.innerHTML='';
+    const leg=document.getElementById('p1barLeg');if(leg)leg.innerHTML='';
+    const{yMax,regions,channels,rows}=data;
+    const nG=regions.length,nB=channels.length;
+    const groupW=(W-pL-pR)/nG,bw=(groupW-6)/nB;
+    const y=v=>base-((v/yMax)*plot);
+    const step=Math.round(yMax/5)||1;
+    const grid=[];for(let g=step;g<yMax+step/2;g+=step)grid.push(g);
+    grid.forEach(g=>{gridLine(svg,pL,y(g),W-pR,y(g));axLabel(svg,pL-4,y(g)+3,g,'end');});
+    axisLine(svg,pL,base,W-pR,base);
+    rows.forEach((row,gi)=>{
+      const gx=pL+gi*groupW+3;
+      row.forEach((v,bi)=>{
+        const bx=gx+bi*bw;
+        svgEl(svg,'rect',{x:bx,y:y(v),width:Math.max(1,bw-1),height:base-y(v),fill:`var(--p${bi+1})`,rx:1});
+      });
+      axLabel(svg,pL+gi*groupW+groupW/2,base+14,regions[gi]);
     });
-    axLabel(svg,pL+gi*groupW+groupW/2,base+14,regions[gi]);
-  });
-  mkLegH('p1barLeg',channels.map((c,i)=>[c,`var(--p${i+1})`]));
+    mkLegH('p1barLeg',channels.map((c,i)=>[c,`var(--p${i+1})`]));
+  }
+  render();
+  window.VIZ.p1bar={page:'pg1',get data(){return data;},set data(d){data=d;},render};
 })();
 
 /* ── P1: Combo bar + line ── */
@@ -3652,75 +4096,103 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
   const svg=mkSVG('p1combo');if(!svg)return;
   const W=540,H=120,pL=30,pB=20,pT=8,pR=30,plot=H-pB-pT,base=H-pB;
   const cats=['Q1','Q2','Q3','Q4','Q1\'24','Q2\'24'];
-  const volData=[4.2,3.8,5.1,4.6,3.9,4.4];
-  const avgData=[82,78,91,85,76,88];
-  const volMax=6,avgMax=100;
-  const bw=(W-pL-pR)/cats.length-8;
-  const y1=v=>base-((v/volMax)*plot);
-  const y2=v=>base-((v/avgMax)*plot);
-  const cx=i=>pL+(i+0.5)*((W-pL-pR)/cats.length);
-  [1,2,3,4,5].forEach(g=>{gridLine(svg,pL,y1(g),W-pR,y1(g));axLabel(svg,pL-4,y1(g)+3,g,'end');});
-  axisLine(svg,pL,base,W-pR,base);
-  volData.forEach((v,i)=>{svgEl(svg,'rect',{x:cx(i)-bw/2,y:y1(v),width:bw,height:base-y1(v),fill:'var(--p1)',opacity:.8,rx:2});});
-  const pts=avgData.map((v,i)=>cx(i).toFixed(1)+','+y2(v).toFixed(1)).join(' ');
-  svgEl(svg,'polyline',{points:pts,style:'stroke:var(--p3);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;fill:none'});
-  avgData.forEach((v,i)=>svgEl(svg,'circle',{cx:cx(i),cy:y2(v),r:3,style:'fill:var(--p3)'}));
-  cats.forEach((c,i)=>axLabel(svg,cx(i),base+14,c));
-  [20,40,60,80,100].forEach(g=>{axLabel(svg,W-pR+6,y2(g)+3,g,'start');});
-  mkLegH('p1comboLeg',[['Volume (M)','var(--p1)',false],['Avg deal size','var(--p3)',false]]);
+  let data={
+    volMax:6,avgMax:100,
+    volData:[4.2,3.8,5.1,4.6,3.9,4.4],
+    avgData:[82,78,91,85,76,88]
+  };
+  function render(){
+    svg.innerHTML='';
+    const leg=document.getElementById('p1comboLeg');if(leg)leg.innerHTML='';
+    const{volMax,avgMax,volData,avgData}=data;
+    const bw=(W-pL-pR)/cats.length-8;
+    const y1=v=>base-((v/volMax)*plot);
+    const y2=v=>base-((v/avgMax)*plot);
+    const cx=i=>pL+(i+0.5)*((W-pL-pR)/cats.length);
+    const step=Math.round(volMax/5)||1;
+    const grid=[];for(let g=step;g<volMax+step/2;g+=step)grid.push(g);
+    grid.forEach(g=>{gridLine(svg,pL,y1(g),W-pR,y1(g));axLabel(svg,pL-4,y1(g)+3,g,'end');});
+    axisLine(svg,pL,base,W-pR,base);
+    volData.forEach((v,i)=>{svgEl(svg,'rect',{x:cx(i)-bw/2,y:y1(v),width:bw,height:base-y1(v),fill:'var(--p1)',opacity:.8,rx:2});});
+    const pts=avgData.map((v,i)=>cx(i).toFixed(1)+','+y2(v).toFixed(1)).join(' ');
+    svgEl(svg,'polyline',{points:pts,style:'stroke:var(--p3);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;fill:none'});
+    avgData.forEach((v,i)=>svgEl(svg,'circle',{cx:cx(i),cy:y2(v),r:3,style:'fill:var(--p3)'}));
+    cats.forEach((c,i)=>axLabel(svg,cx(i),base+14,c));
+    [20,40,60,80,100].forEach(g=>{axLabel(svg,W-pR+6,y2(g)+3,g,'start');});
+    mkLegH('p1comboLeg',[['Volume (M)','var(--p1)',false],['Avg deal size','var(--p3)',false]]);
+  }
+  render();
+  window.VIZ.p1combo={page:'pg1',get data(){return data;},set data(d){data=d;},render};
 })();
 
 /* ── P1: Small multiples trellis ── */
 (function(){
   const host=document.getElementById('p1trellis');if(!host)return;
-  const regions=['North America','Europe','APAC','LATAM'];
-  const qData=[[4.2,3.8,5.1,4.6],[3.1,2.9,3.8,3.4],[2.4,2.2,2.9,2.6],[1.8,1.5,2.1,1.9]];
   const qs=['Q1','Q2','Q3','Q4'];
-  const globalYMax=6;
-  host.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)';
-  regions.forEach((reg,ri)=>{
-    const wrap=document.createElement('div');wrap.className='visual';wrap.style.cssText='padding:10px;display:flex;flex-direction:column;min-height:0';
-    const title=document.createElement('div');title.style.cssText='font-size:11px;font-weight:600;color:var(--text-color);margin-bottom:4px;font-family:var(--font-family)';title.textContent=reg;wrap.appendChild(title);
-    const NS='http://www.w3.org/2000/svg';const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 240 75');svg.setAttribute('width','100%');svg.setAttribute('height','100%');svg.style.flex='1';svg.style.minHeight='0';svg.style.display='block';
-    const W=240,H=75,pL=28,pB=16,pT=6,pR=8,plot=H-pB-pT,base=H-pB;
-    const yMax=globalYMax,bw=(W-pL-pR)/4-6;
-    const el=(t,at)=>{const e=document.createElementNS(NS,t);for(const k in at)e.setAttribute(k,at[k]);svg.appendChild(e);return e;};
-    [2,4].forEach(g=>{const gy=base-((g/yMax)*plot);el('line',{x1:pL,y1:gy,x2:W-pR,y2:gy,style:'stroke:var(--out2);stroke-width:1'});const t=el('text',{x:pL-3,y:gy+3,'text-anchor':'end',class:'axis-label'});t.textContent=g;});
-    el('line',{x1:pL,y1:base,x2:W-pR,y2:base,style:'stroke:var(--out1);stroke-width:1'});
-    qData[ri].forEach((v,qi)=>{
-      const bx=pL+qi*((W-pL-pR)/4)+3;
-      const yv=base-((v/yMax)*plot);
-      const br=el('rect',{x:bx,y:yv,width:bw,height:base-yv,fill:`var(--p${ri+1})`,opacity:.85,rx:2});
-      addChartTip(br,reg,[{color:`var(--p${ri+1})`,label:qs[qi],value:'$'+v+'M'}]);
-      const t=el('text',{x:bx+bw/2,y:base+14,'text-anchor':'middle',class:'axis-label'});t.textContent=qs[qi];
+  let data={
+    globalYMax:6,
+    regions:['North America','Europe','APAC','LATAM'],
+    qData:[[4.2,3.8,5.1,4.6],[3.1,2.9,3.8,3.4],[2.4,2.2,2.9,2.6],[1.8,1.5,2.1,1.9]]
+  };
+  function render(){
+    host.innerHTML='';
+    host.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)';
+    const{globalYMax,regions,qData}=data;
+    regions.forEach((reg,ri)=>{
+      const wrap=document.createElement('div');wrap.className='visual';wrap.style.cssText='padding:10px;display:flex;flex-direction:column;min-height:0';
+      const title=document.createElement('div');title.style.cssText='font-size:11px;font-weight:600;color:var(--text-color);margin-bottom:4px;font-family:var(--font-family)';title.textContent=reg;wrap.appendChild(title);
+      const NS='http://www.w3.org/2000/svg';const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 240 75');svg.setAttribute('width','100%');svg.setAttribute('height','100%');svg.style.flex='1';svg.style.minHeight='0';svg.style.display='block';
+      const W=240,H=75,pL=28,pB=16,pT=6,pR=8,plot=H-pB-pT,base=H-pB;
+      const yMax=globalYMax,bw=(W-pL-pR)/4-6;
+      const el=(t,at)=>{const e=document.createElementNS(NS,t);for(const k in at)e.setAttribute(k,at[k]);svg.appendChild(e);return e;};
+      [2,4].forEach(g=>{const gy=base-((g/yMax)*plot);el('line',{x1:pL,y1:gy,x2:W-pR,y2:gy,style:'stroke:var(--out2);stroke-width:1'});const t=el('text',{x:pL-3,y:gy+3,'text-anchor':'end',class:'axis-label'});t.textContent=g;});
+      el('line',{x1:pL,y1:base,x2:W-pR,y2:base,style:'stroke:var(--out1);stroke-width:1'});
+      qData[ri].forEach((v,qi)=>{
+        const bx=pL+qi*((W-pL-pR)/4)+3;
+        const yv=base-((v/yMax)*plot);
+        const br=el('rect',{x:bx,y:yv,width:bw,height:base-yv,fill:`var(--p${ri+1})`,opacity:.85,rx:2});
+        addChartTip(br,reg,[{color:`var(--p${ri+1})`,label:qs[qi],value:'$'+v+'M'}]);
+        const t=el('text',{x:bx+bw/2,y:base+14,'text-anchor':'middle',class:'axis-label'});t.textContent=qs[qi];
+      });
+      wrap.appendChild(svg);host.appendChild(wrap);
     });
-    wrap.appendChild(svg);host.appendChild(wrap);
-  });
+  }
+  render();
+  window.VIZ.p1trellis={page:'pg1',get data(){return data;},set data(d){data=d;},render};
 })();
 
 /* ── P2: Scatter / bubble ── */
 (function(){
   const svg=mkSVG('p2scatter');if(!svg)return;
   const W=480,H=340,pL=36,pB=32,pT=12,pR=12,plot=H-pB-pT,base=H-pB;
-  const segs=[
-    {lbl:'Enterprise',  x:72,y:68,r:22},{lbl:'Mid-market',x:55,y:52,r:16},
-    {lbl:'SMB',         x:38,y:41,r:14},{lbl:'Gov',       x:61,y:75,r:10},
-    {lbl:'Healthcare',  x:48,y:58,r:12},{lbl:'Retail',    x:34,y:35,r:9},
-    {lbl:'Non-profit',  x:25,y:48,r:7}
-  ];
-  const xMin=15,xMax=85,yMin=20,yMax=95;
-  const px=v=>pL+((v-xMin)/(xMax-xMin))*(W-pL-pR);
-  const py=v=>base-((v-yMin)/(yMax-yMin))*plot;
-  [30,40,50,60,70,80].forEach(g=>{gridLine(svg,pL,py(g),W-pR,py(g));axLabel(svg,pL-4,py(g)+3,g,'end');});
-  [20,40,60,80].forEach(g=>{gridLine(svg,px(g),pT,px(g),base);axLabel(svg,px(g),base+14,g);});
-  axisLine(svg,pL,base,W-pR,base);axisLine(svg,pL,pT,pL,base);
-  const xt=svgEl(svg,'text',{x:W/2,y:base+24,'text-anchor':'middle',class:'axis-label'});xt.textContent='Deal size ($k)';
-  const yt=svgEl(svg,'text',{x:8,y:H/2,'text-anchor':'middle',class:'axis-label',transform:`rotate(-90,8,${H/2})`});yt.textContent='Win rate (%)';
-  segs.forEach((s,i)=>{
-    const bc=svgEl(svg,'circle',{cx:px(s.x),cy:py(s.y),r:s.r,fill:`var(--p${i+1})`,opacity:.65,stroke:`var(--p${i+1})`,strokeWidth:1.5});
-    addChartTip(bc,s.lbl,[{color:`var(--p${i+1})`,label:'Deal size',value:'$'+s.x+'k'},{label:'Win rate',value:s.y+'%'},{label:'Volume',value:'$'+s.r+'M'}]);
-  });
-  mkLegH('p2scatLeg',segs.map((s,i)=>[s.lbl,`var(--p${i+1})`]));
+  let data={
+    xMin:15,xMax:85,yMin:20,yMax:95,
+    segs:[
+      {lbl:'Enterprise',  x:72,y:68,r:22},{lbl:'Mid-market',x:55,y:52,r:16},
+      {lbl:'SMB',         x:38,y:41,r:14},{lbl:'Gov',       x:61,y:75,r:10},
+      {lbl:'Healthcare',  x:48,y:58,r:12},{lbl:'Retail',    x:34,y:35,r:9},
+      {lbl:'Non-profit',  x:25,y:48,r:7}
+    ]
+  };
+  function render(){
+    svg.innerHTML='';
+    const leg=document.getElementById('p2scatLeg');if(leg)leg.innerHTML='';
+    const{xMin,xMax,yMin,yMax,segs}=data;
+    const px=v=>pL+((v-xMin)/(xMax-xMin))*(W-pL-pR);
+    const py=v=>base-((v-yMin)/(yMax-yMin))*plot;
+    [30,40,50,60,70,80].forEach(g=>{gridLine(svg,pL,py(g),W-pR,py(g));axLabel(svg,pL-4,py(g)+3,g,'end');});
+    [20,40,60,80].forEach(g=>{gridLine(svg,px(g),pT,px(g),base);axLabel(svg,px(g),base+14,g);});
+    axisLine(svg,pL,base,W-pR,base);axisLine(svg,pL,pT,pL,base);
+    const xt=svgEl(svg,'text',{x:W/2,y:base+24,'text-anchor':'middle',class:'axis-label'});xt.textContent='Deal size ($k)';
+    const yt=svgEl(svg,'text',{x:8,y:H/2,'text-anchor':'middle',class:'axis-label',transform:`rotate(-90,8,${H/2})`});yt.textContent='Win rate (%)';
+    segs.forEach((s,i)=>{
+      const bc=svgEl(svg,'circle',{cx:px(s.x),cy:py(s.y),r:s.r,fill:`var(--p${i+1})`,stroke:`var(--p${i+1})`,strokeWidth:1.5});
+      addChartTip(bc,s.lbl,[{color:`var(--p${i+1})`,label:'Deal size',value:'$'+s.x+'k'},{label:'Win rate',value:s.y+'%'},{label:'Volume',value:'$'+s.r+'M'}]);
+    });
+    mkLegH('p2scatLeg',segs.map((s,i)=>[s.lbl,`var(--p${i+1})`]));
+  }
+  render();
+  window.VIZ.p2scatter={page:'pg2',get data(){return data;},set data(d){data=d;},render};
 })();
 
 /* ── P2: Product × region matrix ── */
@@ -3728,7 +4200,7 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
   const tb=document.getElementById('p2mbody');if(!tb)return;
   const CHEV_R2='<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg>';
   const CHEV_D2='<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>';
-  const p2tree=[
+  let data=[
     {id:'total2',lbl:'All regions',bkAC:'13.90',bkPY:'+10.8%',bkPos:true,acAC:'2.31',acPY:'-3.9%',acPos:false,clAC:'8.26',clPY:'+10.5%',clPos:true,open:true,children:[
       {id:'na2',lbl:'North America',bkAC:'4.82',bkPY:'+17.6%',bkPos:true,acAC:'0.64',acPY:'-9.9%',acPos:false,clAC:'2.31',clPY:'+14.4%',clPos:true,open:true,children:[
         {id:'na2e',lbl:'East',       bkAC:'2.80',bkPY:'+15.2%',bkPos:true,acAC:'0.37',acPY:'-8.1%',acPos:false,clAC:'1.34',clPY:'+12.1%',clPos:true},
@@ -3753,6 +4225,7 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
     ]},
   ];
   function p2col(v,pos){return `style="color:var(--${pos?'pos':'neg'})"`;};
+  function flatten(ns){let r=[];ns.forEach(n=>{r.push(n);if(n.children)r=r.concat(flatten(n.children));});return r;}
   function p2render(nodes,depth,parentOpen){
     nodes.forEach(n=>{
       const isP=!!n.children;
@@ -3770,11 +4243,15 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
       if(isP)p2render(n.children,depth+1,n.open&&(depth===0||parentOpen));
     });
   }
-  p2render(p2tree,0,true);
-  const p2all=(function flat(ns){let r=[];ns.forEach(n=>{r.push(n);if(n.children)r=r.concat(flat(n.children));});return r;})(p2tree);
+  function render(){
+    tb.innerHTML='';
+    p2render(data,0,true);
+  }
+  render();
   tb.addEventListener('click',e=>{
     const tog=e.target.closest('[data-t2]');if(!tog)return;
-    const node=p2all.find(n=>n.id===tog.dataset.t2);if(!node||!node.children)return;
+    const all=flatten(data);
+    const node=all.find(n=>n.id===tog.dataset.t2);if(!node||!node.children)return;
     node.open=!node.open;tog.innerHTML=node.open?CHEV_D2:CHEV_R2;
     (function setVis(children,pVis){children.forEach(c=>{
       const ctr=tb.querySelector(`tr[data-id="${c.id}"]`);
@@ -3783,6 +4260,7 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
       if(c.children)setVis(c.children,vis&&!!c.open);
     });})(node.children,true);
   });
+  window.VIZ.p2matrix={page:'pg2',get data(){return data;},set data(d){data=d;},render};
 })();
 
 /* ── P3: Combo bar + line (AC vs Plan vs Forecast) ── */
@@ -3790,22 +4268,34 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
   const svg=mkSVG('p3combo');if(!svg)return;
   const W=520,H=185,pL=32,pB=26,pT=10,pR=10,plot=H-pB-pT,base=H-pB;
   const cats=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const ac=   [null,null,null,null,null,null,28,31,35,38,null,null];
-  const plan= [30,33,36,39,41,42,44,46,48,50,52,55];
-  const fc=   [null,null,null,null,null,null,28,31,35,38,42,45];
-  const yMin=20,yMax=60,bw=32;
-  const x=i=>pL+(i+0.5)*((W-pL-pR)/cats.length);
-  const y=v=>base-((v-yMin)/(yMax-yMin))*plot;
-  [25,35,45,55].forEach(g=>{gridLine(svg,pL,y(g),W-pR,y(g));axLabel(svg,pL-4,y(g)+3,g,'end');});
-  axisLine(svg,pL,base,W-pR,base);
-  ac.forEach((v,i)=>{if(v===null)return;svgEl(svg,'rect',{x:x(i)-bw/2,y:y(v),width:bw,height:base-y(v),fill:'var(--p1)',opacity:.8,rx:2});});
-  [{data:plan,col:'var(--p2)',dash:'4 3'},{data:fc,col:'var(--p4)',dash:'2 3'}].forEach(s=>{
-    const pts=s.data.map((v,i)=>v!==null?x(i).toFixed(1)+','+y(v).toFixed(1):null).filter(Boolean).join(' ');
-    svgEl(svg,'polyline',{points:pts,style:`stroke:${s.col};stroke-width:2;fill:none;stroke-dasharray:${s.dash};stroke-linecap:round`});
-    s.data.forEach((v,i)=>{if(v===null)return;svgEl(svg,'circle',{cx:x(i),cy:y(v),r:2.5,style:`fill:${s.col}`});});
-  });
-  cats.forEach((c,i)=>{if(i%2===0)axLabel(svg,x(i),base+14,c);});
-  mkLegH('p3comboLeg',[['AC (bars)','var(--p1)',false],['Plan','var(--p2)',true],['Forecast','var(--p4)',true]]);
+  let data={
+    yMin:20,yMax:60,
+    ac:  [null,null,null,null,null,null,28,31,35,38,null,null],
+    plan:[30,33,36,39,41,42,44,46,48,50,52,55],
+    fc:  [null,null,null,null,null,null,28,31,35,38,42,45]
+  };
+  function render(){
+    svg.innerHTML='';
+    const leg=document.getElementById('p3comboLeg');if(leg)leg.innerHTML='';
+    const{yMin,yMax,ac,plan,fc}=data;
+    const bw=32;
+    const x=i=>pL+(i+0.5)*((W-pL-pR)/cats.length);
+    const y=v=>base-((v-yMin)/(yMax-yMin))*plot;
+    const step=Math.round((yMax-yMin)/4/5)*5||5;
+    const grid=[];for(let g=Math.ceil(yMin/step)*step;g<yMax;g+=step)grid.push(g);
+    grid.forEach(g=>{gridLine(svg,pL,y(g),W-pR,y(g));axLabel(svg,pL-4,y(g)+3,g,'end');});
+    axisLine(svg,pL,base,W-pR,base);
+    ac.forEach((v,i)=>{if(v===null)return;svgEl(svg,'rect',{x:x(i)-bw/2,y:y(v),width:bw,height:base-y(v),fill:'var(--p1)',opacity:.8,rx:2});});
+    [{data:plan,col:'var(--p2)',dash:'4 3'},{data:fc,col:'var(--p3)',dash:'2 3'}].forEach(s=>{
+      const pts=s.data.map((v,i)=>v!==null?x(i).toFixed(1)+','+y(v).toFixed(1):null).filter(Boolean).join(' ');
+      svgEl(svg,'polyline',{points:pts,style:`stroke:${s.col};stroke-width:2;fill:none;stroke-dasharray:${s.dash};stroke-linecap:round`});
+      s.data.forEach((v,i)=>{if(v===null)return;svgEl(svg,'circle',{cx:x(i),cy:y(v),r:2.5,style:`fill:${s.col}`});});
+    });
+    cats.forEach((c,i)=>{if(i%2===0)axLabel(svg,x(i),base+14,c);});
+    mkLegH('p3comboLeg',[['AC (bars)','var(--p1)',false],['Plan','var(--p2)',true],['Forecast','var(--p3)',true]]);
+  }
+  render();
+  window.VIZ.p3combo={page:'pg3',get data(){return data;},set data(d){data=d;},render};
 })();
 
 /* ── P3: Waterfall (plan bridge) ── */
@@ -3813,42 +4303,53 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
   const svg=mkSVG('p3wf');if(!svg)return;
   const W=480,H=185,pL=38,pB=32,pT=10,barW=46,gap=8;
   const base=H-pB;
-  const bars=[
-    {lbl:'Opening',  v:120,type:'total'},
-    {lbl:'New logo', v:+18,type:'pos'},
-    {lbl:'Upsell',   v:+12,type:'pos'},
-    {lbl:'Churn',    v:-15,type:'neg'},
-    {lbl:'Discount', v:-9, type:'neg'},
-    {lbl:'FX',       v:-4, type:'neg'},
-    {lbl:'Closing',  v:122,type:'total'}
-  ];
-  const yMin=108,yMax=154,plot=H-pB-pT;
-  const y=v=>base-((v-yMin)/(yMax-yMin))*plot;
-  [110,120,130,140,150].forEach(g=>{gridLine(svg,pL,y(g),W-8,y(g));axLabel(svg,pL-4,y(g)+3,g,'end');});
-  axisLine(svg,pL,base,W-8,base);
-  let running=120;
-  bars.forEach((b,i)=>{
-    const bx=pL+i*(barW+gap);
-    let top,bot,col;
-    if(b.type==='total'){top=y(b.v);bot=base;col='var(--p1)';}
-    else if(b.type==='pos'){top=y(running+b.v);bot=y(running);col='var(--pos)';}
-    else{top=y(running);bot=y(running+b.v);col='var(--neg)';}
-    const wr=svgEl(svg,'rect',{x:bx,y:top,width:barW,height:Math.max(2,bot-top),fill:col,rx:2});
-    addChartTip(wr,b.lbl,[{label:'Value',value:b.v>0?'+'+b.v:String(b.v)},{color:col,label:'Type',value:b.type==='pos'?'Positive':b.type==='neg'?'Negative':'Total'}]);
-    if(b.type!=='total'&&i<bars.length-1){
-      const connY=b.v>0?top:bot;
-      svgEl(svg,'line',{x1:bx+barW,y1:connY,x2:bx+barW+gap,y2:connY,style:'stroke:var(--out2);stroke-width:1;stroke-dasharray:3 2'});
-    }
-    axLabel(svg,bx+barW/2,base+14,b.lbl);
-    if(b.type!=='total'){const t=svgEl(svg,'text',{x:bx+barW/2,y:top-4,'text-anchor':'middle',class:'axis-label',style:`fill:${col};font-weight:600`});t.textContent=(b.v>0?'+':'')+b.v;}
-    if(b.type!=='total')running+=b.v;
-  });
+  let data={
+    yMin:108,yMax:154,
+    bars:[
+      {lbl:'Opening',  v:120,type:'total'},
+      {lbl:'New logo', v:+18,type:'pos'},
+      {lbl:'Upsell',   v:+12,type:'pos'},
+      {lbl:'Churn',    v:-15,type:'neg'},
+      {lbl:'Discount', v:-9, type:'neg'},
+      {lbl:'FX',       v:-4, type:'neg'},
+      {lbl:'Closing',  v:122,type:'total'}
+    ]
+  };
+  function render(){
+    svg.innerHTML='';
+    const{yMin,yMax,bars}=data;
+    const plot=H-pB-pT;
+    const y=v=>base-((v-yMin)/(yMax-yMin))*plot;
+    const step=Math.round((yMax-yMin)/5/5)*5||5;
+    const grid=[];for(let g=Math.ceil(yMin/step)*step;g<yMax;g+=step)grid.push(g);
+    grid.forEach(g=>{gridLine(svg,pL,y(g),W-8,y(g));axLabel(svg,pL-4,y(g)+3,g,'end');});
+    axisLine(svg,pL,base,W-8,base);
+    let running=bars[0].v;
+    bars.forEach((b,i)=>{
+      const bx=pL+i*(barW+gap);
+      let top,bot,col;
+      if(b.type==='total'){top=y(b.v);bot=base;col='var(--p1)';}
+      else if(b.type==='pos'){top=y(running+b.v);bot=y(running);col='var(--pos)';}
+      else{top=y(running);bot=y(running+b.v);col='var(--neg)';}
+      const wr=svgEl(svg,'rect',{x:bx,y:top,width:barW,height:Math.max(2,bot-top),fill:col,rx:2});
+      addChartTip(wr,b.lbl,[{label:'Value',value:b.v>0?'+'+b.v:String(b.v)},{color:col,label:'Type',value:b.type==='pos'?'Positive':b.type==='neg'?'Negative':'Total'}]);
+      if(b.type!=='total'&&i<bars.length-1){
+        const connY=b.v>0?top:bot;
+        svgEl(svg,'line',{x1:bx+barW,y1:connY,x2:bx+barW+gap,y2:connY,style:'stroke:var(--out2);stroke-width:1;stroke-dasharray:3 2'});
+      }
+      axLabel(svg,bx+barW/2,base+14,b.lbl);
+      if(b.type!=='total'){const t=svgEl(svg,'text',{x:bx+barW/2,y:top-4,'text-anchor':'middle',class:'axis-label',style:`fill:${col};font-weight:600`});t.textContent=(b.v>0?'+':'')+b.v;}
+      if(b.type!=='total')running+=b.v;
+    });
+  }
+  render();
+  window.VIZ.p3wf={page:'pg3',get data(){return data;},set data(d){data=d;},render};
 })();
 
 /* ── P3: Writeback matrix ── */
 (function(){
   const tb=document.getElementById('p3mbody');if(!tb)return;
-  const rows=[
+  let data=[
     ['lvl0','d','All',          ['3.10','3.10','3.10','3.10'],['12.4','1.8','10.6']],
     ['lvl0','d','Bikes',        ['1.20','1.25','1.18','1.19'],['4.82','1.90','4.82']],
     ['ind','','  Road',         ['0.70','0.72','0.68','0.70'],['2.80','1.10','2.80']],
@@ -3857,13 +4358,168 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
     ['lvl0','r','Clothing',     ['0.58','0.60','0.57','0.56'],['2.31','0.88','2.31']]
   ];
   const IC2={chevRight:'<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg>',chevDown:'<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>'};
-  rows.forEach(r=>{
-    const tr=document.createElement('tr');if(r[0]==='lvl0')tr.className='lvl0';
-    const chev=r[1]==='r'?`<span class="mx-chev">${IC2.chevRight}</span>`:r[1]==='d'?`<span class="mx-chev">${IC2.chevDown}</span>`:'';
-    const lead=r[0]==='ind'?`<td class="lead indent">${r[2]}</td>`:`<td class="lead">${chev}${r[2]}</td>`;
-    const cells=r[3].map(v=>`<td>${v}</td>`).join('');
-    tr.innerHTML=lead+cells+`<td class="grpdiv">${r[4][0]}</td><td>${r[4][1]}</td><td>${r[4][2]}</td>`;
-    tb.appendChild(tr);
+  function render(){
+    tb.innerHTML='';
+    data.forEach(r=>{
+      const tr=document.createElement('tr');if(r[0]==='lvl0')tr.className='lvl0';
+      const chev=r[1]==='r'?`<span class="mx-chev">${IC2.chevRight}</span>`:r[1]==='d'?`<span class="mx-chev">${IC2.chevDown}</span>`:'';
+      const lead=r[0]==='ind'?`<td class="lead indent">${r[2]}</td>`:`<td class="lead">${chev}${r[2]}</td>`;
+      const cells=r[3].map(v=>`<td>${v}</td>`).join('');
+      tr.innerHTML=lead+cells+`<td class="grpdiv">${r[4][0]}</td><td>${r[4][1]}</td><td>${r[4][2]}</td>`;
+      tb.appendChild(tr);
+    });
+  }
+  render();
+  window.VIZ.p3matrix={page:'pg3',get data(){return data;},set data(d){data=d;},render};
+})();
+
+/* ── KPI cards (pg0, pg2, pg3) — previously plain hardcoded HTML text
+   with no JS behind them at all; now data-driven and registered in
+   window.VIZ like the charts above, so a future randomizer can update
+   these too. Same visual output as before, just wired properly. ── */
+(function(){
+  function dotIcon(cls){return cls==='pos'?IC.triUp:cls==='neg'?IC.triDown:IC.dash;}
+  function renderKPIs(defs){
+    defs.forEach(d=>{
+      const v=document.getElementById(d.vId);if(v){v.textContent=d.val;v.className='kpi-val'+(d.valClass?' '+d.valClass:'');}
+      const s=document.getElementById(d.sId);if(!s)return;
+      if(d.kind==='sub'){s.className='kpi-sub';s.style.cssText='color:var(--text-color);opacity:.6';s.textContent=d.text;}
+      else{s.className='kpi-pct'+(d.textClass?' '+d.textClass:'');s.innerHTML=`<span class="dot ${d.dotClass}"${d.neuBg?' style="background:var(--neu)"':''}>${dotIcon(d.dotClass)}</span>${d.text}`;}
+    });
+  }
+  let pg0=[
+    {vId:'pg0k0v',sId:'pg0k0s',kind:'sub',val:'2.5M',text:'FY25 YTD'},
+    {vId:'pg0k1v',sId:'pg0k1p',kind:'pct',val:'+1.5M',valClass:'pos-t',textClass:'pos-t',dotClass:'pos',text:'+30.5%'},
+    {vId:'pg0k2v',sId:'pg0k2p',kind:'pct',val:'−2.5M',valClass:'neg-t',textClass:'neg-t',dotClass:'neg',text:'−20.5%'},
+    {vId:'pg0k3v',sId:'pg0k3p',kind:'pct',val:'+0.1M',valClass:'pos-t',textClass:'pos-t',dotClass:'neu',neuBg:true,text:'+0.2%'}
+  ];
+  let pg2=[
+    {vId:'pg2k0v',sId:'pg2k0p',kind:'pct',val:'4.82M',textClass:'pos-t',dotClass:'pos',text:'+17.6%'},
+    {vId:'pg2k1v',sId:'pg2k1p',kind:'pct',val:'0.64M',textClass:'neg-t',dotClass:'neg',text:'−9.9%'},
+    {vId:'pg2k2v',sId:'pg2k2p',kind:'pct',val:'4.41M',valClass:'neu-t',textClass:'neu-t',dotClass:'neu',text:'+0.2%'}
+  ];
+  let pg3=[
+    {vId:'pg3k0v',sId:'pg3k0s',kind:'sub',val:'12.4M',text:'Approved budget'},
+    {vId:'pg3k1v',sId:'pg3k1p',kind:'pct',val:'−2.5M',valClass:'neg-t',textClass:'neg-t',dotClass:'neg',text:'−20.5%'},
+    {vId:'pg3k2v',sId:'pg3k2p',kind:'pct',val:'11.1M',textClass:'pos-t',dotClass:'pos',text:'On track'},
+    {vId:'pg3k3v',sId:'pg3k3p',kind:'pct',val:'+0.3M',valClass:'neu-t',textClass:'neu-t',dotClass:'neu',text:'+2.4%'}
+  ];
+  function render(){renderKPIs(pg0);renderKPIs(pg2);renderKPIs(pg3);}
+  render();
+  window.VIZ.kpis={
+    page:'all',
+    get data(){return{pg0,pg2,pg3};},
+    set data(d){pg0=d.pg0;pg2=d.pg2;pg3=d.pg3;},
+    render
+  };
+})();
+
+/* ══════════════════════════════════════════════════════════
+   FEATURE: Randomize Data (Intelligence module only)
+   Bounded, per-visual jitter rules — deliberately NOT a flat
+   Math.random() over each number's full range. Every rule keeps
+   values within a plausible band of their current value (±10–35%
+   depending on how "noisy" that metric type realistically is) so a
+   click can't produce something absurd like a 1B swing. This relies
+   entirely on the {data,render()} pairs registered in window.VIZ —
+   no chart-specific DOM code lives here, only "what's a believable
+   new number for this data shape".
+══════════════════════════════════════════════════════════ */
+(function(){
+  const btn=document.getElementById('randomizeDataBtn');if(!btn)return;
+
+  function jitterNum(v,pct){return v*(1+(Math.random()*2-1)*pct);}
+  // Jitters a formatted magnitude/percent string ("2.5M","+30.5%","−2.5M")
+  // by scaling only the numeric part, keeping its sign glyph and unit
+  // suffix as-is. Returns the string unchanged if it isn't a plain
+  // signed-number-plus-unit shape (e.g. "On track").
+  function jitterStr(s,pct,decimals){
+    const m=/^([+\-−]?)(\d+(?:\.\d+)?)(M|k|%)?$/.exec(String(s).trim());
+    if(!m)return s;
+    const prefix=m[1]||'';
+    const num=parseFloat(m[2]);
+    const unit=m[3]||'';
+    const dec=decimals!=null?decimals:(unit==='%'?1:2);
+    return prefix+Math.max(0,jitterNum(num,pct)).toFixed(dec)+unit;
+  }
+  function isNeg(s){return /^[-−]/.test(String(s).trim());}
+
+  const RANDOMIZERS={
+    p0line(d){d.series.forEach(s=>{s.data=s.data.map(v=>Math.round(clamp(jitterNum(v,0.12),d.yMin+2,d.yMax-2)));});},
+    p0pie(d){d.forEach(sl=>{sl.v=+Math.max(0.05,jitterNum(sl.v,0.25)).toFixed(2);});},
+    p0wf(d){
+      const bars=d.bars;
+      for(let i=1;i<bars.length-1;i++){const j=Math.round(jitterNum(bars[i].v,0.35));bars[i].v=j!==0?j:(bars[i].v>0?1:-1);}
+      let running=bars[0].v;for(let i=1;i<bars.length-1;i++)running+=bars[i].v;
+      bars[bars.length-1].v=running;
+    },
+    p1bar(d){d.rows=d.rows.map(row=>row.map(v=>+clamp(jitterNum(v,0.2),0.05,d.yMax).toFixed(2)));},
+    p1combo(d){
+      d.volData=d.volData.map(v=>+clamp(jitterNum(v,0.15),0.5,d.volMax).toFixed(2));
+      d.avgData=d.avgData.map(v=>Math.round(clamp(jitterNum(v,0.1),40,d.avgMax)));
+    },
+    p1trellis(d){d.qData=d.qData.map(row=>row.map(v=>+clamp(jitterNum(v,0.2),0.2,d.globalYMax).toFixed(2)));},
+    p2scatter(d){
+      d.segs.forEach(s=>{
+        s.x=Math.round(clamp(jitterNum(s.x,0.15),d.xMin+2,d.xMax-2));
+        s.y=Math.round(clamp(jitterNum(s.y,0.15),d.yMin+2,d.yMax-2));
+        s.r=Math.round(clamp(jitterNum(s.r,0.25),6,24));
+      });
+    },
+    p2matrix(d){
+      (function walk(nodes){nodes.forEach(n=>{
+        ['bk','ac','cl'].forEach(p=>{
+          n[p+'AC']=jitterStr(n[p+'AC'],0.15,2);
+          n[p+'PY']=jitterStr(n[p+'PY'],0.4,1);
+          n[p+'Pos']=!isNeg(n[p+'PY']);
+        });
+        if(n.children)walk(n.children);
+      });})(d);
+    },
+    p3combo(d){
+      d.ac=d.ac.map(v=>v===null?null:+clamp(jitterNum(v,0.1),d.yMin+2,d.yMax-2).toFixed(1));
+      d.plan=d.plan.map(v=>+clamp(jitterNum(v,0.1),d.yMin+2,d.yMax-2).toFixed(1));
+      d.fc=d.fc.map(v=>v===null?null:+clamp(jitterNum(v,0.1),d.yMin+2,d.yMax-2).toFixed(1));
+    },
+    p3wf(d){
+      const bars=d.bars;
+      for(let i=1;i<bars.length-1;i++){const j=Math.round(jitterNum(bars[i].v,0.3));bars[i].v=j!==0?j:(bars[i].v>0?1:-1);}
+      let running=bars[0].v;for(let i=1;i<bars.length-1;i++)running+=bars[i].v;
+      bars[bars.length-1].v=running;
+    },
+    p3matrix(d){
+      d.forEach(r=>{r[3]=r[3].map(v=>jitterStr(v,0.12,2));r[4]=r[4].map(v=>jitterStr(v,0.12,2));});
+    },
+    map(d){d.cities.forEach(c=>{c.v=+clamp(jitterNum(c.v,0.3),1,999).toFixed(2);});},
+    kpis(d){
+      ['pg0','pg2','pg3'].forEach(pg=>{
+        d[pg].forEach(item=>{
+          item.val=jitterStr(item.val,0.15,2);
+          if(item.kind==='pct'&&/%$/.test(item.text))item.text=jitterStr(item.text,0.3,1);
+        });
+      });
+    }
+  };
+
+  function activePageId(){
+    for(const id of['pg0','pg1','pg2','pg3']){
+      const el=document.getElementById(id);
+      if(el&&el.style.display!=='none')return id;
+    }
+    return null;
+  }
+
+  btn.addEventListener('click',()=>{
+    const pg=activePageId();if(!pg)return;
+    Object.keys(window.VIZ).forEach(key=>{
+      const viz=window.VIZ[key];
+      if(viz.page!==pg&&viz.page!=='all')return;
+      const fn=RANDOMIZERS[key];if(!fn)return;
+      const d=viz.data;
+      fn(d);
+      viz.data=d;
+      viz.render();
+    });
   });
 })();
 
@@ -4047,6 +4703,40 @@ $('#cbsimOff').addEventListener('click',cbsimHide);
 document.getElementById('cbsimSelect').addEventListener('change',function(){
   cbsimSetMode(this.value);
 });
+
+/* ── Accessibility dropdown (combines WCAG + Color Sim triggers) ──
+   Purely a menu-open/close wrapper — the actual WCAG-check and
+   colour-blindness-simulation behavior is untouched, still wired to
+   the same #wcagBtn/#cbsimBtn click listeners above/below. This just
+   adds "open/close the menu" on top, and auto-closes the menu once
+   either tool is actually launched. */
+(function(){
+  const pick=document.getElementById('a11yPick');
+  const btn=document.getElementById('a11yBtn');
+  const drop=document.getElementById('a11yDrop');
+  if(!pick||!btn||!drop)return;
+  btn.addEventListener('click',e=>{
+    e.stopPropagation();
+    drop.classList.toggle('open');
+    if(drop.classList.contains('open')){
+      // Fixed positioning computed from the button's own viewport
+      // coords (not CSS anchoring) — see the #a11yDrop CSS comment for
+      // why: the toolbar clips absolutely-positioned overflow.
+      const r=btn.getBoundingClientRect();
+      drop.style.top=(r.bottom+6)+'px';
+      let left=r.right-Math.max(180,drop.offsetWidth||180);
+      if(left<8)left=r.left;
+      const dw=Math.max(180,drop.offsetWidth||180);
+      if(left+dw>window.innerWidth-8)left=window.innerWidth-dw-8;
+      drop.style.left=Math.max(8,left)+'px';
+    }
+  });
+  document.addEventListener('click',e=>{if(!pick.contains(e.target)&&!drop.contains(e.target))drop.classList.remove('open');});
+  ['wcagBtn','cbsimBtn'].forEach(id=>{
+    const opt=document.getElementById(id);
+    if(opt)opt.addEventListener('click',()=>drop.classList.remove('open'));
+  });
+})();
 
 /* ── Draggable panel ── */
 (function(){

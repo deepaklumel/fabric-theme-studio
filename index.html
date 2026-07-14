@@ -94,7 +94,7 @@
         <rect id="ftbThemeIconFill3" x="3" y="10.8" width="6.2" height="6.2" rx="1.3" fill="currentColor"/>
         <rect id="ftbThemeIconFill4" x="10.8" y="10.8" width="6.2" height="6.2" rx="1.3" fill="currentColor"/>
       </svg>
-      <span id="ftbThemeName" style="max-width:88px;overflow:hidden;text-overflow:ellipsis">Default Fabric</span>
+      <span id="ftbThemeName">Default Fabric</span>
       <svg class="ftb-chev" viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
     </button>
     <div class="ftb-theme-drop" id="ftbThemeDrop"></div>
@@ -111,20 +111,22 @@
 
   <div class="ftb-sep"></div>
 
-  <!-- Undo -->
+  <!-- Undo — corner-hook return arrow, deliberately NOT a circular arc
+       like "Reset all" below, so the two aren't a near-duplicate
+       silhouette at toolbar icon size (16px). -->
   <button class="ftb-btn" id="undoBtn" data-tip="Undo  ⌘Z" disabled data-priority="3">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4 8a6 6 0 1 1 .5 5.5"/>
-      <path d="M4 4v4h4"/>
+      <path d="M8 6 4 10l4 4"/>
+      <path d="M4 10h8a5 5 0 0 1 5 5v1"/>
     </svg>
     <span>Undo</span>
   </button>
 
-  <!-- Redo -->
+  <!-- Redo — mirror of Undo's corner-hook arrow -->
   <button class="ftb-btn" id="redoBtn" data-tip="Redo  ⌘⇧Z" disabled data-priority="3">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M16 8a6 6 0 1 0-.5 5.5"/>
-      <path d="M16 4v4h-4"/>
+      <path d="M12 6 16 10l-4 4"/>
+      <path d="M16 10H8a5 5 0 0 0-5 5v1"/>
     </svg>
     <span>Redo</span>
   </button>
@@ -142,27 +144,39 @@
 
   <div class="ftb-sep"></div>
 
-  <!-- WCAG Validation -->
-  <button class="ftb-btn ftb-btn-wcag" id="wcagBtn" data-tip="WCAG contrast validation" data-priority="4">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="10" cy="10" r="7.5"/>
-      <path d="M10 6v5M10 14v.5"/>
-    </svg>
-    <span>WCAG</span>
-  </button>
-
-  <!-- Color Sim — eye with wave icon -->
-  <button class="ftb-btn" id="cbsimBtn" data-tip="Color Vision Simulation" data-priority="4">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10Z"/>
-      <circle cx="10" cy="10" r="2.2"/>
-      <path d="M5.5 15.5 Q7 13 10 13 Q13 13 14.5 15.5" stroke-width="1.3" stroke-dasharray="1.5 1.5" opacity=".5"/>
-      <circle cx="6.5" cy="14.5" r="1" fill="#E3008C" stroke="none" opacity=".8"/>
-      <circle cx="10" cy="13.2" r="1" fill="#117865" stroke="none" opacity=".8"/>
-      <circle cx="13.5" cy="14.5" r="1" fill="#637CEF" stroke="none" opacity=".8"/>
-    </svg>
-    <span>Color Sim</span>
-  </button>
+  <!-- Accessibility — combines the former separate "WCAG" and "Color
+       Sim" buttons into one clearly-labeled entry point, with the two
+       tools as named sub-options underneath (contrast check vs.
+       colour-blindness simulation are related but distinct actions,
+       so they stay as separate items rather than one merged feature). -->
+  <div class="ftb-theme-pick" id="a11yPick" data-priority="4">
+    <button class="ftb-theme-btn" id="a11yBtn" data-tip="Accessibility">
+      <!-- Universal-access "person" glyph — more immediately readable
+           as "accessibility" than a generic info-circle. -->
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="10" cy="4.3" r="1.8" fill="currentColor" stroke="none"/>
+        <path d="M4.5 7.8h11M10 7.8v4.3M6.8 16.2l3.2-4.1 3.2 4.1"/>
+      </svg>
+      <span>Accessibility</span>
+      <svg class="ftb-chev" viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
+    </button>
+    <div class="pt-layout-drop" id="a11yDrop">
+      <button class="pt-layout-opt" id="wcagBtn" data-tip="WCAG contrast validation">
+        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="10" cy="10" r="7.5"/>
+          <path d="M10 6v5M10 14v.5"/>
+        </svg>
+        Check contrast (WCAG)
+      </button>
+      <button class="pt-layout-opt" id="cbsimBtn" data-tip="Color Vision Simulation">
+        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10Z"/>
+          <circle cx="10" cy="10" r="2.2"/>
+        </svg>
+        Simulate color blindness
+      </button>
+    </div>
+  </div>
 
   <div class="ftb-sep"></div>
 
@@ -223,6 +237,7 @@
   <!-- Layout switcher — only relevant (and shown) while on PowerTable -->
   <div class="pt-layout-pick" id="ptLayoutPick" style="display:none">
     <button class="pt-layout-btn" id="ptLayoutBtn">
+      <span class="pt-layout-btn-icon" id="ptLayoutIcon"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="15" height="13" rx="1.3"/><path d="M2.5 8h15M8 8v8.5"/></svg></span>
       <span id="ptLayoutLabel">Table layout</span>
       <svg class="ftb-chev" viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
     </button>
@@ -253,6 +268,7 @@
   <!-- Layout switcher for Planning — only shown while on Planning -->
   <div class="pt-layout-pick" id="planLayoutPick" style="display:none">
     <button class="pt-layout-btn" id="planLayoutBtn">
+      <span class="pt-layout-btn-icon" id="planLayoutIcon"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="4" r="2"/><circle cx="4" cy="16" r="2"/><circle cx="16" cy="16" r="2"/><path d="M10 6v4M10 10L4 14M10 10l6 4"/></svg></span>
       <span id="planLayoutLabel">Hierarchy</span>
       <svg class="ftb-chev" viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
     </button>
@@ -280,6 +296,7 @@
        modules. -->
   <div class="pt-layout-pick" id="intelLayoutPick" style="display:none">
     <button class="pt-layout-btn" id="intelLayoutBtn">
+      <span class="pt-layout-btn-icon" id="intelLayoutIcon"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="15" height="15" rx="1.3"/><path d="M2.5 7.5h15"/></svg></span>
       <span id="intelLayoutLabel">Template 1</span>
       <svg class="ftb-chev" viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
     </button>
@@ -332,6 +349,9 @@
       <div class="panel-body">
         <div class="panel-body-head">
           <span class="panel-body-title" id="panelBodyTitle">Color</span>
+          <button class="panel-body-reset" id="panelBodyReset" title="Reset font settings" style="display:none">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12.6 8a4.6 4.6 0 1 1-1.4-3.3"/><path d="M12.8 2.8V5.3H10.3"/></svg>
+          </button>
         </div>
         <div class="tabpanel on" id="tp-colors"></div>
         <div class="tabpanel" id="tp-page"></div>
@@ -360,31 +380,35 @@
             <button class="dbtn" data-pg="2">Products</button>
             <button class="dbtn" data-pg="3">Planning</button>
           </div>
+          <button class="randomize-btn" id="randomizeDataBtn" style="display:none" title="Regenerate plausible random values for the charts/KPIs on this page">
+            <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="2.5"/><circle cx="7" cy="7" r="0.9" fill="currentColor" stroke="none"/><circle cx="13" cy="13" r="0.9" fill="currentColor" stroke="none"/><circle cx="13" cy="7" r="0.9" fill="currentColor" stroke="none"/><circle cx="7" cy="13" r="0.9" fill="currentColor" stroke="none"/></svg>
+            Randomize Data
+          </button>
         </header>
 
         <!-- PAGE 0: Executive overview -->
         <div class="pg" id="pg0" style="display:flex">
           <!-- KPI row -->
-          <div class="kpi-row">
+          <div class="kpi-row" id="pg0kpis">
             <section class="visual kpi-card">
               <div class="kpi-lbl">AC · Total Sales</div>
-              <div class="kpi-val">2.5M</div>
-              <div class="kpi-sub" style="color:var(--text-color);opacity:.6">FY25 YTD</div>
+              <div class="kpi-val" id="pg0k0v">2.5M</div>
+              <div class="kpi-sub" id="pg0k0s" style="color:var(--text-color);opacity:.6">FY25 YTD</div>
             </section>
             <section class="visual kpi-card">
               <div class="kpi-lbl">vs Prior Year</div>
-              <div class="kpi-val pos-t">+1.5M</div>
-              <div class="kpi-pct pos-t"><span class="dot pos"></span>+30.5%</div>
+              <div class="kpi-val pos-t" id="pg0k1v">+1.5M</div>
+              <div class="kpi-pct pos-t" id="pg0k1p"><span class="dot pos"></span>+30.5%</div>
             </section>
             <section class="visual kpi-card">
               <div class="kpi-lbl">vs Plan</div>
-              <div class="kpi-val neg-t">−2.5M</div>
-              <div class="kpi-pct neg-t"><span class="dot neg"></span>−20.5%</div>
+              <div class="kpi-val neg-t" id="pg0k2v">−2.5M</div>
+              <div class="kpi-pct neg-t" id="pg0k2p"><span class="dot neg"></span>−20.5%</div>
             </section>
             <section class="visual kpi-card">
               <div class="kpi-lbl">vs Forecast</div>
-              <div class="kpi-val pos-t">+0.1M</div>
-              <div class="kpi-pct pos-t"><span class="dot neu" style="background:var(--neu)"></span>+0.2%</div>
+              <div class="kpi-val pos-t" id="pg0k3v">+0.1M</div>
+              <div class="kpi-pct pos-t" id="pg0k3p"><span class="dot neu" style="background:var(--neu)"></span>+0.2%</div>
             </section>
           </div>
           <!-- Line + Donut row -->
@@ -415,7 +439,7 @@
             <div class="rrail">
               <aside class="visual">
                 <div class="vt ftitle"><span class="ti"><svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path d="M17.883 3.914a1.5 1.5 0 0 0-.8-.8A1.5 1.5 0 0 0 16.5 3h-13A1.495 1.495 0 0 0 2 4.5a1.44 1.44 0 0 0 .47 1.086l5.061 4.828q.11.11.2.234a1.4 1.4 0 0 1 .27.852v4A1.5 1.5 0 0 0 9.5 17h1a1.5 1.5 0 0 0 1.5-1.5v-4a1.4 1.4 0 0 1 .272-.852 2 2 0 0 1 .2-.234l5.062-4.828A1.44 1.44 0 0 0 18 4.5c.002-.201-.038-.4-.117-.586m-1.039.945-5.07 4.83A2.53 2.53 0 0 0 11 11.5v4a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-4a2.53 2.53 0 0 0-.773-1.812L3.157 4.86A.47.47 0 0 1 3 4.492a.46.46 0 0 1 .148-.35A.5.5 0 0 1 3.5 4h13a.53.53 0 0 1 .463.304q.039.091.037.188a.47.47 0 0 1-.156.367"/></svg></span>Filters
-                  <button class="iconbtn" title="Clear all"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M4.5 14.6 11 8.1a2 2 0 0 1 2.83 0l1.6 1.6a2 2 0 0 1 0 2.83l-4.4 4.4H6.9z"/><path d="M8.6 10.5l4.3 4.3"/><path d="M3.3 17.4h13.4" stroke-linecap="round"/></svg></button>
+                  <button class="iconbtn" title="Clear all" aria-label="Clear all"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M4.5 14.6 11 8.1a2 2 0 0 1 2.83 0l1.6 1.6a2 2 0 0 1 0 2.83l-4.4 4.4H6.9z"/><path d="M8.6 10.5l4.3 4.3"/><path d="M3.3 17.4h13.4" stroke-linecap="round"/></svg></button>
                 </div>
                 <div class="fsec"><div class="fsec-h">Period</div>
                   <div class="fld" tabindex="0"><span style="flex:1">1/Jan/25 – 30/Jun/25</span><span class="ico"><svg viewBox="0 0 20 20" width="15" height="15" fill="currentColor"><path d="M5.5 16h3.707q.149.524.393 1H5.5A2.5 2.5 0 0 1 3 14.5v-9A2.5 2.5 0 0 1 5.5 3h9A2.5 2.5 0 0 1 17 5.5v4.1a5.5 5.5 0 0 0-1-.393V7H4v7.5A1.5 1.5 0 0 0 5.5 16m0-12A1.5 1.5 0 0 0 4 5.5V6h12v-.5A1.5 1.5 0 0 0 14.5 4z"/><path d="M7 11a1 1 0 1 0 0-2 1 1 0 0 0 0 2m1 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0m2.294-2.044a1 1 0 1 1 .662-.662q-.359.303-.662.662M19 14.5a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0M14.5 12a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 .5.5H16a.5.5 0 0 0 0-1h-1v-1.5a.5.5 0 0 0-.5-.5"/></svg></span></div>
@@ -457,28 +481,28 @@
         <!-- PAGE 2: Product deep dive -->
         <div class="pg" id="pg2" style="display:none">
           <!-- KPI strip -->
-          <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+          <div class="kpi-row" id="pg2kpis" style="grid-template-columns:repeat(3,1fr)">
             <section class="visual kpi-card">
               <div class="kpi-lbl">Bikes · AC</div>
-              <div class="kpi-val">4.82M</div>
-              <div class="kpi-pct pos-t"><span class="dot pos"></span>+17.6%</div>
+              <div class="kpi-val" id="pg2k0v">4.82M</div>
+              <div class="kpi-pct pos-t" id="pg2k0p"><span class="dot pos"></span>+17.6%</div>
             </section>
             <section class="visual kpi-card">
               <div class="kpi-lbl">Accessories · AC</div>
-              <div class="kpi-val">0.64M</div>
-              <div class="kpi-pct neg-t"><span class="dot neg"></span>−9.9%</div>
+              <div class="kpi-val" id="pg2k1v">0.64M</div>
+              <div class="kpi-pct neg-t" id="pg2k1p"><span class="dot neg"></span>−9.9%</div>
             </section>
             <section class="visual kpi-card">
               <div class="kpi-lbl">Components · AC</div>
-              <div class="kpi-val neu-t">4.41M</div>
-              <div class="kpi-pct neu-t"><span class="dot neu"></span>+0.2%</div>
+              <div class="kpi-val neu-t" id="pg2k2v">4.41M</div>
+              <div class="kpi-pct neu-t" id="pg2k2p"><span class="dot neu"></span>+0.2%</div>
             </section>
           </div>
           <!-- Scatter + Matrix row -->
           <div class="rcharts" style="flex:1;min-height:0">
-            <section class="visual" style="flex:none">
-              <div class="vt">Deal size vs win rate by segment</div>
-              <svg id="p2scatter" viewBox="0 0 480 340" width="100%" style="display:block"></svg>
+            <section class="visual flex-fill">
+              <div class="vt" style="flex:none">Deal size vs win rate by segment</div>
+              <svg id="p2scatter" viewBox="0 0 480 340" width="100%" preserveAspectRatio="xMidYMid meet"></svg>
               <div class="legend-h" id="p2scatLeg" style="margin-top:8px"></div>
             </section>
             <section class="visual flex-fill" style="overflow:auto;min-height:0">
@@ -497,26 +521,26 @@
         <!-- PAGE 3: Planning & forecast -->
         <div class="pg" id="pg3" style="display:none">
           <!-- KPI row -->
-          <div class="kpi-row">
+          <div class="kpi-row" id="pg3kpis">
             <section class="visual kpi-card">
               <div class="kpi-lbl">FY25 Plan</div>
-              <div class="kpi-val">12.4M</div>
-              <div class="kpi-sub" style="color:var(--text-color);opacity:.6">Approved budget</div>
+              <div class="kpi-val" id="pg3k0v">12.4M</div>
+              <div class="kpi-sub" id="pg3k0s" style="color:var(--text-color);opacity:.6">Approved budget</div>
             </section>
             <section class="visual kpi-card">
               <div class="kpi-lbl">AC vs Plan</div>
-              <div class="kpi-val neg-t">−2.5M</div>
-              <div class="kpi-pct neg-t"><span class="dot neg"></span>−20.5%</div>
+              <div class="kpi-val neg-t" id="pg3k1v">−2.5M</div>
+              <div class="kpi-pct neg-t" id="pg3k1p"><span class="dot neg"></span>−20.5%</div>
             </section>
             <section class="visual kpi-card">
               <div class="kpi-lbl">Forecast</div>
-              <div class="kpi-val">11.1M</div>
-              <div class="kpi-pct pos-t"><span class="dot pos"></span>On track</div>
+              <div class="kpi-val" id="pg3k2v">11.1M</div>
+              <div class="kpi-pct pos-t" id="pg3k2p"><span class="dot pos"></span>On track</div>
             </section>
             <section class="visual kpi-card">
               <div class="kpi-lbl">Forecast vs Plan</div>
-              <div class="kpi-val neu-t">+0.3M</div>
-              <div class="kpi-pct neu-t"><span class="dot neu"></span>+2.4%</div>
+              <div class="kpi-val neu-t" id="pg3k3v">+0.3M</div>
+              <div class="kpi-pct neu-t" id="pg3k3p"><span class="dot neu"></span>+2.4%</div>
             </section>
           </div>
           <!-- Combo + Waterfall row -->
@@ -549,15 +573,17 @@
              above (Inforiver-based grid), so it inherits every theme
              token already, no new schema needed. -->
         <div class="pg" id="pg4" style="display:none">
-          <section class="page-canvas" style="overflow:auto" id="planMatrixView">
+          <section class="page-canvas" style="overflow:hidden" id="planMatrixView">
             <div class="vt" style="flex:none">Profit, Sales, Year, Category, Sub-Category</div>
-            <table class="matrix" id="planningMatrixTable">
-              <thead>
-                <tr class="grp" id="planningYearRow"></tr>
-                <tr class="sub" id="planningSubRow"></tr>
-              </thead>
-              <tbody id="planningMatrixBody"></tbody>
-            </table>
+            <div class="plan-table-scroll">
+              <table class="matrix" id="planningMatrixTable">
+                <thead>
+                  <tr class="grp" id="planningYearRow"></tr>
+                  <tr class="sub" id="planningSubRow"></tr>
+                </thead>
+                <tbody id="planningMatrixBody"></tbody>
+              </table>
+            </div>
           </section>
 
           <section class="page-canvas" style="overflow:auto;display:none" id="planTreeView">
@@ -645,8 +671,8 @@
                 <span id="ptCalRangeLabel">09 June - 13 June, 2025</span>
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 2v4M13 2v4" stroke-linecap="round"/></svg>
               </div>
-              <button class="pt-cal-navbtn" id="ptCalPrev"><svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 2.5L3 6l4.5 3.5"/></svg></button>
-              <button class="pt-cal-navbtn" id="ptCalNext"><svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5L9 6l-4.5 3.5"/></svg></button>
+              <button class="pt-cal-navbtn" id="ptCalPrev" title="Previous" aria-label="Previous"><svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 2.5L3 6l4.5 3.5"/></svg></button>
+              <button class="pt-cal-navbtn" id="ptCalNext" title="Next" aria-label="Next"><svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5L9 6l-4.5 3.5"/></svg></button>
               <button class="pt-cal-today">Today</button>
               <button class="pt-cal-viewpick">Week<svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg></button>
             </div>
@@ -675,7 +701,7 @@
     <div style="display:flex;align-items:center;gap:8px">
       <span class="wcag-title">WCAG Contrast Validation</span>
     </div>
-    <button class="wcag-close" id="wcagClose">
+    <button class="wcag-close" id="wcagClose" title="Close" aria-label="Close">
       <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M3.293 3.293a1 1 0 0 1 1.414 0L8 6.586l3.293-3.293a1 1 0 1 1 1.414 1.414L9.414 8l3.293 3.293a1 1 0 0 1-1.414 1.414L8 9.414l-3.293 3.293a1 1 0 0 1-1.414-1.414L6.586 8 3.293 4.707a1 1 0 0 1 0-1.414Z"/></svg>
     </button>
   </div>
@@ -694,7 +720,7 @@
       <span class="cbsim-dot"></span>
       <span class="cbsim-title">Colour Vision Simulation</span>
     </div>
-    <button class="cbsim-close" id="cbsimOff" title="Exit simulation">
+    <button class="cbsim-close" id="cbsimOff" title="Exit simulation" aria-label="Exit simulation">
       <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M3.293 3.293a1 1 0 0 1 1.414 0L8 6.586l3.293-3.293a1 1 0 1 1 1.414 1.414L9.414 8l3.293 3.293a1 1 0 0 1-1.414 1.414L8 9.414l-3.293 3.293a1 1 0 0 1-1.414-1.414L6.586 8 3.293 4.707a1 1 0 0 1 0-1.414Z"/></svg>
     </button>
   </div>
@@ -835,7 +861,7 @@
             </div>
             <div style="flex:1;min-width:0">
               <div style="font-size:12.5px;font-weight:600;color:#242424;font-family:'Segoe UI',sans-serif" id="ntmImageFileName">Click to choose an image</div>
-              <div style="font-size:11px;color:#8a8886;font-family:'Segoe UI',sans-serif">JPG, PNG or WebP — processed locally, never uploaded</div>
+              <div style="font-size:11px;color:#5c5c5c;font-family:'Segoe UI',sans-serif">JPG, PNG or WebP — processed locally, never uploaded</div>
             </div>
           </div>
           <input type="file" id="ntmImageFile" accept="image/*" style="display:none">
@@ -854,17 +880,22 @@
         <!-- Magic — descriptive theme generator (revealed on selection) -->
         <div id="ntmMagicInput" style="display:none">
           <span class="ntm-section-label">✨ Describe your theme</span>
-          <input type="text" id="ntmMagicText" class="ntm-input" maxlength="80" placeholder="e.g. underwater metrics dashboard, corporate fintech navy and gold…" spellcheck="false">
-          <p class="ntm-helper" id="ntmMagicStatus"><span id="ntmMagicSpinner" class="ntm-spinner" style="display:none"></span><span id="ntmMagicStatusText">Type a mood, industry, colour, or scene — we'll turn it into a full palette instantly, no internet required.</span><span id="ntmMagicSourceBadge" class="ntm-magic-source-badge" style="display:none"></span></p>
+          <input type="text" id="ntmMagicText" class="ntm-input" maxlength="80" placeholder="e.g. very dark ocean, navy and gold fintech, not too bright…" spellcheck="false">
+          <p class="ntm-helper" id="ntmMagicStatus"><span id="ntmMagicSpinner" class="ntm-spinner" style="display:none"></span><span id="ntmMagicStatusText">Type a mood, industry, colour(s), or scene — try combining colours ("navy and gold"), adding "very"/"slightly", or excluding one with "not". Instant, no internet required.</span><span id="ntmMagicSourceBadge" class="ntm-magic-source-badge" style="display:none"></span></p>
           <button class="ntm-magic-variation" id="ntmMagicVariation" disabled>🔁 Try a variation</button>
 
           <div class="ntm-magic-ai-row">
-            <button type="button" class="ntm-magic-ai-toggle" id="ntmMagicAiToggle">⚙ Use Gemini AI for smarter matches (optional)</button>
+            <button type="button" class="ntm-magic-ai-toggle" id="ntmMagicAiToggle">⚙ Use AI for smarter matches (optional)</button>
             <div class="ntm-magic-key-wrap" id="ntmMagicKeyWrap" style="display:none">
+              <select id="ntmMagicAiProvider" class="ntm-input" style="flex:0 0 100px">
+                <option value="gemini">Gemini</option>
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude</option>
+              </select>
               <input type="password" id="ntmMagicApiKey" class="ntm-input" placeholder="Paste your free Gemini API key" spellcheck="false">
               <button type="button" class="ntm-magic-key-clear" id="ntmMagicKeyClear">Clear</button>
             </div>
-            <p class="ntm-helper" id="ntmMagicAiHelper" style="display:none">Stored only in this browser (localStorage), sent only to Google's Gemini API. Leave blank to always use the built-in offline generator. If the AI call fails, is rate-limited, or times out, we automatically fall back to the offline generator.</p>
+            <p class="ntm-helper" id="ntmMagicAiHelper" style="display:none">Stored only in this browser (localStorage) — each provider's key is remembered separately, sent only to that provider's own API. Leave blank to always use the built-in offline generator. If the AI call fails, is rate-limited, or times out, we automatically fall back to the offline generator.</p>
           </div>
         </div>
 
@@ -901,9 +932,9 @@
         <div id="ntmPalettePreview"></div>
 
         <!-- Empty state -->
-        <div id="ntmPreviewEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:8px;color:#8a8886;font-size:13px;font-family:'Segoe UI',sans-serif;text-align:center;padding:40px 20px">
+        <div id="ntmPreviewEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:8px;color:#5c5c5c;font-size:13px;font-family:'Segoe UI',sans-serif;text-align:center;padding:40px 20px">
           <svg viewBox="0 0 32 32" width="36" height="36" fill="none" stroke="#d1d1d1" stroke-width="1.5"><rect x="6" y="8" width="20" height="16" rx="2"/><path d="M6 12h20"/><circle cx="10.5" cy="18" r="1.6" fill="#d1d1d1" stroke="none"/><circle cx="16" cy="18" r="1.6" fill="#d1d1d1" stroke="none"/><circle cx="21.5" cy="18" r="1.6" fill="#d1d1d1" stroke="none"/></svg>
-          Choose a starting point and theme name to preview your palette
+          <span id="ntmPreviewEmptyText">Choose a starting point to preview your palette</span>
         </div>
       </div>
 

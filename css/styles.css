@@ -5,9 +5,9 @@
    SemiBold/Bold map onto font-weight 400/600/700 respectively so
    font-weight:600 renders as a true SemiBold everywhere, not a
    browser-synthesized fake-bold fallback. */
-@font-face{font-family:'Segoe UI';src:url('../fonts/SegoeUI-Regular.ttf') format('truetype') format('truetype');font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:'Segoe UI';src:url('../fonts/SegoeUI-SemiBold.ttf') format('truetype') format('truetype');font-weight:600;font-style:normal;font-display:swap}
-@font-face{font-family:'Segoe UI';src:url('../fonts/SegoeUI-Bold.ttf') format('truetype') format('truetype');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Segoe UI';src:url('../fonts/SegoeUI-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Segoe UI';src:url('../fonts/SegoeUI-SemiBold.ttf') format('truetype');font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Segoe UI';src:url('../fonts/SegoeUI-Bold.ttf') format('truetype');font-weight:700;font-style:normal;font-display:swap}
 :root{
   --p1:#117865;--p2:#637CEF;--p3:#E3008C;--p4:#2AA0A4;--p5:#9373C0;--p6:#13A10E;--p7:#3A96DD;--p8:#CA5010;
   --out1:#ADADAD;--out2:#E0E0E0;--struct-bg:#F5F5F5;--struct-icon:#242424;--struct-accent:#0078D4;--struct-subtle:#FFFFFF;
@@ -28,6 +28,24 @@
   --f-brand:#117865;--f-brand-hover:#0d6054;--f-brand-press:#094d43;
   --f-radius:4px;--f-radius-lg:6px;
   --f-font:"Segoe UI",wf_segoe-ui_normal,system-ui,-apple-system,Arial,sans-serif;
+
+  /* Audit finding #12: documented z-index scale for the app's global
+     chrome layers, replacing what used to be ad hoc literals (800,
+     900, 940, 950, 2000, 2100, 3000, 9999) sprinkled across unrelated
+     features with no stated relationship to one another. Small,
+     purely-local stacking values inside a single component (e.g. a
+     tooltip arrow sitting above its own bubble) are left as plain
+     small integers — this scale is only for layers that need to stack
+     correctly against OTHER, unrelated parts of the app chrome. */
+  --z-toolbar-sub:800;      /* floating command toolbar row */
+  --z-toolbar-fade:801;     /* its horizontal-scroll discoverability fades, just above it */
+  --z-toolbar:900;          /* app header (sits above the toolbar row) */
+  --z-narrow-backdrop:940;  /* narrow-shell side-panel-drawer backdrop */
+  --z-narrow-panel:950;     /* narrow-shell side-panel drawer itself */
+  --z-overlay:2000;         /* floating tool panels: WCAG, Color Vision Sim, toasts */
+  --z-tooltip:2100;         /* chart data tooltips, above overlay panels */
+  --z-modal:3000;           /* full-screen modal dialogs (New Theme wizard, etc.) */
+  --z-dropdown:9999;        /* viewport-clamped popovers: theme picker, a11y, layout switchers */
 }
 *{box-sizing:border-box} html,body{margin:0;height:100%;overflow:hidden;display:flex;flex-direction:column}
 body{font-family:var(--f-font);background:var(--f-bg);color:var(--f-ink);font-size:13px;-webkit-font-smoothing:antialiased}
@@ -41,7 +59,7 @@ svg text{font-family:var(--font-family)}
    so the canvas keeps as much room as possible. */
 .app.narrow-shell.panel-open{grid-template-columns:1fr 60px}
 .app.narrow-shell .panel{overflow:visible}
-.app.narrow-shell .panel-body{position:absolute;top:0;right:60px;height:100%;background:#ffffff;box-shadow:-6px 0 20px rgba(0,0,0,.18);border-left:1px solid #e0e0e0;z-index:950}
+.app.narrow-shell .panel-body{position:absolute;top:0;right:60px;height:100%;background:#ffffff;box-shadow:-6px 0 20px rgba(0,0,0,.18);border-left:1px solid #e0e0e0;z-index:var(--z-narrow-panel)}
 /* The drawer's width was still hardcoded to 316px by the general
    .app.panel-open rule below, which on a viewport narrower than
    ~376px (316 drawer + 60 rail) pushed its left edge off-screen.
@@ -49,22 +67,15 @@ svg text{font-family:var(--font-family)}
    (app+narrow-shell+panel-open+panel-body) beats that general rule
    regardless of source order. */
 .app.narrow-shell.panel-open .panel-body{width:min(316px,calc(100vw - 76px))}
-.narrow-shell-backdrop{display:none;position:absolute;inset:0 60px 0 0;background:rgba(0,0,0,.15);z-index:940}
+.narrow-shell-backdrop{display:none;position:absolute;inset:0 60px 0 0;background:rgba(0,0,0,.15);z-index:var(--z-narrow-backdrop)}
 .app.narrow-shell.panel-open .narrow-shell-backdrop{display:block}
 
-/* Drawer toggle — Fabric style */
-.drawer-toggle{display:none}
-.drawer-toggle:hover{background:#f3f2f1;color:#201f1e}
-
 /* Panel shell */
-.app-header{display:flex;align-items:center;gap:20px;background:#ffffff;border-bottom:1px solid #d1d1d1;padding:0 28px;height:68px;flex:none;z-index:900;overflow:hidden}
+.app-header{display:flex;align-items:center;gap:20px;background:#ffffff;border-bottom:1px solid #d1d1d1;padding:0 28px;height:68px;flex:none;z-index:var(--z-toolbar);overflow:hidden}
 .app-header .ah-logo{width:40px;height:40px;flex:none}
 .app-header .ah-brand{display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:0;flex:1 1 auto;overflow:hidden}
 .app-header .ah-title{font-size:18px;font-weight:700;color:#242424;font-family:var(--f-font);letter-spacing:-.01em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .app-header .ah-desc{font-size:12px;color:#616161;font-family:var(--f-font);line-height:1.3;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.app-header .ah-sep{width:1px;height:36px;background:#d1d1d1;flex:none;margin:0 8px}
-.app-header .ah-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;color:#117865;background:#e8f5f2;border:1px solid #b8dfd8;border-radius:12px;padding:3px 10px;font-family:var(--f-font);flex:none;white-space:nowrap}
-.app-header .ah-badge svg{flex:none}
 .app-header .ah-space{display:none}
 
 /* Narrow header — drop the description and the Fabric UX badge once
@@ -73,7 +84,6 @@ svg text{font-family:var(--font-family)}
 @media (max-width:760px){
   .app-header{padding:0 16px;gap:12px}
   .app-header .ah-desc{display:none}
-  .app-header .ah-sep,.app-header .ah-badge{display:none}
 }
 @media (max-width:420px){
   .app-header .ah-logo{width:32px;height:32px}
@@ -82,8 +92,6 @@ svg text{font-family:var(--font-family)}
 
 .panel{background:#ffffff;border-left:1px solid #e0e0e0;height:100%;display:flex;flex-direction:row-reverse;overflow:hidden}
 
-/* Fabric-style IO buttons */
-.iorow{display:flex;gap:8px}
 .f-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;border-radius:4px;font-family:var(--f-font);font-size:14px;font-weight:600;cursor:pointer;transition:background .1s;white-space:nowrap;outline:none}
 .f-btn-default{background:#ffffff;border:1px solid #d1d1d1;color:#242424}
 .f-btn-default:hover{background:#f5f5f5;border-color:#d1d1d1}
@@ -107,13 +115,13 @@ svg text{font-family:var(--font-family)}
   border-bottom:1px solid #e8e8e8;
   padding:0 16px;
   height:44px;flex:none;
-  z-index:800;
+  z-index:var(--z-toolbar-sub);
   overflow-x:auto;overflow-y:hidden;scrollbar-width:none;
 }
 .ftb::-webkit-scrollbar{display:none}
 /* Scroll-discoverability fades — shown only when there's more
    toolbar content off-screen in that direction (see JS reflow). */
-.ftb-fade{position:absolute;top:0;width:28px;height:44px;pointer-events:none;z-index:801;opacity:0;transition:opacity .15s}
+.ftb-fade{position:absolute;top:0;width:28px;height:44px;pointer-events:none;z-index:var(--z-toolbar-fade);opacity:0;transition:opacity .15s}
 .ftb-fade-l{left:0;background:linear-gradient(to right,#ffffff,rgba(255,255,255,0))}
 .ftb-fade-r{right:0;background:linear-gradient(to left,#ffffff,rgba(255,255,255,0))}
 .ftb-wrap.can-scroll-left .ftb-fade-l{opacity:1}
@@ -133,7 +141,6 @@ svg text{font-family:var(--font-family)}
 .ftb-btn.active{background:#f0faf7;color:#117865;box-shadow:inset 0 -2px 0 0 #117865}
 .ftb-btn svg{width:16px;height:16px;flex:none}
 .ftb-btn span{font-size:12px;font-weight:500;letter-spacing:0;line-height:1;white-space:nowrap;color:inherit}
-.ftb-btn-danger{color:#9e3a3a}
 /* Save button — teal accent when enabled */
 .f-btn-danger-solid{background:#c50f1f;color:#fff;border-color:#c50f1f}
 .f-btn-danger-solid:hover{background:#a00e19;border-color:#a00e19}
@@ -153,9 +160,27 @@ svg text{font-family:var(--font-family)}
 .ftb-theme-btn>svg:first-child{width:18px;height:18px;flex:none}
 .ftb-theme-btn .ftb-chev{opacity:.45;transition:opacity .1s;flex:none}
 .ftb-theme-btn:hover .ftb-chev{opacity:.8}
-.ftb-theme-btn>span{font-size:12px;font-weight:500;line-height:1;white-space:nowrap;color:inherit;width:90px;overflow:hidden;text-overflow:ellipsis;display:inline-block}
-.ftb-theme-drop{position:fixed;background:#fff;border:1px solid #e0e0e0;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.16);width:360px;max-height:72vh;overflow-y:auto;display:none;z-index:9999}
+/* Audit finding #6: the 90px CSS width here and a separate 88px inline
+   style on #ftbThemeName were two independent, slightly-inconsistent
+   truncation limits for the same span. Consolidated into this one rule
+   (inline style removed) and widened so more of a theme's name is
+   visible before ellipsis kicks in. */
+.ftb-theme-btn>span{font-size:12px;font-weight:500;line-height:1;white-space:nowrap;color:inherit;max-width:140px;overflow:hidden;text-overflow:ellipsis;display:inline-block}
+.ftb-theme-drop{position:fixed;background:#fff;border:1px solid #e0e0e0;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.16);width:360px;max-height:72vh;overflow-y:auto;display:none;z-index:var(--z-dropdown)}
 .ftb-theme-drop.open{display:block}
+/* Accessibility trigger reuses .ftb-theme-btn for its responsive
+   label-hiding behavior, but its label is a fixed word ("Accessibility"),
+   not a variable-length theme name — so it shouldn't be squeezed into
+   the theme-picker's 90px truncating box. */
+#a11yBtn>span{width:auto;overflow:visible;text-overflow:clip}
+/* position:fixed (not the inherited .pt-layout-drop absolute) — the
+   toolbar itself (.ftb) sets overflow-y:hidden for its horizontal
+   scroll-fade behavior, which would silently clip an absolutely
+   positioned dropdown popping out of a button inside it. Same fix
+   the theme-picker dropdown already uses, for the same reason;
+   position is computed in JS from the button's viewport coordinates. */
+#a11yDrop{position:fixed;display:none;z-index:var(--z-dropdown);width:210px;min-width:0}
+#a11yDrop.open{display:block}
 
 /* Module switcher — segmented pill control, left-aligned under the toolbar */
 .mod-switch-bar{display:flex;align-items:center;justify-content:flex-start;padding:8px 16px;background:#fafafa;border-bottom:1px solid #e8e8e8;flex:none}
@@ -180,10 +205,6 @@ svg text{font-family:var(--font-family)}
 .mod-switch-btn svg{width:15px;height:15px;flex:none}
 .mod-switch-btn:hover:not(.active){color:#242424}
 .mod-switch-btn.active{background:#fff;color:#117865;box-shadow:0 1px 2px rgba(0,0,0,.08)}
-.mod-placeholder-card{text-align:center;max-width:340px;padding:32px;margin:auto}
-.mod-placeholder-card svg{width:40px;height:40px;margin-bottom:12px}
-.mod-placeholder-card h2{font-size:16px;font-weight:600;margin:0 0 6px}
-.mod-placeholder-card p{font-size:13px;margin:0;line-height:1.5}
 /* PowerTable layout switcher — sits beside the sheet-type pills.
    flex:none so it never gets squeezed out or clipped — its dropdown
    must always be reachable regardless of how tight the pill group
@@ -199,16 +220,38 @@ svg text{font-family:var(--font-family)}
    button lands in the row. */
 .pt-layout-drop{position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.14);min-width:180px;display:none;z-index:50;padding:4px}
 .pt-layout-drop.open{display:block}
+/* ptLayoutDrop / planLayoutDrop / intelLayoutDrop override the inherited
+   position:absolute with position:fixed + JS-computed viewport coords
+   (see the shared clampDropdown() helper), because their ancestor
+   toolbars/pill-bars use overflow-x:auto / overflow-y:hidden for
+   scroll-fade effects, which silently clips an absolutely positioned
+   dropdown — same root cause and fix already used by .ftb-theme-drop
+   and #a11yDrop. */
+#ptLayoutDrop,#planLayoutDrop,#intelLayoutDrop{position:fixed;top:auto;right:auto;z-index:var(--z-dropdown)}
 .pt-layout-opt{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:7px 10px;border:none;background:none;border-radius:5px;cursor:pointer;font-family:var(--f-font);font-size:12.5px;color:#242424}
 .pt-layout-opt svg{flex:none;color:#616161}
 .pt-layout-opt.active svg{color:#117865}
 .pt-layout-opt:hover{background:#f5f5f5}
 .pt-layout-opt.active{color:#117865;font-weight:600;background:#f0faf7}
+/* Icon shown on the closed trigger button itself — mirrors whichever
+   option is currently selected, so the current state is recognizable
+   without opening the dropdown (previously only the list items had
+   icons; the button just showed plain text). */
+.pt-layout-btn-icon{display:flex;flex:none;color:#117865}
+.pt-layout-btn-icon svg{display:block}
+/* "Randomize Data" — only shown while on the Intelligence module (see
+   selectModule()); regenerates bounded, plausible values for whatever
+   chart/KPI data belongs to the currently visible pg#, via the
+   window.VIZ registry each visual registered itself in. */
+.randomize-btn{display:flex;align-items:center;gap:6px;margin-left:10px;padding:6px 12px;border:1px solid #d1d1d1;background:#fff;border-radius:8px;cursor:pointer;font-family:var(--f-font);font-size:12.5px;font-weight:500;color:#242424;flex:none}
+.randomize-btn:hover{border-color:#8a8886}
+.randomize-btn:active svg{transform:rotate(50deg)}
+.randomize-btn svg{transition:transform .25s ease}
 /* Card grid */
 .ftd-search{display:flex;align-items:center;gap:8px;margin:10px 12px 4px;background:#f5f5f5;border-radius:4px;padding:5px 10px}
 .ftd-search input{background:none;border:none;outline:none;font-size:12px;color:#242424;font-family:var(--f-font);flex:1}
 .ftd-search input::placeholder{color:#8a8886}
-.ftd-section{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8a8886;padding:8px 13px 4px;font-family:var(--f-font)}
+.ftd-section{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#5c5c5c;padding:8px 13px 4px;font-family:var(--f-font)}
 .ftd-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:0 10px 10px}
 .ftd-card{border:1.5px solid #e0e0e0;border-radius:6px;cursor:pointer;overflow:hidden;transition:border-color .12s,box-shadow .12s;position:relative;background:#fff}
 .ftd-card:hover{border-color:#117865;box-shadow:0 2px 8px rgba(0,0,0,.1)}
@@ -253,7 +296,7 @@ svg text{font-family:var(--font-family)}
 .panel-foot{flex:none;border-top:1px solid #ebebeb;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;background:#fafafa}
 .panel-foot .pf-theme{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#242424;font-family:var(--f-font)}
 .panel-foot .pf-dot{width:10px;height:10px;border-radius:50%;background:#117865;border:1px solid rgba(0,0,0,.12);flex:none}
-.panel-foot .pf-hint{font-size:10.5px;color:#8a8886;font-family:var(--f-font);display:flex;align-items:center;gap:2px}
+.panel-foot .pf-hint{font-size:10.5px;color:#5c5c5c;font-family:var(--f-font);display:flex;align-items:center;gap:2px}
 .panel-foot kbd{font-family:var(--f-font);font-size:9.5px;background:#fff;border:1px solid #d1d1d1;border-radius:3px;padding:1px 4px;color:#605e5c;box-shadow:0 1px 0 #d1d1d1}
 /* Icon rail */
 .panel-rail{width:60px;flex:none;display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:2px;background:#fafafa;border-left:1px solid #e0e0e0}
@@ -265,8 +308,14 @@ svg text{font-family:var(--font-family)}
 /* Panel body */
 .panel-body{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .18s;width:0}
 .app.panel-open .panel-body{opacity:1;pointer-events:auto;width:316px}
-.panel-body-head{flex:none;padding:9px 14px 8px;border-bottom:1px solid #f0f0f0}
-.panel-body-title{font-size:11px;font-weight:600;color:#8a8886;letter-spacing:.06em;text-transform:uppercase;font-family:var(--f-font)}
+.panel-body-head{flex:none;padding:9px 14px 8px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between}
+.panel-body-title{font-size:11px;font-weight:600;color:#5c5c5c;letter-spacing:.06em;text-transform:uppercase;font-family:var(--f-font)}
+/* Font tab's reset action — lives in the shared panel title bar
+   (right-aligned next to "FONT") instead of inside the tab content,
+   since Font has no per-section headers of its own to host it in.
+   Hidden on every other tab (toggled in openTab()). */
+.panel-body-reset{width:24px;height:24px;display:grid;place-items:center;border-radius:4px;color:#5c5c5c;cursor:pointer;border:1px solid transparent;background:transparent;transition:all .1s;flex:none}
+.panel-body-reset:hover{background:#f3f2f1;border-color:#d1d1d1;color:#201f1e}
 
 /* Color accordion groups */
 .cgroup{border:1px solid #d1d1d1;border-radius:4px;margin-bottom:8px;overflow:hidden;background:#ffffff}
@@ -278,7 +327,7 @@ svg text{font-family:var(--font-family)}
 .cghead .cg-count{font-size:11px;color:#605e5c;background:#f3f2f1;border-radius:10px;padding:1px 7px;font-weight:400;margin-left:2px}
 .cghead .cg-prev{margin-left:auto;display:flex;gap:2px;align-items:center;margin-right:4px}
 .cghead .cg-prev span{width:9px;height:16px;border-radius:2px;display:block}
-.cghead .cg-reset{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:24px;height:24px;display:grid;place-items:center;border-radius:4px;color:#8a8886;cursor:pointer;flex:none;border:1px solid transparent;background:transparent;transition:all .1s;z-index:1}
+.cghead .cg-reset{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:24px;height:24px;display:grid;place-items:center;border-radius:4px;color:#5c5c5c;cursor:pointer;flex:none;border:1px solid transparent;background:transparent;transition:all .1s;z-index:1}
 .cghead .cg-reset:hover{background:#f3f2f1;border-color:#d1d1d1;color:#201f1e}
 .cgbody{padding:12px 14px 14px;display:none;background:#ffffff;border-top:1px solid #ebebeb}
 .cgroup.open .cgbody{display:block}
@@ -308,8 +357,14 @@ svg text{font-family:var(--font-family)}
 .prop-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;min-height:32px}
 .pad-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 .pad-cell{display:flex;flex-direction:column;gap:4px}
-.pad-cell-lbl{font-size:11px;font-weight:600;color:#8a8886;font-family:var(--f-font);text-align:center}
-.prop-lbl{font-size:12px;font-weight:600;color:#242424;min-width:80px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none;line-height:1.3;font-family:var(--f-font)}
+.pad-cell-lbl{font-size:11px;font-weight:600;color:#5c5c5c;font-family:var(--f-font);text-align:center}
+/* Widened from 80px — labels like "Auto font color" / "Responsive
+   size" (Font tab) were getting truncated to "Auto font co…" with no
+   way to see the rest short of a tooltip. 80px fit the shorter
+   Page/Visuals labels (Enabled, Width, Side) fine, but not these.
+   Kept text-overflow/ellipsis as a safety net for any future label
+   that's still too long, rather than removing truncation entirely. */
+.prop-lbl{font-size:12px;font-weight:600;color:#242424;min-width:132px;max-width:132px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none;line-height:1.3;font-family:var(--f-font)}
 .prop-color{display:flex;align-items:center;gap:8px;flex:1}
 .prop-color .swatch{width:32px;height:28px;border-radius:var(--f-radius);border:1px solid var(--f-border-strong);cursor:pointer;position:relative;overflow:hidden;flex:none}
 .prop-color .swatch input[type=color]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
@@ -331,7 +386,7 @@ svg text{font-family:var(--font-family)}
 .f-spinbtn:hover .f-input.num,.f-spinbtn:hover .f-spin-arrows{border-color:#8a8886}
 .f-spinbtn:focus-within .f-input.num,.f-spinbtn:focus-within .f-spin-arrows{border-color:#d1d1d1}
 .f-spinbtn:focus-within .f-input.num{box-shadow:inset 0 -2px 0 0 #117865}
-.unit{font-size:11px;color:#8a8886;font-family:var(--f-font);margin-left:4px;flex:none}
+.unit{font-size:11px;color:#5c5c5c;font-family:var(--f-font);margin-left:4px;flex:none}
 /* Fabric-style dropdown */
 .f-select{font-family:var(--f-font);font-size:14px;font-weight:400;height:32px;border:1px solid #d1d1d1;border-radius:4px;padding:0 28px 0 10px;color:#242424;background:#ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16' fill='none' stroke='%23605e5c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 8px center;appearance:none;outline:none;flex:1;max-width:200px}
 .f-select:hover{border-color:#242424} .f-select:focus{border-color:#d1d1d1;box-shadow:inset 0 -2px 0 0 #117865}
@@ -348,13 +403,10 @@ svg text{font-family:var(--font-family)}
 .f-toggle .tlbl{font-size:12px;color:#201f1e;font-family:var(--f-font)}
 .prop-row .f-toggle{flex:1}
 .unit{font-size:11px;color:var(--f-muted)}
-.section-h{font-size:12px;font-weight:600;color:var(--f-ink);margin:14px 0 8px;display:flex;align-items:center;gap:6px}
-.section-h:first-child{margin-top:0}
-.fdivider{height:1px;background:var(--f-border);margin:14px 0}
 
 /* Tip */
-.tip{position:fixed;z-index:2000;background:#fff;color:#242424;border:1px solid #d1d1d1;border-radius:6px;box-shadow:0 4px 18px rgba(0,0,0,.18);padding:10px 12px;font-size:11.5px;line-height:1.5;width:226px;pointer-events:none;opacity:0;transition:opacity .1s;font-family:var(--f-font)}
-.chart-tip{position:fixed;z-index:2100;background:var(--tt-bg,#fff);color:var(--tt-color,#242424);border:1px solid var(--out1,#d1d1d1);border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,.16);padding:8px 12px;font-size:12px;font-family:var(--f-font);line-height:1.5;pointer-events:none;opacity:0;transition:opacity .12s;white-space:nowrap;max-width:220px;white-space:normal}
+.tip{position:fixed;z-index:var(--z-overlay);background:#fff;color:#242424;border:1px solid #d1d1d1;border-radius:6px;box-shadow:0 4px 18px rgba(0,0,0,.18);padding:10px 12px;font-size:11.5px;line-height:1.5;width:226px;pointer-events:none;opacity:0;transition:opacity .1s;font-family:var(--f-font)}
+.chart-tip{position:fixed;z-index:var(--z-tooltip);background:var(--tt-bg,#fff);color:var(--tt-color,#242424);border:1px solid var(--out1,#d1d1d1);border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,.16);padding:8px 12px;font-size:12px;font-family:var(--f-font);line-height:1.5;pointer-events:none;opacity:0;transition:opacity .12s;white-space:nowrap;max-width:220px;white-space:normal}
 .chart-tip.show{opacity:1}
 .chart-tip-title{font-weight:600;color:var(--tt-color,#242424);margin-bottom:3px;font-size:11.5px}
 .chart-tip-row{display:flex;align-items:center;gap:6px;font-size:12px}
@@ -373,7 +425,7 @@ svg text{font-family:var(--font-family)}
 .tip .cmp .sw{width:12px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.12)}
 
 /* Export modal */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:3000;display:none;place-items:center}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:var(--z-modal);display:none;place-items:center}
 /* ── New theme wizard — single screen, Fabric UX spec ── */
 /* Dialog container */
 .ntm .modal-head{padding:20px 24px 16px;border-bottom:1px solid #e0e0e0;flex:none;display:flex;align-items:flex-start;justify-content:space-between}
@@ -401,12 +453,17 @@ svg text{font-family:var(--font-family)}
 
 /* Starting point selection — Fabric card pattern */
 /* Segmented control replaces tall cards */
-.ntm-source-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+/* Audit finding #8: a fixed repeat(3,1fr) with 5 cards leaves the 5th
+   stranded alone in its own row (auto-placed into column 1, columns
+   2-3 empty) instead of filling the row. auto-fit+minmax lets the grid
+   choose however many equal-width columns actually fit the row, so the
+   last card always shares a row instead of sitting orphaned. */
+.ntm-source-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px}
 .ntm-source-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:60px;border:1px solid #d1d1d1;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;font-weight:500;font-family:"Segoe UI",sans-serif;color:#424242;transition:background .1s,color .1s,border-color .1s;padding:6px;position:relative}
 .ntm-source-card svg{width:22px;height:22px;flex:none}
 .ntm-source-card:hover{background:#f5f5f5;color:#242424;border-color:#b3b0ad}
 .ntm-source-card.selected{background:#f0faf7;color:#117865;font-weight:600;border-color:#117865}
-.ntm-source-title{font-size:12.5px;font-weight:inherit;color:inherit;font-family:"Segoe UI",sans-serif;white-space:nowrap}
+.ntm-source-title{font-size:12.5px;font-weight:inherit;color:inherit;font-family:"Segoe UI",sans-serif;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 
 /* Brand colour row — Fabric input pattern */
 .ntm-brand-row{display:flex;align-items:center;gap:8px}
@@ -440,7 +497,8 @@ svg text{font-family:var(--font-family)}
 .ntm-magic-ai-toggle{font-size:11.5px;color:#616161;font-family:"Segoe UI",sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none;background:none;border:none;padding:0}
 .ntm-magic-ai-toggle:hover{color:#242424}
 .ntm-magic-key-wrap{margin-top:6px;display:flex;gap:6px;align-items:center}
-.ntm-magic-key-wrap input{height:28px;font-size:12px}
+.ntm-magic-key-wrap input,.ntm-magic-key-wrap select{height:28px;font-size:12px}
+.ntm-magic-key-wrap input{flex:1;min-width:0}
 .ntm-magic-key-clear{font-size:11px;color:#a4262c;background:none;border:none;cursor:pointer;white-space:nowrap;font-family:"Segoe UI",sans-serif}
 .ntm-spinner{width:12px;height:12px;border:2px solid #b8dfd8;border-top-color:#117865;border-radius:50%;display:inline-block;animation:ntm-spin .7s linear infinite;vertical-align:middle;margin-right:5px}
 @keyframes ntm-spin{to{transform:rotate(360deg)}}
@@ -454,7 +512,7 @@ svg text{font-family:var(--font-family)}
 .ntm-reset-gen{font-size:11.5px;color:#117865;font-family:"Segoe UI",sans-serif;cursor:pointer;background:none;border:none;padding:0;text-decoration:underline;text-underline-offset:2px}
 .ntm-reset-gen:hover{color:#0d6054}
 .ntm-preview-section{display:flex;flex-direction:column;gap:6px}
-.ntm-preview-section-label{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8a8886;font-family:"Segoe UI",sans-serif}
+.ntm-preview-section-label{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#5c5c5c;font-family:"Segoe UI",sans-serif}
 .ntm-swatch-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
 
 /* Swatch — click to edit (review step) */
@@ -479,7 +537,7 @@ svg text{font-family:var(--font-family)}
 .ntm-row-dragging .ntm-pal-swatch:hover .ntm-swatch-hex{opacity:0}
 
 /* Edit hint */
-.ntm-edit-hint{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#8a8886;font-family:var(--f-font);margin-bottom:14px;background:#f5f5f5;border-radius:6px;padding:7px 11px}
+.ntm-edit-hint{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#5c5c5c;font-family:var(--f-font);margin-bottom:14px;background:#f5f5f5;border-radius:6px;padding:7px 11px}
 .ntm-edit-hint svg{flex:none;color:#117865}
 
 /* Footer — Fabric dialog footer */
@@ -507,7 +565,7 @@ svg text{font-family:var(--font-family)}
   .ntm-right{overflow-y:visible}
 }
 @media (max-width:520px){
-  .ntm-source-row{grid-template-columns:repeat(2,1fr)}
+  .ntm-source-row{grid-template-columns:repeat(auto-fit,minmax(76px,1fr))}
   .ntm-body{gap:0}
   .ntm-left,.ntm-right{padding:14px 16px}
 }
@@ -522,29 +580,31 @@ svg text{font-family:var(--font-family)}
   .modal-foot{flex-direction:column-reverse;align-items:stretch}
   .modal-foot .f-btn{width:100%}
 }
-.lib-item.preset{background:linear-gradient(90deg,rgba(17,120,101,.05) 0%,transparent 100%)}
-.lib-item.preset .lib-item-name{color:#117865;font-weight:600}
-.lib-item.preset.active{background:#e8f5f2;border-left:3px solid #117865}
-.lib-preset-badge{font-size:9px;font-weight:600;padding:1px 6px;border-radius:8px;background:#e8f5f2;color:#117865;border:1px solid #b8dfd8;flex:none;text-transform:uppercase;letter-spacing:.04em}
-.lib-item.active .lib-preset-badge{background:#117865;color:#fff;border-color:#117865}
 /* Color blindness overlay */
 /* ── WCAG Validation Panel ── */
 .wcag-panel{
-  position:fixed;top:120px;right:380px;
+  position:fixed;top:120px;right:64px;
   width:320px;max-width:calc(100vw - 32px);max-height:480px;
   background:#fff;border:1px solid #e0e0e0;border-radius:8px;
   box-shadow:0 8px 32px rgba(0,0,0,.18);
-  z-index:2000;font-family:var(--f-font);
+  z-index:var(--z-overlay);font-family:var(--f-font);
   display:none;flex-direction:column;overflow:hidden;
+  transition:right .22s cubic-bezier(.4,0,.2,1);
 }
 .wcag-panel.show{display:flex}
-/* The 380px right-offset assumes the docked side panel (60px rail +
-   316px body) is open next to it. Below 900px the side panel becomes
-   an overlay drawer instead (see narrow-shell), so that assumption
-   no longer holds — pin the panel near the actual right edge instead
-   so it can't be pushed off-screen on narrower viewports. */
+/* Audit finding #5: the right-offset used to be a static 380px, which
+   assumed the docked side panel (60px rail + 316px body) was always
+   open. When the panel is collapsed to its 60px rail, that left a
+   large dead gap; fixed by sitting just past the rail (64px) by
+   default and pushing out to clear the full docked panel body (380px)
+   only while .app carries panel-open, matching the same grid-template
+   toggle the side panel itself uses. */
+.app.panel-open ~ .wcag-panel,.app.panel-open .wcag-panel{right:380px}
+/* Below 900px the side panel becomes an overlay drawer instead (see
+   narrow-shell), so neither offset above holds — pin the panel near
+   the actual right edge instead so it can't be pushed off-screen. */
 @media (max-width:900px){
-  .wcag-panel{right:16px;top:100px;max-height:min(480px,calc(100vh - 132px))}
+  .wcag-panel{right:16px !important;top:100px;max-height:min(480px,calc(100vh - 132px))}
 }
 .wcag-header{
   display:flex;align-items:center;justify-content:space-between;
@@ -553,7 +613,7 @@ svg text{font-family:var(--font-family)}
 .wcag-title{font-size:13px;font-weight:600;color:#242424}
 .wcag-close{
   width:28px;height:28px;border:none;background:transparent;
-  border-radius:4px;cursor:pointer;color:#8a8886;
+  border-radius:4px;cursor:pointer;color:#5c5c5c;
   display:grid;place-items:center;padding:0;
 }
 .wcag-close:hover{background:#f5f5f5;color:#242424}
@@ -590,12 +650,9 @@ svg text{font-family:var(--font-family)}
 .wcag-item-badge.fail{background:#fef2f2;color:#c50f1f;border:1px solid #f4c4c4}
 .wcag-item-badge.large{background:#fff8e1;color:#8a6d00;border:1px solid #f0d080}
 .wcag-foot{
-  font-size:10.5px;color:#8a8886;padding:8px 14px;
+  font-size:10.5px;color:#5c5c5c;padding:8px 14px;
   border-top:1px solid #f0f0f0;flex:none;
 }
-.ftb-btn-wcag:not([disabled]){color:#0078d4}
-.ftb-btn-wcag:not([disabled]):hover{background:#f0f6ff;color:#005a9e}
-
 /* ── Color Vision Simulator — Fabric card ── */
 .cbsim-panel{
   position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
@@ -606,7 +663,7 @@ svg text{font-family:var(--font-family)}
   border:1px solid #e0e0e0;
   border-radius:8px;
   box-shadow:0 8px 32px rgba(0,0,0,.18);
-  z-index:2000;
+  z-index:var(--z-overlay);
   font-family:var(--f-font);
   overflow:hidden;
 }
@@ -622,7 +679,7 @@ svg text{font-family:var(--font-family)}
 .cbsim-dot{width:8px;height:8px;border-radius:50%;background:#117865;flex:none;animation:cbpulse 2s ease-in-out infinite}
 .cbsim-close{
   width:28px;height:28px;border:none;background:transparent;
-  border-radius:4px;cursor:pointer;color:#8a8886;
+  border-radius:4px;cursor:pointer;color:#5c5c5c;
   display:grid;place-items:center;flex:none;padding:0;
 }
 .cbsim-close:hover{background:#f5f5f5;color:#242424}
@@ -689,12 +746,6 @@ svg text{font-family:var(--font-family)}
 
 .score{display:flex;align-items:center;background:var(--el-bg);border:var(--el-border-w) solid var(--el-border-color);border-radius:var(--el-radius);box-shadow:var(--el-shadow);padding:20px 28px}
 .score .hero{padding-right:28px;margin-right:28px;border-right:1px solid var(--out2)}
-.score .hero .k{font-size:11.5px;color:var(--text-color);opacity:.72;font-family:var(--font-family)}
-.score .hero .v{font-size:32px;font-weight:700;color:var(--text-color);line-height:1.1;font-family:var(--font-family)}
-.score .grp{display:flex;gap:32px;flex:1}
-.kblock .lab{font-size:11.5px;color:var(--text-color);opacity:.72;font-family:var(--font-family)}
-.kblock .val{font-size:16px;font-weight:600;color:var(--text-color);font-variant-numeric:tabular-nums;margin-top:2px;font-family:var(--font-family)}
-.kblock .pct{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px;margin-top:4px;font-variant-numeric:tabular-nums;font-family:var(--font-family)}
 .dot{width:16px;height:16px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;flex:none}
 .dot svg{width:11px;height:11px}
 .dot.pos{background:var(--pos)} .dot.neg{background:var(--neg)} .dot.neu{background:var(--neu);color:var(--text-color)}
@@ -725,6 +776,10 @@ svg text{font-family:var(--font-family)}
 .mchip .x:hover{background:rgba(0,0,0,.09)}
 .msel-pop{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;background:var(--el-bg);border:1px solid var(--el-border-color);border-radius:4px;box-shadow:0 4px 14px rgba(0,0,0,.14);padding:4px;max-height:220px;overflow:auto;display:none}
 .msel-pop.show{display:block}
+/* Audit finding #4: when the trigger sits low enough on the page that
+   the 220px popover would overflow the viewport bottom, JS toggles this
+   class to flip it to open upward instead of clipping/scrolling off. */
+.msel-pop.msel-pop-up{top:auto;bottom:calc(100% + 4px)}
 .msel-opt{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:4px;cursor:pointer;font-size:12px;color:var(--text-color)}
 .msel-opt:hover{background:var(--struct-bg)}
 .mbox{width:16px;height:16px;border:1px solid var(--out1);border-radius:3px;flex:none;display:grid;place-items:center;background:var(--el-bg);color:#fff}
@@ -755,11 +810,6 @@ table.matrix tbody tr:nth-child(odd) td{background:var(--struct-subtle)}
 table.matrix tbody tr:nth-child(even) td{background:var(--struct-bg)}
 table.matrix tbody td{border-bottom:1px solid var(--out2)}
 table.matrix .grpdiv{border-left:1px solid var(--out2)}
-table.matrix .indent{padding-left:34px}
-table.matrix .indent1{padding-left:34px}
-table.matrix .indent2{padding-left:54px}
-table.matrix .indent3{padding-left:74px}
-table.matrix .indent4{padding-left:94px}
 table.matrix tr.lvl0 .lead,table.matrix tr.lvl1 .lead,table.matrix tr.lvl2 .lead,table.matrix tr.lvl3 .lead{font-weight:600}
 .mx-chev{display:inline-flex;width:14px;color:var(--text-color);opacity:.7;vertical-align:middle}
 
@@ -819,13 +869,7 @@ table.pt tbody tr:hover td{filter:brightness(.97)}
    (chevron/label/count/kebab) sits above it, unboxed, directly on the
    canvas, per the reference. Distinct groups are NOT one continuous
    backdrop; there's visible canvas between them. */
-.pt-group-wrap{display:flex;flex-direction:column;gap:8px}
 .pt-group{display:flex;flex-direction:column;gap:10px;background:var(--struct-bg);border-radius:8px;padding:10px}
-.pt-group-head{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--text-color)}
-.pt-group-head .cnt{opacity:.6;font-weight:500}
-.pt-group-head .chev{width:12px;height:12px;color:var(--struct-icon)}
-.pt-group-head .sp{flex:1}
-.pt-group-head .kebab{width:13px;height:13px;color:var(--struct-icon);cursor:pointer;flex:none}
 .pt-date-sep{display:inline-block;width:1px;height:11px;background:var(--out1);margin:0 7px;vertical-align:middle}
 .pt-card{background:var(--el-bg);border:var(--el-border-w) solid var(--el-border-color);border-radius:var(--el-radius);box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
 .pt-card-title{font-size:13px;font-weight:600;color:var(--text-color)}
@@ -835,7 +879,6 @@ table.pt tbody tr:hover td{filter:brightness(.97)}
 .pt-card-row .val{color:var(--text-color)}
 .pt-assignee-pill{display:inline-flex;align-items:center;gap:5px;background:var(--struct-subtle);border-radius:9px;padding:2px 9px 2px 6px;font-size:11px;color:var(--text-color)}
 .pt-assignee-pill .av{width:14px;height:14px;border-radius:50%;background:var(--out2);display:inline-flex;align-items:center;justify-content:center;font-size:8px}
-.pt-card-progress{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-color)}
 .pt-add-card{border:1px solid var(--el-border-color);background:var(--el-bg);border-radius:6px;padding:8px;display:flex;align-items:center;justify-content:center;color:var(--struct-icon);cursor:pointer}
 /* Completed strip: lives only in the cards row now (its chevron is
    a separate element up in the chip row, see .pt-completed-chev) so
@@ -875,6 +918,18 @@ table.pt tbody tr:hover td{filter:brightness(.97)}
 .pt-gantt-info .sel{flex:0 0 175px;min-width:0;padding:0 12px;align-self:stretch;display:flex;align-items:center;overflow:hidden;border-right:1px solid var(--out2)}
 .pt-gantt-info .sel .pt-pill{overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .pt-gantt-info .cur{flex:0 0 90px;padding:0 12px;text-align:right;font-size:13px;color:var(--text-color);align-self:stretch;display:flex;align-items:center;justify-content:flex-end}
+/* Audit finding #9: at narrow viewports the sticky info column's full
+   505px width (chk 40 + name 200 + sel 175 + cur 90) can exceed the
+   entire viewport, so the pinned column alone fills the screen and
+   hides every timeline/date column behind an unreachable horizontal
+   scroll. Drop the two lower-priority sub-columns and shrink the name
+   column so the sticky rail stays reasonably sized and the timeline
+   remains reachable. */
+@media (max-width:640px){
+  .pt-gantt-info{flex-basis:240px}
+  .pt-gantt-info .name{flex-basis:200px}
+  .pt-gantt-info .sel,.pt-gantt-info .cur{display:none}
+}
 /* Header labels (Task Name / Single Select / Currency + month/
    quarter/year) are all semibold and use the theme's text-color
    token, not a hardcoded/inherited color. */
@@ -985,6 +1040,9 @@ table.pt tbody tr:hover td{filter:brightness(.97)}
 .ptgr-row{display:flex;align-items:stretch;border-bottom:1px solid var(--out2)}
 .ptgr-row.head{position:sticky;top:0;z-index:3;background:var(--struct-bg)}
 .ptgr-info{flex:0 0 340px;box-sizing:border-box;padding:10px 16px;display:flex;align-items:center;gap:8px;position:sticky;left:0;z-index:2;background:var(--canvas-bg);border-right:1px solid var(--out1)}
+/* Audit finding #9: same fix as .pt-gantt-info — a 340px sticky rail
+   can exceed a narrow phone viewport outright. */
+@media (max-width:640px){.ptgr-info{flex-basis:200px;padding:10px 12px}}
 .ptgr-row.head .ptgr-info{background:var(--struct-bg);z-index:4;font-weight:600;color:var(--text-color);font-size:13px;line-height:1.3}
 .ptgr-row.group .ptgr-info{font-weight:600;font-size:14px;color:var(--text-color);cursor:pointer}
 .ptgr-row.group .ptgr-info .chev{width:14px;height:14px;color:var(--struct-icon);flex:none}
