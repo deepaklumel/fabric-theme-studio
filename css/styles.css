@@ -609,7 +609,13 @@ svg text{font-family:var(--font-family)}
 .wcag-header{
   display:flex;align-items:center;justify-content:space-between;
   padding:12px 14px 10px;border-bottom:1px solid #f0f0f0;flex:none;
+  cursor:move;user-select:none;touch-action:none;
 }
+/* Once the panel has been dragged, it's positioned via inline
+   left/top (JS) rather than the default right-offset — drop the
+   right-offset transition so it doesn't fight the drag position. */
+.wcag-panel.dragged{transition:none}
+.wcag-panel.dragged,.app.panel-open ~ .wcag-panel.dragged,.app.panel-open .wcag-panel.dragged{right:auto}
 .wcag-title{font-size:13px;font-weight:600;color:#242424}
 .wcag-close{
   width:28px;height:28px;border:none;background:transparent;
