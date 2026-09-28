@@ -1073,11 +1073,33 @@ table.pt tbody tr:hover td{filter:brightness(.97)}
 .ptgr-taskbar{position:absolute;height:34px;border-radius:6px;background:var(--p1);color:var(--p1-text);display:flex;align-items:center;padding:0 12px;font-size:12.5px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;box-sizing:border-box}
 
 /* ── Planning "Tree view" ──
-   A root summary card fans out via curved connectors to one card
-   per category, mirroring the reference mind-map/tree layout. Cards
-   reuse the theme's element tokens (background/border/radius/
-   shadow) since they're the same kind of "visual card" concept as
-   the writeback matrix, just laid out as a tree instead of a grid. */
+   A root summary card fans out via curved connectors through each
+   hierarchy level, matching the Planning tree visual: fixed-size
+   cards with a simulation-status left bar, primary measure on top,
+   every measure listed on a Subtle Fill strip below, and a round collapse
+   chevron on every parent's right edge. Uses structural tokens (not
+   the Visuals-tab element tokens) since Planning has no element
+   styling — see the colour mapping below. */
+/* Colour mapping — the tree visual's own Display Settings dropdowns,
+   matched by value to the closest Classic-theme variable (designer's
+   mapping). "Subtle Fill" below is the UI name; its JSON key is
+   structuralColors.background (see buildColors()).
+     Main Color (tree backdrop) ... page.canvas.background     (--canvas-bg)
+     Header BG (top half) ......... elements.background.color  (--el-bg)
+     Header font color (top half) . typography.color           (--text-color)
+     Font Color (bottom half) ..... typography.color           (--text-color)
+     Non-simulation nodes BG
+       (bottom half) .............. "Subtle Fill"              (--struct-bg)
+     Composite Nodes .............. elements.background.color  (--el-bg) — not rendered in the preview
+     Connectors ................... structuralColors.outline2  (--out2)
+     Node divider (top/bottom) .... structuralColors.outline2  (--out2), same as connectors
+     Accent Bar (status) .......... primaryColors[0]           (--p1) — default and neutral simulation
+       positive simulation ........ semantic.positive          (--pos)
+       negative simulation ........ semantic.negative          (--neg)
+   Not a product dropdown — fixed choice:
+     collapse "beak" .............. same fill as Header BG (--el-bg), glyph --struct-icon
+   Out of scope for the preview: BG Color (has no visible effect) and
+   Highlighted (selection-path highlight on connectors). */
 .plan-tree-wrap{flex:1;min-height:0;overflow:auto;background:var(--canvas-bg)}
 .plan-table-scroll{flex:1;min-height:0;overflow:auto;background:var(--canvas-bg)}
 #planTable{width:100%;border-collapse:separate;border-spacing:0}
@@ -1101,17 +1123,40 @@ table.pt tbody tr:hover td{filter:brightness(.97)}
 #planTable .plan-ruler-corner{vertical-align:middle;text-align:center;padding:4px;color:var(--struct-icon)}
 #planTable .plan-col-gap-row th.plan-col-gap{height:14px;padding:0;border:none!important;background:transparent!important}
 #planTable thead tr:last-child th{padding-top:16px;padding-bottom:16px}
-.plan-tree{position:relative}
-.plan-tree-card{position:absolute;width:260px;background:var(--struct-subtle);border:var(--el-border-w) solid var(--el-border-color);border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.08);padding:12px 14px;box-sizing:border-box}
-.plan-tree-card.root{border-color:var(--out1)}
-.plan-tree-card .hd{font-size:13.5px;font-weight:700;color:var(--text-color);padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid var(--out2)}
-.plan-tree-card .row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text-color);padding:2px 0}
-.plan-tree-card .row .lbl{opacity:.7}
-.plan-tree-card .row .val{font-variant-numeric:tabular-nums;font-weight:500}
+.plan-tree{position:relative;margin:0 auto}
+/* Node anatomy (measured off the Planning tree visual):
+     head  — title 12.5/600, then the primary measure 11.5/700
+     body  — every measure listed 11/400 on the Subtle Fill strip,
+             separated from head by a divider inset to the text edges
+   No outline border — just the 3px status bar and a soft shadow.
+   The shadow lives on the .plan-tree-node wrapper (drop-shadow filter)
+   rather than the card, so the card and its collapse "beak" share one
+   continuous silhouette with no seam where they meet. */
+.plan-tree-node{position:absolute;width:256px;filter:drop-shadow(0 0 .6px rgba(0,0,0,.3)) drop-shadow(0 1.5px 3px rgba(0,0,0,.10))}
+/* Dark canvases: a black shadow has nothing to darken (and in some dark
+   themes the node header matches the canvas), so use a grey hairline
+   edge plus a soft grey shadow as the dark-mode counterpart. */
+[data-tone=dark] .plan-tree-node{filter:drop-shadow(0 0 .6px rgba(190,190,200,.55)) drop-shadow(0 1.5px 4px rgba(150,150,160,.22))}
+.plan-tree-card{position:relative;width:256px;box-sizing:border-box;overflow:hidden;background:var(--el-bg);border-left:3px solid var(--p1);border-radius:3px;font-family:var(--font-family);color:var(--text-color);white-space:nowrap}
+.plan-tree-card.sim-pos{border-left-color:var(--pos)}
+.plan-tree-card.sim-neg{border-left-color:var(--neg)}
+.plan-tree-card .head{height:44px;box-sizing:border-box;padding:5px 11px 5px 8px}
+.plan-tree-card .hd{font-size:12.5px;font-weight:600;line-height:17px;overflow:hidden;text-overflow:ellipsis}
+.plan-tree-card .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.plan-tree-card .head .row{font-size:11.5px;font-weight:700;line-height:17px}
+.plan-tree-card .body{position:relative;background:var(--struct-bg);padding:3px 11px 4px 8px}
+.plan-tree-card .body::before{content:'';position:absolute;top:0;left:8px;right:11px;height:1px;background:var(--out2)}
+.plan-tree-card .body .row{font-size:11px;line-height:17.5px}
+.plan-tree-card .row span:first-child{overflow:hidden;text-overflow:ellipsis}
+.plan-tree-card .val{flex:none;font-variant-numeric:tabular-nums}
 .plan-tree-conn{position:absolute;top:0;left:0;pointer-events:none}
-.plan-tree-conn path{fill:none;stroke:var(--out2);stroke-width:1.2}
-.plan-tree-count{position:absolute;width:20px;height:20px;border-radius:50%;background:var(--el-bg);border:1px solid var(--out1);display:flex;align-items:center;justify-content:center;color:var(--struct-icon)}
-.plan-tree-count svg{width:8px;height:8px}
+.plan-tree-conn path{fill:none;stroke:var(--out2);stroke-width:1}
+/* Collapse "beak": a roomy disc in the card's own fill, centred just
+   past the card's right edge at the node's vertical middle, so it
+   reads as a rounded bump grown out of the node (speech-bubble tail)
+   rather than a separate button stuck on top. */
+.plan-tree-beak{position:absolute;width:20px;height:20px;border-radius:50%;background:var(--el-bg);display:flex;align-items:center;justify-content:center;color:var(--struct-icon)}
+.plan-tree-beak svg{width:8px;height:8px;flex:none}
 
   .pg{display:none;flex-direction:column;gap:var(--vgap);flex:1;min-height:0;overflow:hidden}
   .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);flex:none;height:82px}

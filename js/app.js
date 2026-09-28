@@ -187,6 +187,9 @@ function applyTheme(){
   root.style.setProperty('--struct-accent',sc.accent);root.style.setProperty('--struct-subtle',sc.subtleFill);
   root.style.setProperty('--pos',c.semantic.positive);root.style.setProperty('--neg',c.semantic.negative);root.style.setProperty('--neu',c.semantic.neutral);
   root.style.setProperty('--canvas-bg',p.canvas.background.color);
+  // Tone flag for styles that can't be expressed as a single token —
+  // e.g. black drop shadows vanish on a dark canvas and need a grey one.
+  root.dataset.tone=lum(p.canvas.background.color)<0.18?'dark':'light';
   root.style.setProperty('--canvas-border-color',p.canvas.border.color);
   root.style.setProperty('--canvas-border-w',p.canvas.border.isEnabled?p.canvas.border.width+'px':'0px');
   const cr=p.canvas.cornerRadius;root.style.setProperty('--canvas-radius',cr.isEnabled?cr.radiusTopLeft+'px':'0px');
@@ -450,7 +453,12 @@ function buildColors(){
 
   buildColorGroup(host,'Structural',Object.values(c.structuralColors),(body,resets)=>{
     const grid=document.createElement('div');grid.className='swcards';
-    [['outline1','Outline 1'],['outline2','Outline 2'],['background','Background'],['icon','Icon'],['accent','Accent'],['subtleFill','Subtle Fill']].forEach(([k,l])=>{
+    // UI labels for background/subtleFill are deliberately swapped vs the
+    // JSON keys: "Subtle Fill" is the team's name for the slightly-grey
+    // fill that sits on the pure canvas (the `background` key, #F5F5F5 in
+    // Classic), and `subtleFill` holds the pure white/dark base. JSON
+    // keys are untouched so exported themes keep the Power BI schema.
+    [['outline1','Outline 1'],['outline2','Outline 2'],['background','Subtle Fill'],['icon','Icon'],['accent','Accent'],['subtleFill','Background']].forEach(([k,l])=>{
       const ctrl=mkSwblock(grid,l,THEME_ORIGIN.theme.colors.structuralColors[k],()=>c.structuralColors[k],v=>{c.structuralColors[k]=v;});
       resets.push(ctrl.reset);refreshers.push({tab:'colors',fn:ctrl.refresh});});
     body.appendChild(grid);},openNames.has('Structural'));
@@ -1304,20 +1312,22 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
    old flat "All" fanning out directly to 10 categories at once. Reuses
    the exact same Group>Category figures as the Planning "Table view"
    below (GROUPS), so the two views agree with each other, and reads
-   as an actual drill-down hierarchy instead of one wide, shallow fan. */
+   as an actual drill-down hierarchy instead of one wide, shallow fan.
+   `sim` marks a node that has been simulated ('pos' / 'neg'), which
+   recolours its left status bar — one of each, for demonstration. */
 (function(){
   const root=document.getElementById('planTree');
   if(!root)return;
   const GROUPS=[
     {name:'Hard Goods',cats:[
-      {name:'Electronics',sales:482.3,profit:86.4},
+      {name:'Electronics',sales:482.3,profit:86.4,sim:'pos'},
       {name:'Home Appliances',sales:264.9,profit:47.8},
       {name:'Automotive Accessories',sales:87.5,profit:15.8}
     ]},
     {name:'Soft Goods',cats:[
       {name:'Apparel',sales:305.8,profit:54.3},
       {name:'Footwear',sales:178.4,profit:31.0},
-      {name:'Personal Care',sales:143.2,profit:25.6}
+      {name:'Personal Care',sales:143.2,profit:25.6,sim:'neg'}
     ]},
     {name:'Office & Living',cats:[
       {name:'Furniture',sales:210.5,profit:38.9},
@@ -1328,75 +1338,78 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
       {name:'Beauty & Wellness',sales:198.3,profit:35.6}
     ]}
   ];
-  function fmt(v){return v>=1000?(v/1000).toFixed(2)+'M':v.toFixed(2)+'k';}
-  GROUPS.forEach(g=>{
-    g.sales=g.cats.reduce((s,c)=>s+c.sales,0);
-    g.profit=g.cats.reduce((s,c)=>s+c.profit,0);
-  });
-  const totalSales=GROUPS.reduce((s,g)=>s+g.sales,0);
-  const totalProfit=GROUPS.reduce((s,g)=>s+g.profit,0);
+  // Values are in thousands; shown the way the Planning tree visual
+  // formats them — always millions, 2 decimals, lower-case unit, no
+  // currency symbol (e.g. 0.87m, 0.00m), never switching to "k".
+  function fmt(v){return (v/1000).toFixed(2)+'m';}
 
-  const CARD_W=230, CARD_H=88, GAP_Y=14, GROUP_GAP=26, GAP_X=70, LEFT_X=32;
-  const col2X=LEFT_X+CARD_W+GAP_X;   // Group column
-  const col3X=col2X+CARD_W+GAP_X;    // Category column
-  const topY=40;
+  // Normalise into one generic node shape so the layout below can
+  // recurse to any depth: {name, sales, profit, children}.
+  const tree={name:'All',children:GROUPS.map(g=>({name:g.name,children:g.cats.map(c=>({name:c.name,sales:c.sales,profit:c.profit,sim:c.sim}))}))};
+  (function sum(n){
+    if(!n.children)return;
+    n.children.forEach(sum);
+    n.sales=n.children.reduce((s,c)=>s+c.sales,0);
+    n.profit=n.children.reduce((s,c)=>s+c.profit,0);
+  })(tree);
 
-  function card(x,y,title,rows,extraClass){
-    return `<div class="plan-tree-card${extraClass?' '+extraClass:''}" style="left:${x}px;top:${topY+y}px;width:${CARD_W}px">
-      <div class="hd">${title}</div>
-      ${rows.map(r=>`<div class="row"><span class="lbl">${r[0]}</span><span class="val">${r[1]}</span></div>`).join('')}
+  // Geometry measured off the Planning tree visual: fixed-size cards,
+  // tight sibling spacing (no extra gap between groups), and each
+  // parent vertically centred between its first and last child.
+  // Card height = 44px head + 3/4px body padding + 17.5px per listed
+  // measure (Sales, Profit) — keep in sync with the .plan-tree-card CSS.
+  const CARD_W=256, CARD_H=86, GAP_Y=7, GAP_X=80, PAD=20;
+  // Beak: 20px disc centred 3px past the right edge, vertically centred
+  // on the node. Connectors run beak-to-beak height, so a single child
+  // lines up as a straight horizontal line.
+  const BEAK_R=10, BEAK_DX=3, BEAK_Y=CARD_H/2;
+  let leafY=PAD;
+  (function place(n,depth){
+    n.x=PAD+depth*(CARD_W+GAP_X);
+    if(n.children){
+      n.children.forEach(c=>place(c,depth+1));
+      const first=n.children[0],last=n.children[n.children.length-1];
+      n.y=(first.y+last.y)/2;
+    }else{
+      n.y=leafY;leafY+=CARD_H+GAP_Y;
+    }
+  })(tree,0);
+
+  // Card anatomy: head = title + primary measure (bold); body = every
+  // measure listed (primary repeated, then secondary) below a divider.
+  const MEASURES=[['Sum of Sales','sales'],['Sum of Profit','profit']];
+  function card(n){
+    const row=([lbl,k])=>`<div class="row"><span>${lbl}</span><span class="val">${fmt(n[k])}</span></div>`;
+    const beak=n.children?`<div class="plan-tree-beak" style="left:${CARD_W+BEAK_DX-BEAK_R}px;top:${BEAK_Y-BEAK_R}px"><svg viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 1L2.4 4l2.8 3"/></svg></div>`:'';
+    return `<div class="plan-tree-node" style="left:${n.x}px;top:${n.y}px">
+      <div class="plan-tree-card${n.sim?' sim-'+n.sim:''}">
+        <div class="head"><div class="hd">${n.name}</div>${row(MEASURES[0])}</div>
+        <div class="body">${MEASURES.map(row).join('')}</div>
+      </div>${beak}
     </div>`;
   }
   function bezier(x1,y1,x2,y2){
     const midX=(x1+x2)/2;
     return `<path d="M${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}"/>`;
   }
-  function countIcon(x,y){
-    return `<div class="plan-tree-count" style="left:${x-10}px;top:${y-10}px"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7.5 2.5L3 6l4.5 3.5"/></svg></div>`;
-  }
 
-  // Pass 1: lay out leaf Category cards top-to-bottom, grouped, with
-  // extra vertical space between groups so the clustering is legible
-  // at a glance. Track each group's vertical span as we go.
-  let cursorY=0;
-  const groupLayout=GROUPS.map(g=>{
-    const catYs=g.cats.map(()=>{const y=cursorY;cursorY+=CARD_H+GAP_Y;return y;});
-    cursorY+=GROUP_GAP-GAP_Y; // swap the last child's gap for the wider group gap
-    const startY=catYs[0], endY=catYs[catYs.length-1];
-    const groupY=(startY+endY)/2;
-    return{group:g,catYs,groupY};
-  });
-  cursorY-=GROUP_GAP;
-  const totalCatH=cursorY;
-
-  // Pass 2: root sits centered on the full span of group centers.
-  const groupCYs=groupLayout.map(gl=>gl.groupY+CARD_H/2);
-  const rootY=(Math.min(...groupCYs)+Math.max(...groupCYs))/2-CARD_H/2;
-
-  let cards=card(LEFT_X,rootY,'All',[['Sum of Sales','$'+fmt(totalSales)],['Sum of Profit','$'+fmt(totalProfit)]],'root');
-  let conns='';
-  const rootCX=LEFT_X+CARD_W, rootCY=topY+rootY+CARD_H/2;
-  let icons=countIcon(rootCX,rootCY);
-
-  groupLayout.forEach(gl=>{
-    const groupCY=topY+gl.groupY+CARD_H/2;
-    conns+=bezier(rootCX,rootCY,col2X,groupCY);
-    cards+=card(col2X,gl.groupY,gl.group.name,[['Sum of Sales','$'+fmt(gl.group.sales)],['Sum of Profit','$'+fmt(gl.group.profit)]]);
-    const groupCX=col2X+CARD_W;
-    icons+=countIcon(groupCX,groupCY);
-    gl.group.cats.forEach((c,ci)=>{
-      const y=gl.catYs[ci];
-      cards+=card(col3X,y,c.name,[['Sum of Sales','$'+fmt(c.sales)],['Sum of Profit','$'+fmt(c.profit)]]);
-      const childCY=topY+y+CARD_H/2;
-      conns+=bezier(groupCX,groupCY,col3X,childCY);
+  let cards='',conns='';
+  (function draw(n){
+    cards+=card(n);
+    if(!n.children)return;
+    const px=n.x+CARD_W+BEAK_DX+BEAK_R, py=n.y+BEAK_Y;
+    n.children.forEach(c=>{
+      conns+=bezier(px,py,c.x,c.y+BEAK_Y);
+      draw(c);
     });
-  });
+  })(tree);
 
-  const totalWidth=col3X+CARD_W+60;
-  const totalHeightPx=topY+Math.max(totalCatH,rootY+CARD_H)+40;
+  let maxX=0;(function mx(n){maxX=Math.max(maxX,n.x);(n.children||[]).forEach(mx);})(tree);
+  const totalWidth=maxX+CARD_W+PAD;
+  const totalHeightPx=leafY-GAP_Y+PAD;
   root.style.width=totalWidth+'px';
   root.style.height=totalHeightPx+'px';
-  root.innerHTML=`<svg class="plan-tree-conn" width="${totalWidth}" height="${totalHeightPx}">${conns}</svg>${cards}${icons}`;
+  root.innerHTML=`<svg class="plan-tree-conn" width="${totalWidth}" height="${totalHeightPx}">${conns}</svg>${cards}`;
 })();
 
 /* ── Planning Table view — flattened Group>Category hierarchy with
