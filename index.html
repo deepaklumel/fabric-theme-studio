@@ -1,11 +1,12 @@
 <!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plan Theme Studio</title>
+<title>Fabric Planning Theme Studio</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/styles.css">
 
 
+<!-- ── Item header (the app's own title bar) ── -->
 <header class="app-header">
   <svg class="ah-logo" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path fill-rule="evenodd" clip-rule="evenodd" d="M5.64029 31.5994L5.05445 33.7436C4.83612 34.4294 4.53029 35.4369 4.36529 36.3336C4.13029 36.9536 4.00195 37.6261 4.00195 38.3286C4.00195 41.2253 6.19029 43.6103 9.00362 43.9219C9.79529 44.0361 10.6911 44.0303 11.6953 43.8828L16.3086 43.2461C17.4686 43.0861 18.4211 42.2486 18.7294 41.1186L21.9044 29.4569L5.64029 31.5994Z" fill="url(#paint0_linear_1780_20147)"/>
@@ -71,295 +72,125 @@
   </svg>
   <div class="ah-brand">
     <span class="ah-title">Fabric Planning Theme Studio</span>
-    <span class="ah-desc">Preview and validate Microsoft Fabric theme tokens across live dashboard visuals</span>
+    <span class="ah-desc">Preview and validate Microsoft Fabric theme tokens across live report visuals</span>
   </div>
-  <div class="ah-space"></div>
 </header>
 
-<!-- Floating toolbar -->
-<!-- Hidden toggle target for JS wiring -->
+<!-- Hidden toggle target kept for JS wiring -->
 <button id="panelToggle" style="display:none"><span class="dt-ic"></span></button>
 
-<div class="ftb-wrap" id="ftbWrap">
-<div class="ftb-fade ftb-fade-l" id="ftbFadeL"></div>
-<div class="ftb-fade ftb-fade-r" id="ftbFadeR"></div>
-<div class="ftb" id="floatingToolbar">
-
-  <!-- Theme picker — palette icon + name + chevron -->
-  <div class="ftb-theme-pick" id="ftbThemePick" data-priority="1">
-    <button class="ftb-btn ftb-theme-btn" id="ftbThemeBtn" data-tip="Switch theme">
-      <svg viewBox="0 0 20 20" fill="none">
-        <rect id="ftbThemeIconFill1" x="3" y="3" width="6.2" height="6.2" rx="1.3" fill="currentColor"/>
-        <rect id="ftbThemeIconFill2" x="10.8" y="3" width="6.2" height="6.2" rx="1.3" fill="currentColor"/>
-        <rect id="ftbThemeIconFill3" x="3" y="10.8" width="6.2" height="6.2" rx="1.3" fill="currentColor"/>
-        <rect id="ftbThemeIconFill4" x="10.8" y="10.8" width="6.2" height="6.2" rx="1.3" fill="currentColor"/>
-      </svg>
-      <span id="ftbThemeName">Classic Theme</span>
-      <svg class="ftb-chev" viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
-    </button>
-    <div class="ftb-theme-drop" id="ftbThemeDrop"></div>
-  </div>
-
-  <!-- New Theme -->
-  <button class="ftb-btn ftb-btn-create" id="newThemeBtn" data-tip="Create a new theme" data-priority="2">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="10" cy="10" r="7.5"/>
-      <path d="M10 7v6M7 10h6"/>
-    </svg>
-    <span>New Theme</span>
-  </button>
-
-  <div class="ftb-sep"></div>
-
-  <!-- Undo — corner-hook return arrow, deliberately NOT a circular arc
-       like "Reset all" below, so the two aren't a near-duplicate
-       silhouette at toolbar icon size (16px). -->
-  <button class="ftb-btn" id="undoBtn" data-tip="Undo  ⌘Z" disabled data-priority="3">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M8 6 4 10l4 4"/>
-      <path d="M4 10h8a5 5 0 0 1 5 5v1"/>
-    </svg>
-    <span>Undo</span>
-  </button>
-
-  <!-- Redo — mirror of Undo's corner-hook arrow -->
-  <button class="ftb-btn" id="redoBtn" data-tip="Redo  ⌘⇧Z" disabled data-priority="3">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 6 16 10l-4 4"/>
-      <path d="M16 10H8a5 5 0 0 0-5 5v1"/>
-    </svg>
-    <span>Redo</span>
-  </button>
-
-  <div class="ftb-sep"></div>
-
-  <!-- Save -->
-  <button class="ftb-btn ftb-btn-save" id="saveBtn" data-tip="Save theme" disabled data-priority="2">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M15 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v7a2 2 0 0 1-2 2Z"/>
-      <path d="M13 17v-5H7v5M7 3v4h5"/>
-    </svg>
-    <span id="saveBtnLabel">Save</span>
-  </button>
-
-  <div class="ftb-sep"></div>
-
-  <!-- Accessibility — combines the former separate "WCAG" and "Color
-       Sim" buttons into one clearly-labeled entry point, with the two
-       tools as named sub-options underneath (contrast check vs.
-       colour-blindness simulation are related but distinct actions,
-       so they stay as separate items rather than one merged feature). -->
-  <div class="ftb-theme-pick" id="a11yPick" data-priority="4">
-    <button class="ftb-theme-btn" id="a11yBtn" data-tip="Accessibility">
-      <!-- Universal-access "person" glyph — more immediately readable
-           as "accessibility" than a generic info-circle. -->
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="10" cy="4.3" r="1.8" fill="currentColor" stroke="none"/>
-        <path d="M4.5 7.8h11M10 7.8v4.3M6.8 16.2l3.2-4.1 3.2 4.1"/>
-      </svg>
-      <span>Accessibility</span>
-      <svg class="ftb-chev" viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
-    </button>
-    <div class="pt-layout-drop" id="a11yDrop">
-      <button class="pt-layout-opt" id="wcagBtn" data-tip="WCAG contrast validation">
-        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="10" cy="10" r="7.5"/>
-          <path d="M10 6v5M10 14v.5"/>
-        </svg>
-        Check contrast (WCAG)
-      </button>
-      <button class="pt-layout-opt" id="cbsimBtn" data-tip="Color Vision Simulation">
-        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10Z"/>
-          <circle cx="10" cy="10" r="2.2"/>
-        </svg>
-        Simulate color blindness
-      </button>
+<!-- ── Ribbon: tab strip (sheet types) + command bar (DESIGN.md → Ribbon) ── -->
+<div class="ribbon">
+  <div class="ribbon-tabs">
+    <!-- Feature tabs. Sheets are switched from the Explorer rail, not here (DESIGN.md → Layout). -->
+    <div class="tablist-outer">
+      <div class="tablist" role="tablist" aria-label="Ribbon">
+        <button class="tab active" role="tab" aria-selected="true"><span class="tab-label">Theme</span></button>
+      </div>
+    </div>
+    <!-- Item-level cluster: Small buttons, the far-right one is the ribbon's single Primary -->
+    <div class="ribbon-cluster">
+      <button class="btn btn-default btn-sm" id="introBtn" data-tip="Take a quick tour of the studio"><i data-icon="question16"></i><span>Tour</span></button>
+      <button class="btn btn-default btn-sm" id="exportBtn" data-tip="Export the theme as JSON"><i data-icon="export16"></i><span>Export</span></button>
+      <button class="btn btn-primary btn-sm" id="saveBtn" data-tip="Save theme" disabled><i data-icon="save16"></i><span id="saveBtnLabel">Save</span></button>
     </div>
   </div>
 
-  <div class="ftb-sep"></div>
+  <div class="cmdbar-wrap ftb-wrap" id="ftbWrap">
+    <div class="ftb-fade ftb-fade-l" id="ftbFadeL"></div>
+    <div class="ftb-fade ftb-fade-r" id="ftbFadeR"></div>
+    <div class="cmdbar ftb" id="floatingToolbar" role="toolbar" aria-label="Theme commands">
 
-  <!-- Export — file with arrow up -->
-  <button class="ftb-btn" id="exportBtn" data-tip="Export JSON" data-priority="3">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3 13v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3"/>
-      <path d="M10 13V3"/>
-      <path d="M7 6l3-3 3 3"/>
-    </svg>
-    <span>Export</span>
-  </button>
+      <!-- Group: theme -->
+      <div class="ftb-theme-pick cmd-pick" id="ftbThemePick" data-priority="1">
+        <button class="btn btn-subtle cmd ftb-theme-btn" id="ftbThemeBtn" data-tip="Switch theme" aria-haspopup="true">
+          <svg class="theme-chip" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
+            <rect id="ftbThemeIconFill1" x="3" y="3" width="6.2" height="6.2" rx="1.3" fill="currentColor"/>
+            <rect id="ftbThemeIconFill2" x="10.8" y="3" width="6.2" height="6.2" rx="1.3" fill="currentColor"/>
+            <rect id="ftbThemeIconFill3" x="3" y="10.8" width="6.2" height="6.2" rx="1.3" fill="currentColor"/>
+            <rect id="ftbThemeIconFill4" x="10.8" y="10.8" width="6.2" height="6.2" rx="1.3" fill="currentColor"/>
+          </svg>
+          <span class="cmd-label" id="ftbThemeName">Classic Theme</span><i data-icon="chevronDown12" class="mb-chev"></i>
+        </button>
+        <div class="menu ftb-theme-drop" id="ftbThemeDrop"></div>
+      </div>
+      <button class="btn btn-subtle cmd ftb-btn ftb-btn-create" id="newThemeBtn" data-tip="Create a theme" data-priority="2"><i data-icon="add" class="ri-validation"></i><span class="cmd-label">New theme</span></button>
 
-  <!-- Spacer -->
-  <div class="ftb-space"></div>
+      <div class="cmd-divider ftb-sep" role="separator"></div>
 
-  <!-- Delete theme -->
-  <button class="ftb-btn ftb-btn-delete" id="deleteThemeBtn" data-tip="Delete this theme" disabled data-priority="2">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3 6h14M8 6V4h4v2M16 6l-1 11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/>
-      <path d="M8.5 9v5M11.5 9v5"/>
-    </svg>
-    <span>Delete</span>
-  </button>
+      <!-- Group: edit (widely recognized → icon-only) -->
+      <button class="btn btn-subtle cmd cmd-icon ftb-btn" id="undoBtn" data-tip="Undo (Ctrl+Z)" disabled data-priority="3"><i data-icon="undo" class="ri-misc"></i></button>
+      <button class="btn btn-subtle cmd cmd-icon ftb-btn" id="redoBtn" data-tip="Redo (Ctrl+Shift+Z)" disabled data-priority="3"><i data-icon="redo" class="ri-misc"></i></button>
 
-  <!-- Reset — counter-clockwise arrow, danger -->
-  <button class="ftb-btn" id="resetAllBtn" data-tip="Reset all to defaults" data-priority="4">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4.5 8A6 6 0 0 1 16 10a6 6 0 0 1-6 6 6 6 0 0 1-5.5-3.6"/>
-      <path d="M4.5 4.5v4h4"/>
-    </svg>
-    <span>Reset all</span>
-  </button>
+      <div class="cmd-divider ftb-sep" role="separator"></div>
 
-</div>
-</div>
+      <!-- Group: checks -->
+      <div class="ftb-theme-pick cmd-pick" id="a11yPick" data-priority="4">
+        <button class="btn btn-subtle cmd ftb-theme-btn" id="a11yBtn" data-tip="Accessibility checks" aria-haspopup="true"><i data-icon="accessibility" class="ri-monitoring"></i><span class="cmd-label">Accessibility</span><i data-icon="chevronDown12" class="mb-chev"></i></button>
+        <div class="menu pt-layout-drop" id="a11yDrop" role="menu">
+          <button class="menu-item pt-layout-opt" id="wcagBtn" role="menuitem"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="contrast16" class="mi-icon"></i><span class="mi-label">Check contrast</span></button>
+          <button class="menu-item pt-layout-opt" id="cbsimBtn" role="menuitemcheckbox"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="eye16" class="mi-icon"></i><span class="mi-label">Simulate color blindness</span></button>
+        </div>
+      </div>
 
-<div class="mod-switch-bar" id="modSwitchBar">
-  <div class="mod-switch-outer" id="modSwitchOuter">
-  <div class="ftb-fade ftb-fade-l mod-switch-fade" id="modSwitchFadeL"></div>
-  <div class="ftb-fade ftb-fade-r mod-switch-fade" id="modSwitchFadeR"></div>
-  <div class="mod-switch" id="modSwitch" role="tablist">
-    <button class="mod-switch-btn active" id="modBtnIntelligence" data-module="intelligence" role="tab" aria-selected="true">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15V9M8 15V5M13 15v-3M17 15V7"/></svg>
-      Intelligence
-    </button>
-    <button class="mod-switch-btn" id="modBtnPlanning" data-module="planning" role="tab" aria-selected="false">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3" width="15" height="14" rx="1.3"/><path d="M2.5 8h15M7 8v9"/></svg>
-      Planning
-    </button>
-    <button class="mod-switch-btn" id="modBtnPowerTable" data-module="powertable" role="tab" aria-selected="false">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="6" height="6" rx="1"/><rect x="11.5" y="2.5" width="6" height="6" rx="1"/><rect x="2.5" y="11.5" width="6" height="6" rx="1"/><rect x="11.5" y="11.5" width="6" height="6" rx="1"/></svg>
-      PowerTable
-    </button>
-  </div>
-  </div>
+      <div class="cmd-divider ftb-sep" role="separator"></div>
 
-  <!-- Layout switcher — only relevant (and shown) while on PowerTable -->
-  <div class="pt-layout-pick" id="ptLayoutPick" style="display:none">
-    <button class="pt-layout-btn" id="ptLayoutBtn">
-      <span class="pt-layout-btn-icon" id="ptLayoutIcon"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="15" height="13" rx="1.3"/><path d="M2.5 8h15M8 8v8.5"/></svg></span>
-      <span id="ptLayoutLabel">Table</span>
-      <svg class="ftb-chev" viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
-    </button>
-    <div class="pt-layout-drop" id="ptLayoutDrop">
-      <button class="pt-layout-opt active" data-layout="table">
-        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="15" height="13" rx="1.3"/><path d="M2.5 8h15M8 8v8.5"/></svg>
-        Table
-      </button>
-      <button class="pt-layout-opt" data-layout="gantt">
-        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5h7M2.5 10h11M2.5 15h5" stroke-linecap="round"/><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="16" cy="10" r="1.6" fill="currentColor" stroke="none"/><circle cx="10" cy="15" r="1.6" fill="currentColor" stroke="none"/></svg>
-        Gantt
-      </button>
-      <button class="pt-layout-opt" data-layout="ganttres">
-        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="4.5" r="2"/><path d="M2 12.5c0-2 1.3-3 3-3s3 1 3 3"/><path d="M11 6h6M11 10h4M11 14h6" stroke-linecap="round"/></svg>
-        Gantt resources
-      </button>
-      <button class="pt-layout-opt" data-layout="calendar">
-        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="15" height="13" rx="1.3"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3"/></svg>
-        Calendar
-      </button>
-      <button class="pt-layout-opt" data-layout="kanban">
-        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="15" height="13" rx="1.3"/><path d="M8 3.5v13M13.5 3.5v13"/></svg>
-        Kanban
-      </button>
-    </div>
-  </div>
+      <!-- Group: manage -->
+      <button class="btn btn-subtle cmd ftb-btn" id="resetAllBtn" data-tip="Reset all changes to this theme" data-priority="4"><i data-icon="reset" class="ri-error"></i><span class="cmd-label">Reset all</span></button>
+      <button class="btn btn-subtle cmd cmd-icon ftb-btn ftb-btn-delete" id="deleteThemeBtn" data-tip="Delete this theme" disabled data-priority="2"><i data-icon="delete" class="ri-error"></i></button>
 
-  <!-- Layout switcher for Planning — only shown while on Planning -->
-  <div class="pt-layout-pick" id="planLayoutPick" style="display:none">
-    <button class="pt-layout-btn" id="planLayoutBtn">
-      <span class="pt-layout-btn-icon" id="planLayoutIcon"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="4" r="2"/><circle cx="4" cy="16" r="2"/><circle cx="16" cy="16" r="2"/><path d="M10 6v4M10 10L4 14M10 10l6 4"/></svg></span>
-      <span id="planLayoutLabel">Hierarchy</span>
-      <svg class="ftb-chev" viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
-    </button>
-    <div class="pt-layout-drop" id="planLayoutDrop">
-      <button class="pt-layout-opt active" data-layout="matrix">
-        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="4" r="2"/><circle cx="4" cy="16" r="2"/><circle cx="16" cy="16" r="2"/><path d="M10 6v4M10 10L4 14M10 10l6 4"/></svg>
-        Hierarchy
-      </button>
-      <button class="pt-layout-opt" data-layout="table">
-        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="15" height="13" rx="1.3"/><path d="M2.5 8h15M8 8v8.5"/></svg>
-        Table
-      </button>
-      <button class="pt-layout-opt" data-layout="tree">
-        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="10" r="2"/><circle cx="16" cy="4" r="2"/><circle cx="16" cy="10" r="2"/><circle cx="16" cy="16" r="2"/><path d="M6 10h2M11 10 8 10M11 10l3-6M11 10l3 6"/></svg>
-        Tree
-      </button>
-    </div>
-  </div>
-
-  <!-- Template switcher for Intelligence — only shown while on Intelligence.
-       Replaces the old clickable canvas page-switcher (Overview/Sales/
-       Products/Planning); most users never touched those buttons, so
-       template switching now lives here alongside Planning/PowerTable's
-       own layout dropdowns for a consistent pattern across all three
-       modules. -->
-  <div class="pt-layout-pick" id="intelLayoutPick" style="display:none">
-    <button class="pt-layout-btn" id="intelLayoutBtn">
-      <span class="pt-layout-btn-icon" id="intelLayoutIcon"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="15" height="15" rx="1.3"/><path d="M2.5 7.5h15"/></svg></span>
-      <span id="intelLayoutLabel">Template 1</span>
-      <svg class="ftb-chev" viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
-    </button>
-    <div class="pt-layout-drop" id="intelLayoutDrop">
-      <button class="pt-layout-opt active" data-pg="0">
-        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="15" height="15" rx="1.3"/><path d="M2.5 7.5h15"/></svg>
-        Template 1
-      </button>
-      <button class="pt-layout-opt" data-pg="1">
-        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="15" height="15" rx="1.3"/><path d="M2.5 7.5h15M8 7.5v10"/></svg>
-        Template 2
-      </button>
-      <button class="pt-layout-opt" data-pg="2">
-        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="15" height="15" rx="1.3"/><path d="M2.5 7.5h15M8 7.5v10M13 7.5v10"/></svg>
-        Template 3
-      </button>
-      <button class="pt-layout-opt" data-pg="3">
-        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="6.5" height="6.5" rx="1"/><rect x="11" y="2.5" width="6.5" height="6.5" rx="1"/><rect x="2.5" y="11" width="6.5" height="6.5" rx="1"/><rect x="11" y="11" width="6.5" height="6.5" rx="1"/></svg>
-        Template 4
-      </button>
+      <div class="ftb-space"></div>
+      <button class="btn btn-subtle cmd cmd-icon ribbon-collapse" id="ribbonCollapse" data-tip="Collapse ribbon" aria-label="Collapse ribbon" aria-expanded="true"><i data-icon="chevronUp20" class="ri-misc"></i></button>
     </div>
   </div>
 </div>
 
 <div class="app">
   <div class="narrow-shell-backdrop" id="narrowShellBackdrop"></div>
+  <!-- Explorer rail — collapsible, docked to the pane's left edge; sheets as Tree nodes (DESIGN.md → Layout, Tree) -->
+  <aside class="explorer" id="explorer" aria-label="Explorer">
+    <div class="explorer-head">
+      <h2 class="explorer-title">Explorer <span class="explorer-count" id="explorerCount">(3)</span></h2>
+      <button class="btn btn-subtle btn-icon explorer-toggle" id="explorerToggle" data-tip="Collapse explorer" aria-label="Collapse explorer" aria-expanded="true"><i data-icon="collapseLeft" class="et-collapse"></i><i data-icon="expandRight" class="et-expand"></i></button>
+    </div>
+    <div class="input search explorer-search">
+      <i data-icon="search20"></i><input class="input-el" id="explorerSearch" type="text" placeholder="Search" aria-label="Search sheets and layouts" autocomplete="off" spellcheck="false">
+      <button class="btn btn-subtle btn-icon btn-sm search-clear" id="explorerSearchClear" aria-label="Clear search" hidden><i data-icon="dismiss16"></i></button>
+    </div>
+    <button class="rail-label explorer-rail-label" id="explorerExpandLabel" aria-hidden="true" tabindex="-1">Explorer</button>
+    <div class="tree" id="modSwitch" role="tree" aria-label="Sheets and layouts"></div>
+    <p class="explorer-empty" id="explorerEmpty" hidden>No sheets or layouts match your search.</p>
+  </aside>
   <aside class="panel">
 
-      <!-- Icon rail — always visible 44px strip -->
-      <nav class="panel-rail">
-        <button class="panel-rail-btn" data-tab="colors" title="Color">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5 C10 2.5 4 9 4 13a6 6 0 0 0 12 0C16 9 10 2.5 10 2.5Z" fill="currentColor" fill-opacity=".15"/><path d="M10 2.5 C10 2.5 4 9 4 13a6 6 0 0 0 12 0C16 9 10 2.5 10 2.5Z"/><path d="M7.5 14a3 3 0 0 0 2.5 2" stroke-width="1.2" opacity=".6"/></svg>
-          Color
-        </button>
-        <button class="panel-rail-btn" data-tab="page" title="Page">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="2" width="14" height="16" rx="2"/><path d="M6 6h8M6 9h8M6 12h5"/></svg>
-          Page
-        </button>
-        <button class="panel-rail-btn" data-tab="visuals" title="Visuals">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="3.5" height="7" rx="1"/><rect x="8.25" y="6" width="3.5" height="11" rx="1"/><rect x="13.5" y="3" width="3.5" height="14" rx="1"/><path d="M2 17.5h16" stroke-width="1.3"/></svg>
-          Visuals
-        </button>
-        <button class="panel-rail-btn" data-tab="font" title="Font">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h12M10 5v12"/><path d="M7 17h6" stroke-width="1.3"/></svg>
-          Font
-        </button>
+      <!-- Collapsed pane rail: only the expand control (mirrors the collapsed Explorer) -->
+      <nav class="panel-rail" aria-label="Properties pane">
+        <button class="btn btn-subtle btn-icon" id="panelExpand" data-tip="Expand pane (Ctrl+B)" aria-label="Expand properties pane" aria-controls="propertiesPane"><i data-icon="collapseLeft"></i></button>
+        <button class="rail-label panel-rail-label" id="panelExpandLabel" aria-hidden="true" tabindex="-1">Properties</button>
       </nav>
 
-      <!-- Expandable panel body -->
-      <div class="panel-body">
-        <div class="panel-body-head">
-          <span class="panel-body-title" id="panelBodyTitle">Color</span>
-          <button class="panel-body-reset" id="panelBodyReset" title="Reset font settings" style="display:none">
-            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12.6 8a4.6 4.6 0 1 1-1.4-3.3"/><path d="M12.8 2.8V5.3H10.3"/></svg>
-          </button>
+      <!-- Inline drawer — docks beside the canvas and reflows it (DESIGN.md → Drawer) -->
+      <div class="panel-body drawer" id="propertiesPane">
+        <div class="panel-body-head drawer-head">
+          <h2 class="panel-body-title drawer-title" id="panelBodyTitle">Properties</h2>
+          <div class="drawer-actions">
+            <button class="btn btn-subtle btn-icon" id="panelClose" data-tip="Collapse pane (Ctrl+B)" aria-label="Collapse pane"><i data-icon="expandRight"></i></button>
+          </div>
         </div>
-        <div class="tabpanel on" id="tp-colors"></div>
-        <div class="tabpanel" id="tp-page"></div>
-        <div class="tabpanel" id="tp-visuals"></div>
-        <div class="tabpanel" id="tp-font"></div>
-        <div class="panel-foot" id="panelFoot">
-          <div class="pf-theme"><span class="pf-dot" id="pfDot"></span><span id="pfLabel">Classic Theme</span></div>
-          <div class="pf-hint"><kbd>⌘/Ctrl</kbd><span>+</span><kbd>B</kbd></div>
+        <!-- Label tabs (Tablist) — the pane's sections, as in the product's Fields pane -->
+        <div class="drawer-tabs" role="tablist" aria-label="Theme properties">
+          <button class="tab drawer-tab active" role="tab" aria-selected="true" aria-controls="tp-colors" data-tab="colors"><span class="tab-label" data-text="Color">Color</span></button>
+          <button class="tab drawer-tab" role="tab" aria-selected="false" aria-controls="tp-page" data-tab="page" tabindex="-1"><span class="tab-label" data-text="Page">Page</span></button>
+          <button class="tab drawer-tab" role="tab" aria-selected="false" aria-controls="tp-visuals" data-tab="visuals" tabindex="-1"><span class="tab-label" data-text="Visuals">Visuals</span></button>
+          <button class="tab drawer-tab" role="tab" aria-selected="false" aria-controls="tp-font" data-tab="font" tabindex="-1"><span class="tab-label" data-text="Font">Font</span></button>
+        </div>
+        <div class="tabpanel on" id="tp-colors" role="tabpanel"></div>
+        <div class="tabpanel" id="tp-page" role="tabpanel"></div>
+        <div class="tabpanel" id="tp-visuals" role="tabpanel"></div>
+        <div class="tabpanel" id="tp-font" role="tabpanel"></div>
+        <!-- Drawer footer: one reset for the open tab, labelled with what it resets -->
+        <div class="drawer-foot">
+          <button class="btn btn-default" id="panelTabReset"><i data-icon="reset"></i><span id="panelTabResetLabel">Reset color</span></button>
         </div>
       </div>
 
@@ -658,23 +489,19 @@
           </section>
 
           <section class="page-canvas" style="overflow:hidden;display:none;flex-direction:column" id="ptCalendarView">
+            <!-- Calendar toolbar — Fluent parts themed from the element tokens, same as
+                 the report's other inputs (.fld / .dbtn): Subtle menu button, Switch,
+                 DatePicker input, Subtle icon buttons, Default button, Dropdown. -->
             <div class="pt-cal-toolbar" style="flex:none">
-              <button class="pt-cal-opts">
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="4.5" cy="6" r="1.4"/><circle cx="9.5" cy="13" r="1.4"/><circle cx="15" cy="7" r="1.4"/><path d="M4.5 7.4V16M4.5 4.6V2M9.5 14.4V16M9.5 11.6V2M15 8.4V16M15 5.6V2"/></svg>
-                Calendar View Options
-                <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
-              </button>
+              <button class="pt-cal-btn pt-cal-subtle"><i data-icon="options20"></i><span>Calendar View Options</span><i data-icon="chevronDown20" class="pt-cal-chev"></i></button>
               <div class="pt-cal-space"></div>
-              <label class="pt-cal-toggle"><span class="knob"></span>Work Week</label>
+              <label class="pt-cal-switch"><span class="track" aria-hidden="true"></span><span>Work Week</span></label>
               <div class="pt-cal-sep"></div>
-              <div class="pt-cal-daterange">
-                <span id="ptCalRangeLabel">09 June - 13 June, 2025</span>
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 2v4M13 2v4" stroke-linecap="round"/></svg>
-              </div>
-              <button class="pt-cal-navbtn" id="ptCalPrev" title="Previous" aria-label="Previous"><svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 2.5L3 6l4.5 3.5"/></svg></button>
-              <button class="pt-cal-navbtn" id="ptCalNext" title="Next" aria-label="Next"><svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5L9 6l-4.5 3.5"/></svg></button>
-              <button class="pt-cal-today">Today</button>
-              <button class="pt-cal-viewpick">Week<svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg></button>
+              <div class="pt-cal-input"><span id="ptCalRangeLabel">09 June - 13 June, 2025</span><i data-icon="calendarLtr20"></i></div>
+              <button class="pt-cal-btn pt-cal-subtle pt-cal-icon" id="ptCalPrev" aria-label="Previous week"><i data-icon="chevronLeft20"></i></button>
+              <button class="pt-cal-btn pt-cal-subtle pt-cal-icon" id="ptCalNext" aria-label="Next week"><i data-icon="chevronRight20"></i></button>
+              <button class="pt-cal-btn pt-cal-default">Today</button>
+              <button class="pt-cal-input pt-cal-dropdown"><span>Week</span><i data-icon="chevronDown20"></i></button>
             </div>
             <div class="pt-cal-wrap">
               <div class="pt-cal" id="ptCalendar"></div>
@@ -695,55 +522,37 @@
 
 
 <!-- Color blindness simulation bar (injected into stage area) -->
-<!-- WCAG Validation Panel -->
-<div class="wcag-panel" id="wcagPanel">
+<!-- Contrast check — non-blocking overlay drawer (DESIGN.md → Drawer) -->
+<div class="wcag-panel" id="wcagPanel" role="dialog" aria-labelledby="wcagTitle">
   <div class="wcag-header">
-    <div style="display:flex;align-items:center;gap:8px">
-      <span class="wcag-title">WCAG Contrast Validation</span>
-    </div>
-    <button class="wcag-close" id="wcagClose" title="Close" aria-label="Close">
-      <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M3.293 3.293a1 1 0 0 1 1.414 0L8 6.586l3.293-3.293a1 1 0 1 1 1.414 1.414L9.414 8l3.293 3.293a1 1 0 0 1-1.414 1.414L8 9.414l-3.293 3.293a1 1 0 0 1-1.414-1.414L6.586 8 3.293 4.707a1 1 0 0 1 0-1.414Z"/></svg>
-    </button>
+    <h2 class="wcag-title" id="wcagTitle">Contrast check</h2>
+    <button class="btn btn-subtle btn-icon wcag-close" id="wcagClose" aria-label="Close"><i data-icon="dismiss20"></i></button>
   </div>
   <div class="wcag-summary" id="wcagSummary"></div>
   <div class="wcag-divider"></div>
   <div class="wcag-list" id="wcagList"></div>
-  <div class="wcag-foot">Checked against WCAG 2.1 AA (4.5:1 normal, 3:1 large/UI)</div>
+  <div class="wcag-foot">Checked against WCAG 2.1 AA: 4.5:1 for text, 3:1 for large text and UI.</div>
 </div>
 
-<!-- Color Vision Simulator — Fabric-style floating panel -->
-<div class="cbsim-panel" id="cbsimBar">
-
-  <!-- Header -->
+<!-- Color vision simulation — floating popover -->
+<div class="cbsim-panel" id="cbsimBar" role="dialog" aria-labelledby="cbsimTitle">
   <div class="cbsim-header">
-    <div class="cbsim-header-left">
-      <span class="cbsim-dot"></span>
-      <span class="cbsim-title">Colour Vision Simulation</span>
-    </div>
-    <button class="cbsim-close" id="cbsimOff" title="Exit simulation" aria-label="Exit simulation">
-      <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M3.293 3.293a1 1 0 0 1 1.414 0L8 6.586l3.293-3.293a1 1 0 1 1 1.414 1.414L9.414 8l3.293 3.293a1 1 0 0 1-1.414 1.414L8 9.414l-3.293 3.293a1 1 0 0 1-1.414-1.414L6.586 8 3.293 4.707a1 1 0 0 1 0-1.414Z"/></svg>
-    </button>
+    <div class="cbsim-header-left"><span class="cbsim-dot"></span><span class="cbsim-title" id="cbsimTitle">Color vision simulation</span></div>
+    <button class="btn btn-subtle btn-icon cbsim-close" id="cbsimOff" aria-label="Turn off simulation"><i data-icon="dismiss20"></i></button>
   </div>
-
-  <!-- Mode dropdown — Fabric select -->
-  <div class="cbsim-select-row">
-    <label class="cbsim-select-label">Condition</label>
-    <div class="cbsim-select-wrap">
+  <div class="field cbsim-select-row">
+    <label class="field-label" for="cbsimSelect">Condition</label>
+    <div class="input dropdown">
       <select id="cbsimSelect" class="cbsim-select">
         <option value="deuteranopia">Deuteranopia</option>
         <option value="protanopia">Protanopia</option>
         <option value="tritanopia">Tritanopia</option>
         <option value="achromatopsia">Achromatopsia</option>
-      </select>
-      <svg class="cbsim-chev" viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
+      </select><i data-icon="chevronDown20"></i>
     </div>
   </div>
-
   <div class="cbsim-divider"></div>
-
-  <!-- Explanation -->
   <div class="cbsim-info" id="cbsimInfo"></div>
-
 </div>
 
 <!-- SVG filter definitions for color blindness simulation -->
@@ -764,16 +573,19 @@
   </defs>
 </svg>
 
-<!-- Export modal -->
+<!-- Export dialog (Medium) -->
 <div class="modal-bg" id="exportModal">
-  <div class="modal">
-    <div class="modal-head"><h2>Export theme JSON</h2><p>Copy to clipboard or download as a <code>.json</code> file.</p></div>
-    <div class="modal-body"><textarea id="exportArea" spellcheck="false" readonly></textarea></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+    <div class="modal-head">
+      <div class="mh-text"><h2 id="exportTitle">Export theme</h2><p>Copy the theme JSON, share a link to it, or download it as a .json file.</p></div>
+      <button class="btn btn-subtle btn-icon" id="exportCloseX" aria-label="Close"><i data-icon="dismiss20"></i></button>
+    </div>
+    <div class="modal-body"><textarea id="exportArea" spellcheck="false" readonly aria-label="Theme JSON"></textarea></div>
     <div class="modal-foot">
-      <button class="f-btn f-btn-default" id="exportClose">Close</button>
-      <button class="f-btn f-btn-default" id="exportCopy">Copy to clipboard</button>
-      <button class="f-btn f-btn-default" id="exportShareUrl">Copy share URL</button>
-      <button class="f-btn f-btn-primary" id="exportDownload">Download file</button>
+      <button class="btn btn-default" id="exportClose">Close</button>
+      <button class="btn btn-default" id="exportCopy">Copy JSON</button>
+      <button class="btn btn-default" id="exportShareUrl">Copy link</button>
+      <button class="btn btn-primary" id="exportDownload">Download</button>
     </div>
   </div>
 </div>
@@ -782,17 +594,15 @@
      NEW THEME WIZARD MODAL
 ══════════════════════════════════════════════ -->
 <div class="modal-bg" id="newThemeModal">
-  <div class="modal ntm">
+  <div class="modal ntm" role="dialog" aria-modal="true" aria-labelledby="ntmTitle">
 
     <!-- Fabric Dialog Header -->
-    <div class="modal-head" style="padding:20px 24px 16px;border-bottom:1px solid #e0e0e0;display:flex;align-items:flex-start;justify-content:space-between">
-      <div>
-        <div class="ntm-title">Create new theme</div>
-        <div class="ntm-subtitle">Configure your theme and preview it live before applying</div>
+    <div class="modal-head">
+      <div class="mh-text">
+        <h2 class="ntm-title" id="ntmTitle">Create a theme</h2>
+        <p class="ntm-subtitle">Pick a starting point, then fine-tune the colors in the preview.</p>
       </div>
-      <button class="ntm-close" id="ntmCloseX" aria-label="Close">
-        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414Z"/></svg>
-      </button>
+      <button class="btn btn-subtle btn-icon ntm-close" id="ntmCloseX" aria-label="Close"><i data-icon="dismiss20"></i></button>
     </div>
 
     <!-- Two-column body -->
@@ -804,44 +614,29 @@
         <!-- Theme name — Fabric TextField -->
         <div class="ntm-field">
           <label class="ntm-field-label" for="ntmThemeName">Theme name</label>
-          <input type="text" id="ntmThemeName" class="ntm-input" placeholder="e.g. Contoso Brand, Dark Enterprise…" maxlength="48" autocomplete="off">
+          <input type="text" id="ntmThemeName" class="ntm-input" placeholder="For example, Contoso Brand" maxlength="48" autocomplete="off">
         </div>
 
         <!-- Starting point -->
         <div>
           <span class="ntm-section-label">Starting point</span>
           <div class="ntm-source-row">
-            <button class="ntm-source-card" id="ntmCardBrand">
-              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M6.5 13.5L4 18.5l2.6-.4L8 20l2-4" stroke-linejoin="round"/><path d="M13.5 13.5L16 18.5l-2.6-.4L12 20l-2-4" stroke-linejoin="round"/><path d="M10 1.6l1.1 1 1.4-.5 1 1.2 1.5.1.5 1.4 1.4.6-.1 1.5 1 1.1-.6 1.4.6 1.4-1 1.1.1 1.5-1.4.6-.5 1.4-1.5.1-1 1.2-1.4-.5-1.1 1-1.1-1-1.4.5-1-1.2-1.5-.1-.5-1.4-1.4-.6.1-1.5-1-1.1.6-1.4-.6-1.4 1-1.1-.1-1.5 1.4-.6.5-1.4 1.5-.1 1-1.2 1.4.5Z"/><path d="M6.2 10.4a3.9 3.9 0 0 0 7.6 0" stroke-linecap="round"/></svg>
-              <span class="ntm-source-title">Brand colour</span>
-            </button>
-            <button class="ntm-source-card" id="ntmCardCoolors">
-              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M13.2 6.2A5.2 5.2 0 1 0 13.2 13.8"/></svg>
-              <span class="ntm-source-title">Coolors</span>
-            </button>
-            <button class="ntm-source-card" id="ntmCardImage">
-              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><rect x="2.5" y="3.5" width="15" height="13" rx="1.5" fill="currentColor" fill-opacity=".06"/><rect x="2.5" y="3.5" width="15" height="13" rx="1.5"/><circle cx="7" cy="8" r="1.4"/><path d="M3 14l4-4a1.3 1.3 0 0 1 1.8 0l2.4 2.4 2.6-2.6a1.3 1.3 0 0 1 1.8 0L17.5 12.5"/></svg>
-              <span class="ntm-source-title">Image</span>
-            </button>
-            <button class="ntm-source-card" id="ntmCardJson">
-              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M7.5 3.8c-1.7 0-2.7.9-2.7 2.7v1.3c0 1.1-.4 1.7-1.6 1.7 1.2 0 1.6.6 1.6 1.7v1.3c0 1.8 1 2.7 2.7 2.7"/><path d="M12.5 3.8c1.7 0 2.7.9 2.7 2.7v1.3c0 1.1.4 1.7 1.6 1.7-1.2 0-1.6.6-1.6 1.7v1.3c0 1.8-1 2.7-2.7 2.7"/></svg>
-              <span class="ntm-source-title">Import JSON</span>
-            </button>
-            <button class="ntm-source-card" id="ntmCardMagic">
-              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M10 2.5l1.3 3.7 3.7 1.3-3.7 1.3-1.3 3.7-1.3-3.7-3.7-1.3 3.7-1.3 1.3-3.7Z" fill="currentColor" fill-opacity=".15"/><path d="M10 2.5l1.3 3.7 3.7 1.3-3.7 1.3-1.3 3.7-1.3-3.7-3.7-1.3 3.7-1.3 1.3-3.7Z"/><path d="M16 12.5l.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6.6-1.7Z" fill="currentColor" fill-opacity=".15"/><path d="M16 12.5l.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6.6-1.7Z"/></svg>
-              <span class="ntm-source-title">Magic</span>
-            </button>
+            <button class="ntm-source-card" id="ntmCardBrand" aria-pressed="false"><i data-icon="brand"></i><span class="ntm-source-title">Brand</span></button>
+            <button class="ntm-source-card" id="ntmCardCoolors" aria-pressed="false"><i data-icon="palette"></i><span class="ntm-source-title">Coolors</span></button>
+            <button class="ntm-source-card" id="ntmCardImage" aria-pressed="false"><i data-icon="image"></i><span class="ntm-source-title">Image</span></button>
+            <button class="ntm-source-card" id="ntmCardJson" aria-pressed="false"><i data-icon="code"></i><span class="ntm-source-title">JSON</span></button>
+            <button class="ntm-source-card" id="ntmCardMagic" aria-pressed="false"><i data-icon="sparkle"></i><span class="ntm-source-title">Describe</span></button>
           </div>
         </div>
 
         <!-- Brand colour input — revealed on selection -->
         <div id="ntmBrandInput" style="display:none">
-          <span class="ntm-section-label">Brand colour</span>
+          <span class="ntm-section-label">Brand color</span>
           <div class="ntm-brand-row">
             <input type="color" id="ntmBrandPicker" value="#117865" class="ntm-color-pick">
             <input type="text" id="ntmBrandHex" value="#117865" class="ntm-hex-input" maxlength="7" placeholder="#000000" spellcheck="false">
           </div>
-          <p class="ntm-helper">We'll generate 8 primary colours, structural greys and semantic colours from this value.</p>
+          <p class="ntm-helper">We'll generate 8 primary colors, structural grays and semantic colors from this value.</p>
         </div>
 
         <!-- Coolors import — revealed on selection -->
@@ -849,7 +644,7 @@
           <span class="ntm-section-label">Coolors link or hex codes</span>
           <textarea id="ntmCoolorsText" class="ntm-input" rows="2" style="resize:vertical;padding:6px 8px;font-family:'Consolas','Courier New',monospace;font-size:12.5px" placeholder="https://coolors.co/264653-2a9d8f-e9c46a-f4a261-e76f51" spellcheck="false"></textarea>
           <div id="ntmCoolorsSwatchRow" class="ntm-swatch-row" style="margin-top:8px"></div>
-          <p class="ntm-helper" id="ntmCoolorsStatus">Paste a Coolors URL or a list of hex codes. If your palette has fewer than 8 colours, we'll generate the rest to match.</p>
+          <p class="ntm-helper" id="ntmCoolorsStatus">Paste a Coolors URL or a list of hex codes. If your palette has fewer than 8 colors, we'll generate the rest to match.</p>
         </div>
 
         <!-- Image import — revealed on selection -->
@@ -866,7 +661,7 @@
           </div>
           <input type="file" id="ntmImageFile" accept="image/*" style="display:none">
           <div id="ntmImageSwatchRow" class="ntm-swatch-row" style="margin-top:8px"></div>
-          <p class="ntm-helper" id="ntmImageStatus">We'll pull out the dominant colours from your image. Fewer than 8 found? We'll generate the rest to match.</p>
+          <p class="ntm-helper" id="ntmImageStatus">We'll pull out the dominant colors from your image. Fewer than 8 found? We'll generate the rest to match.</p>
         </div>
 
         <!-- JSON import — revealed on selection -->
@@ -879,13 +674,13 @@
 
         <!-- Magic — descriptive theme generator (revealed on selection) -->
         <div id="ntmMagicInput" style="display:none">
-          <span class="ntm-section-label">✨ Describe your theme</span>
+          <span class="ntm-section-label">Describe your theme</span>
           <input type="text" id="ntmMagicText" class="ntm-input" maxlength="80" placeholder="e.g. very dark ocean, navy and gold fintech, not too bright…" spellcheck="false">
-          <p class="ntm-helper" id="ntmMagicStatus"><span id="ntmMagicSpinner" class="ntm-spinner" style="display:none"></span><span id="ntmMagicStatusText">Type a mood, industry, colour(s), or scene — try combining colours ("navy and gold"), adding "very"/"slightly", or excluding one with "not". Instant, no internet required.</span><span id="ntmMagicSourceBadge" class="ntm-magic-source-badge" style="display:none"></span></p>
-          <button class="ntm-magic-variation" id="ntmMagicVariation" disabled>🔁 Try a variation</button>
+          <p class="ntm-helper" id="ntmMagicStatus"><span id="ntmMagicSpinner" class="ntm-spinner" style="display:none"></span><span id="ntmMagicStatusText">Type a mood, industry, color(s), or scene — try combining colors ("navy and gold"), adding "very"/"slightly", or excluding one with "not". Instant, no internet required.</span><span id="ntmMagicSourceBadge" class="ntm-magic-source-badge" style="display:none"></span></p>
+          <button class="btn btn-default btn-sm ntm-magic-variation" id="ntmMagicVariation" disabled><i data-icon="arrowShuffle"></i>Try a variation</button>
 
           <div class="ntm-magic-ai-row">
-            <button type="button" class="ntm-magic-ai-toggle" id="ntmMagicAiToggle">⚙ Use AI for smarter matches (optional)</button>
+            <button type="button" class="btn btn-subtle btn-sm ntm-magic-ai-toggle" id="ntmMagicAiToggle"><i data-icon="sparkle"></i>Use AI for better matches (optional)</button>
             <div class="ntm-magic-key-wrap" id="ntmMagicKeyWrap" style="display:none">
               <select id="ntmMagicAiProvider" class="ntm-input" style="flex:0 0 100px">
                 <option value="gemini">Gemini</option>
@@ -893,7 +688,7 @@
                 <option value="claude">Claude</option>
               </select>
               <input type="password" id="ntmMagicApiKey" class="ntm-input" placeholder="Paste your free Gemini API key" spellcheck="false">
-              <button type="button" class="ntm-magic-key-clear" id="ntmMagicKeyClear">Clear</button>
+              <button type="button" class="btn btn-subtle ntm-magic-key-clear" id="ntmMagicKeyClear">Clear</button>
             </div>
             <p class="ntm-helper" id="ntmMagicAiHelper" style="display:none">Stored only in this browser (localStorage) — each provider's key is remembered separately, sent only to that provider's own API. Leave blank to always use the built-in offline generator. If the AI call fails, is rate-limited, or times out, we automatically fall back to the offline generator.</p>
           </div>
@@ -904,12 +699,10 @@
           <span class="ntm-section-label">Tone</span>
           <div class="ntm-tone-row">
             <button class="ntm-tone-btn" data-tone="light">
-              <div class="ntm-tone-swatch light"></div>
-              Light
+              <i data-icon="weatherSunny"></i>Light
             </button>
             <button class="ntm-tone-btn" data-tone="dark">
-              <div class="ntm-tone-swatch dark"></div>
-              Dark
+              <i data-icon="weatherMoon"></i>Dark
             </button>
           </div>
           <p class="ntm-helper" id="ntmToneDesc">Choose a starting point to preview tone</p>
@@ -924,8 +717,7 @@
           <button class="ntm-reset-gen" id="ntmResetGen" style="display:none">Reset to generated</button>
         </div>
         <div class="ntm-edit-hint" id="ntmEditHint" style="display:none">
-          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M9.5 2l2.5 2.5L4 13H1.5v-2.5L9.5 2Z"/></svg>
-          Click any swatch to edit its colour — drag the ⠿ handle on primary swatches to reorder
+          <i data-icon="infoFilled"></i>Select a swatch to change its color. Drag primary colors to reorder them.
         </div>
 
         <!-- Preview populated by buildPreview() -->
@@ -933,7 +725,7 @@
 
         <!-- Empty state -->
         <div id="ntmPreviewEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:8px;color:#5c5c5c;font-size:13px;font-family:'Segoe UI',sans-serif;text-align:center;padding:40px 20px">
-          <svg viewBox="0 0 32 32" width="36" height="36" fill="none" stroke="#d1d1d1" stroke-width="1.5"><rect x="6" y="8" width="20" height="16" rx="2"/><path d="M6 12h20"/><circle cx="10.5" cy="18" r="1.6" fill="#d1d1d1" stroke="none"/><circle cx="16" cy="18" r="1.6" fill="#d1d1d1" stroke="none"/><circle cx="21.5" cy="18" r="1.6" fill="#d1d1d1" stroke="none"/></svg>
+          <i data-icon="palette"></i>
           <span id="ntmPreviewEmptyText">Choose a starting point to preview your palette</span>
         </div>
       </div>
@@ -942,21 +734,21 @@
 
     <!-- Fabric Dialog Footer -->
     <div class="ntm-foot">
-      <button class="f-btn f-btn-default" id="ntmCancel">Cancel</button>
-      <button class="f-btn f-btn-primary" id="ntmApply" disabled style="opacity:.45;cursor:not-allowed">Create theme</button>
+      <button class="btn btn-default" id="ntmCancel">Cancel</button>
+      <button class="btn btn-primary" id="ntmApply" disabled>Create</button>
     </div>
 
   </div>
 </div>
 
-<!-- Inline confirm/prompt modal (replaces blocked browser dialogs) -->
+<!-- Confirm / prompt dialog (Small) — replaces blocked browser dialogs -->
 <div class="modal-bg" id="inlineDialogBg">
-  <div class="modal" style="width:380px;padding:24px;gap:0">
-    <div id="inlineDialogMsg" style="font-size:14px;font-family:var(--f-font);color:#242424;margin-bottom:16px;line-height:1.5"></div>
-    <input type="text" id="inlineDialogInput" class="f-input" style="display:none;width:100%;margin-bottom:16px;box-sizing:border-box">
-    <div style="display:flex;justify-content:flex-end;gap:8px">
-      <button class="f-btn f-btn-default" id="inlineDialogCancel">Cancel</button>
-      <button class="f-btn f-btn-primary" id="inlineDialogOk">OK</button>
+  <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="inlineDialogMsg">
+    <div id="inlineDialogMsg" class="dialog-title-sm"></div>
+    <div class="input" id="inlineDialogInputWrap" style="display:none"><input type="text" id="inlineDialogInput" class="input-el" aria-labelledby="inlineDialogMsg"></div>
+    <div class="modal-foot">
+      <button class="btn btn-default" id="inlineDialogCancel">Cancel</button>
+      <button class="btn btn-primary" id="inlineDialogOk">OK</button>
     </div>
   </div>
 </div>
@@ -964,4 +756,55 @@
 <div class="tip" id="tip"></div>
 <div class="chart-tip" id="chartTip"></div>
 
+
+<!-- Studio tour — FRE Dialog (DESIGN.md → Dialog): Medium 576px, step dots,
+     Back/Skip + one green Primary. Opens on a first visit; "Tour" reopens it. -->
+<div class="modal-bg" id="introModal">
+  <div class="modal intro" role="dialog" aria-modal="true" aria-labelledby="introTitle" aria-describedby="introBody">
+    <div class="modal-head">
+      <div class="mh-text"><p class="intro-overline" id="introOverline">Welcome</p><h2 id="introTitle">Design themes for Fabric Planning</h2></div>
+      <button class="btn btn-subtle btn-icon" id="introClose" aria-label="Close tour"><i data-icon="dismiss20"></i></button>
+    </div>
+    <div class="intro-media" id="introMedia" aria-hidden="true"></div>
+    <p class="intro-body" id="introBody"></p>
+    <div class="modal-foot intro-foot">
+      <div class="intro-dots" id="introDots" role="tablist" aria-label="Tour steps"></div>
+      <button class="btn btn-default" id="introBack">Skip</button>
+      <button class="btn btn-primary" id="introNext">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- Layout/template pickers: no longer shown (the Explorer tree switches layouts);
+     kept hidden because their scripts own the layout-switching logic. -->
+<div class="legacy-layout-pickers" hidden>
+      <div class="pt-layout-pick cmd-pick" id="intelLayoutPick" style="display:none" data-priority="3">
+        <button class="btn btn-subtle cmd pt-layout-btn" id="intelLayoutBtn" data-tip="Choose a report template" aria-haspopup="true"><span class="pt-layout-btn-icon ri-misc" id="intelLayoutIcon"><i data-icon="template"></i></span><span class="cmd-label" id="intelLayoutLabel">Template 1</span><i data-icon="chevronDown12" class="mb-chev"></i></button>
+        <div class="menu pt-layout-drop" id="intelLayoutDrop" role="menu">
+          <button data-ic="template" class="menu-item pt-layout-opt active" data-pg="0" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="template16" class="mi-icon"></i><span class="mi-label">Template 1</span></button>
+          <button data-ic="template" class="menu-item pt-layout-opt" data-pg="1" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="template16" class="mi-icon"></i><span class="mi-label">Template 2</span></button>
+          <button data-ic="template" class="menu-item pt-layout-opt" data-pg="2" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="template16" class="mi-icon"></i><span class="mi-label">Template 3</span></button>
+          <button data-ic="template" class="menu-item pt-layout-opt" data-pg="3" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="template16" class="mi-icon"></i><span class="mi-label">Template 4</span></button>
+        </div>
+      </div>
+      <div class="pt-layout-pick cmd-pick" id="planLayoutPick" style="display:none" data-priority="3">
+        <button class="btn btn-subtle cmd pt-layout-btn" id="planLayoutBtn" data-tip="Choose a layout" aria-haspopup="true"><span class="pt-layout-btn-icon ri-misc" id="planLayoutIcon"><i data-icon="layoutHierarchy"></i></span><span class="cmd-label" id="planLayoutLabel">Hierarchy</span><i data-icon="chevronDown12" class="mb-chev"></i></button>
+        <div class="menu pt-layout-drop" id="planLayoutDrop" role="menu">
+          <button data-ic="layoutHierarchy" class="menu-item pt-layout-opt active" data-layout="matrix" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="layoutHierarchy16" class="mi-icon"></i><span class="mi-label">Hierarchy</span></button>
+          <button data-ic="layoutTable" class="menu-item pt-layout-opt" data-layout="table" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="layoutTable16" class="mi-icon"></i><span class="mi-label">Table</span></button>
+          <button data-ic="layoutTree" class="menu-item pt-layout-opt" data-layout="tree" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="layoutTree16" class="mi-icon"></i><span class="mi-label">Tree</span></button>
+        </div>
+      </div>
+      <div class="pt-layout-pick cmd-pick" id="ptLayoutPick" style="display:none" data-priority="3">
+        <button class="btn btn-subtle cmd pt-layout-btn" id="ptLayoutBtn" data-tip="Choose a layout" aria-haspopup="true"><span class="pt-layout-btn-icon ri-misc" id="ptLayoutIcon"><i data-icon="layoutTable"></i></span><span class="cmd-label" id="ptLayoutLabel">Table</span><i data-icon="chevronDown12" class="mb-chev"></i></button>
+        <div class="menu pt-layout-drop" id="ptLayoutDrop" role="menu">
+          <button data-ic="layoutTable" class="menu-item pt-layout-opt active" data-layout="table" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="layoutTable16" class="mi-icon"></i><span class="mi-label">Table</span></button>
+          <button data-ic="layoutGantt" class="menu-item pt-layout-opt" data-layout="gantt" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="layoutGantt16" class="mi-icon"></i><span class="mi-label">Gantt</span></button>
+          <button data-ic="layoutGanttRes" class="menu-item pt-layout-opt" data-layout="ganttres" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="layoutGanttRes16" class="mi-icon"></i><span class="mi-label">Gantt resources</span></button>
+          <button data-ic="layoutCalendar" class="menu-item pt-layout-opt" data-layout="calendar" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="layoutCalendar16" class="mi-icon"></i><span class="mi-label">Calendar</span></button>
+          <button data-ic="layoutKanban" class="menu-item pt-layout-opt" data-layout="kanban" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="layoutKanban16" class="mi-icon"></i><span class="mi-label">Kanban</span></button>
+        </div>
+      </div>
+</div>
+<script src="js/icons.js"></script>
 <script src="js/app.js"></script>
