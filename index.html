@@ -1,6 +1,7 @@
 <!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Design, check, and share one theme for every sheet in a Fabric Planning workspace: Intelligence, Planning, and PowerTable.">
 <title>Fabric Planning Theme Studio</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/styles.css">
@@ -72,7 +73,7 @@
   </svg>
   <div class="ah-brand">
     <span class="ah-title">Fabric Planning Theme Studio</span>
-    <span class="ah-desc">Preview and validate Microsoft Fabric theme tokens across live report visuals</span>
+    <span class="ah-desc">Design, check, and share one theme for every sheet in your Fabric Planning workspace</span>
   </div>
 </header>
 
@@ -580,7 +581,19 @@
       <div class="mh-text"><h2 id="exportTitle">Export theme</h2><p>Copy the theme JSON, share a link to it, or download it as a .json file.</p></div>
       <button class="btn btn-subtle btn-icon" id="exportCloseX" aria-label="Close"><i data-icon="dismiss20"></i></button>
     </div>
-    <div class="modal-body"><textarea id="exportArea" spellcheck="false" readonly aria-label="Theme JSON"></textarea></div>
+    <div class="modal-body">
+      <textarea id="exportArea" spellcheck="false" readonly aria-label="Theme JSON"></textarea>
+      <!-- How the export gets into the product — the last step of the theme loop -->
+      <section class="export-apply" aria-labelledby="exportApplyTitle">
+        <h3 id="exportApplyTitle">Apply in Fabric Planning</h3>
+        <ol>
+          <li>Select Copy JSON or Download.</li>
+          <li>In Fabric Planning, on the Home tab, select Themes.</li>
+          <li>At the bottom of the Themes pane, select Import.</li>
+          <li>Paste the JSON or upload the file to create the theme.</li>
+        </ol>
+      </section>
+    </div>
     <div class="modal-foot">
       <button class="btn btn-default" id="exportClose">Close</button>
       <button class="btn btn-default" id="exportCopy">Copy JSON</button>

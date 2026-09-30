@@ -103,6 +103,7 @@ function isDirty(){return JSON.stringify(T)!==JSON.stringify(THEME_ORIGIN);}
 /* ── Update Save button state ── */
 function checkDirty(){
   const dirty=isDirty();
+  const resetAll=document.getElementById('resetAllBtn');if(resetAll)resetAll.disabled=!dirty;
   if(window._syncTabReset)window._syncTabReset();
   const saveBtn=document.getElementById('saveBtn');
   const saveLabel=document.getElementById('saveBtnLabel');
@@ -617,9 +618,8 @@ function mkSelect(p,label,opts,get,set){
      blur       px                           → Blur
      distance, angle — read-only here, greyed out as in the product.
    A theme that isn't edited exports byte-for-byte as before. */
-// Only "bottom" is confirmed from a product export; the other eight
-// spellings follow this file's camelCase style — confirm against a theme
-// exported from the product. Unknown values are shown and kept as-is.
+// All nine `side` values are confirmed against the product's theme JSON.
+// Unknown values (e.g. from a newer product version) are shown and kept as-is.
 const SHADOW_POSITIONS=[['topLeft','Top left'],['top','Top'],['topRight','Top right'],['left','Left'],['center','Center'],['right','Right'],['bottomLeft','Bottom left'],['bottom','Bottom'],['bottomRight','Bottom right']];
 const SHADOW_DIR={topLeft:[-1,-1],top:[0,-1],topRight:[1,-1],left:[-1,0],center:[0,0],right:[1,0],bottomLeft:[-1,1],bottom:[0,1],bottomRight:[1,1]};
 function parseShadowColor(c){
@@ -2450,7 +2450,7 @@ function hexToOklch(hex){
   let s=Math.cbrt(0.0883024619*rl+0.2817188376*gl+0.6299787005*bl);
   const L=0.2104542553*l+0.7936177850*m-0.0040720468*s;
   const a=1.9779984951*l-2.4285922050*m+0.4505937099*s;
-  const b=-0.0259040371*l+0.7827717662*m-0.8068517602*s;
+  const b=0.0259040371*l+0.7827717662*m-0.8086757660*s;
   const C=Math.sqrt(a*a+b*b);
   const H=(Math.atan2(b,a)*180/Math.PI+360)%360;
   return[L,C,H];
@@ -2662,7 +2662,7 @@ function rgbToOklab(r,g,b){
   return[
     0.2104542553*l+0.7936177850*m-0.0040720468*s,
     1.9779984951*l-2.4285922050*m+0.4505937099*s,
-    -0.0259040371*l+0.7827717662*m-0.8068517602*s
+    0.0259040371*l+0.7827717662*m-0.8086757660*s
   ];
 }
 function oklabToHex(L,a,b){
@@ -4406,10 +4406,15 @@ $('#exportBtn').addEventListener('click',()=>{
 $('#exportClose').addEventListener('click',()=>$('#exportModal').classList.remove('show'));
 $('#exportCloseX').addEventListener('click',()=>$('#exportModal').classList.remove('show'));
 $('#exportCopy').addEventListener('click',()=>{navigator.clipboard&&navigator.clipboard.writeText($('#exportArea').value);const b=$('#exportCopy'),t=b.textContent;b.textContent='Copied';b.classList.add('is-done');setTimeout(()=>{b.textContent=t;b.classList.remove('is-done');},1400);});
+// Reset all — back to the theme's saved state as one undo step (so no
+// confirm dialog: Ctrl+Z brings the changes back).
 $('#resetAllBtn').addEventListener('click',()=>{
+  if(!isDirty())return;
   T=JSON.parse(JSON.stringify(THEME_ORIGIN));
   applyTheme();
   buildAll();
+  pushUndo();
+  showToast('All changes reset. Press Ctrl+Z to undo.');
 });
 $('#exportDownload').addEventListener('click',()=>{const blob=new Blob([$('#exportArea').value],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(T.label||'theme').replace(/\s+/g,'-').toLowerCase()+'.json';a.click();URL.revokeObjectURL(a.href);});
 
@@ -4462,7 +4467,7 @@ function showPage(idx){
   const tile=(ic,label,cls='')=>`<div class="im-frame im-tile ${cls}">${icon(ic)}<span>${label}</span></div>`;
   const STEPS=[
     {over:'Welcome',title:'Design themes for Fabric Planning',
-     body:'Build one theme and see it applied to every sheet type: Intelligence reports, Planning sheets, and PowerTable layouts. The JSON you export is exactly what the product reads.',
+     body:'Build one theme and see it applied to every sheet type: Intelligence reports, Planning sheets, and PowerTable layouts. When it’s ready, export it and import it from Themes in Fabric Planning.',
      media:()=>`<div class="im-frame im-studio">
         <div><div class="im-line" style="width:70%"></div><div class="im-line sel"></div><div class="im-line" style="width:80%"></div><div class="im-line" style="width:60%"></div><div class="im-line" style="width:75%"></div></div>
         <div><div class="im-line" style="width:45%"></div><div class="im-bars">${[62,88,48,74,96,58].map((v,i)=>`<span style="height:${v}%;background:var(--p${i%5+1})"></span>`).join('')}</div></div>
@@ -4487,7 +4492,7 @@ function showPage(idx){
      body:'Pick a built-in theme from the theme menu on the command bar, or select New theme to start from brand colors, a Coolors palette, an image, theme JSON, or a short description.',
      media:()=>`<div class="im-tiles">${tile('brand','Brand','pick')}${tile('palette','Coolors')}${tile('image','Image')}${tile('code','JSON')}${tile('sparkle','Describe')}</div>`},
     {over:'Check and export',title:'Check accessibility, then save and export',
-     body:'Under Accessibility, use Check contrast and Simulate color blindness to catch readability issues. Save keeps the theme in this browser, and Export copies the JSON, shares a link, or downloads the file.',
+     body:'Under Accessibility, Check contrast flags hard-to-read colors and suggests a passing shade, and Simulate color blindness shows how others see the theme. Save keeps it in this browser; Export copies the JSON, shares a link, or downloads the file.',
      media:()=>`<div class="im-tiles">${tile('contrast16','Check contrast','wide')}${tile('eye16','Simulate color blindness','wide')}${tile('export16','Export','wide pick')}</div>`}
   ];
   let step=0,opener=null;
@@ -5254,17 +5259,19 @@ $('#exportShareUrl').addEventListener('click',()=>{
     // white — so a dark theme's colours get judged against its real
     // dark backdrop instead of failing against a background it never
     // actually appears on.
+    // `set` writes a suggested fix back to the colour being checked.
+    const setText=v=>{typo.color=v;},setPrim=i=>v=>{c.primaryColors[i]=v;},setAccent=v=>{c.structuralColors.accent=v;},setSem=k=>v=>{c.semantic[k]=v;};
     const pairs=[
-      {name:'Text on canvas',fg:textCol,bg:canvasBg,size:'normal'},
-      {name:'Text on element background',fg:textCol,bg:elBg,size:'normal'},
-      {name:'Text on wallpaper',fg:textCol,bg:wallpaper,size:'normal'},
-      ...c.primaryColors.map((col,i)=>({name:`Primary ${i+1} on canvas`,fg:col,bg:canvasBg,size:'large'})),
-      ...c.primaryColors.map((col,i)=>({name:`Primary ${i+1} on element background`,fg:col,bg:elBg,size:'large'})),
-      {name:'Accent on canvas',fg:c.structuralColors.accent,bg:canvasBg,size:'large'},
-      {name:'Accent on element background',fg:c.structuralColors.accent,bg:elBg,size:'large'},
-      {name:'Positive on canvas',fg:c.semantic.positive,bg:canvasBg,size:'large'},
-      {name:'Negative on canvas',fg:c.semantic.negative,bg:canvasBg,size:'large'},
-      {name:'Neutral on canvas',fg:c.semantic.neutral,bg:canvasBg,size:'large'},
+      {name:'Text on canvas',fg:textCol,bg:canvasBg,size:'normal',set:setText},
+      {name:'Text on element background',fg:textCol,bg:elBg,size:'normal',set:setText},
+      {name:'Text on wallpaper',fg:textCol,bg:wallpaper,size:'normal',set:setText},
+      ...c.primaryColors.map((col,i)=>({name:`Primary ${i+1} on canvas`,fg:col,bg:canvasBg,size:'large',set:setPrim(i)})),
+      ...c.primaryColors.map((col,i)=>({name:`Primary ${i+1} on element background`,fg:col,bg:elBg,size:'large',set:setPrim(i)})),
+      {name:'Accent on canvas',fg:c.structuralColors.accent,bg:canvasBg,size:'large',set:setAccent},
+      {name:'Accent on element background',fg:c.structuralColors.accent,bg:elBg,size:'large',set:setAccent},
+      {name:'Positive on canvas',fg:c.semantic.positive,bg:canvasBg,size:'large',set:setSem('positive')},
+      {name:'Negative on canvas',fg:c.semantic.negative,bg:canvasBg,size:'large',set:setSem('negative')},
+      {name:'Neutral on canvas',fg:c.semantic.neutral,bg:canvasBg,size:'large',set:setSem('neutral')},
     ];
 
     let pass=0,fail=0;
@@ -5274,8 +5281,10 @@ $('#exportShareUrl').addEventListener('click',()=>{
       const ok=ratio>=threshold;
       const largePassed=!ok&&ratio>=3&&pair.size==='normal';
       if(ok||(ratio>=3&&pair.size==='large'))pass++;else fail++;
-      return{...pair,ratio,ok,largePassed};
+      const fix=ok?null:suggestFix(pair.fg,pair.bg,threshold);
+      return{...pair,ratio,ok,largePassed,fix};
     });
+    lastRows=rows;
 
     // Summary
     summary.innerHTML=`
@@ -5293,16 +5302,40 @@ $('#exportShareUrl').addEventListener('click',()=>{
     list.innerHTML=sorted.map(r=>{
       const badge=r.ok?'pass':r.largePassed?'large':'fail';
       const badgeLbl=r.ok?'Pass':(r.largePassed?'Large text only':'Fail');
+      const fix=r.fix?`<button class="btn btn-default btn-sm wcag-fix" data-row="${rows.indexOf(r)}" data-tip="Changes only the lightness, just enough to pass"><span class="wcag-fix-sw" style="background:${r.fix}"></span>Use ${r.fix}</button>`:'';
       return `<div class="wcag-item">
         <div class="wcag-item-swatch" style="background:${r.fg};outline:2px solid ${r.bg};outline-offset:-1px"></div>
         <div class="wcag-item-info">
           <div class="wcag-item-name">${r.name}</div>
           <div class="wcag-item-ratio">${r.ratio.toFixed(2)}:1 vs ${r.size==='normal'?'4.5':'3.0'}:1 threshold</div>
+          ${fix}
         </div>
         <span class="wcag-item-badge ${badge}">${badgeLbl}</span>
       </div>`;
     }).join('');
   }
+
+  /* Suggested fix: keep the colour's hue and chroma, move only its OKLCH
+     lightness away from the background until it clears the threshold (with
+     a small margin), taking the smallest step that works. */
+  function suggestFix(fg,bg,threshold){
+    const hex=(fg||'').slice(0,7);if(!/^#[0-9a-f]{6}$/i.test(hex))return null;
+    const [L,C,H]=hexToOklch(hex);
+    const dir=cr2('#000000',bg)>=cr2('#FFFFFF',bg)?-1:1; // darken on light backgrounds
+    for(let l=L;l>=0&&l<=1;l+=dir*0.005){
+      const cand=oklchToHex(l,C,H);
+      if(cr2(cand,bg)>=threshold+0.05)return cand;
+    }
+    return null;
+  }
+  let lastRows=[];
+  list.addEventListener('click',e=>{
+    const b=e.target.closest('.wcag-fix');if(!b)return;
+    const r=lastRows[+b.dataset.row];if(!r||!r.fix)return;
+    r.set(keepHexStyle(r.fg,r.fix));
+    applyTheme();buildAll();pushUndo();wcagRun();
+    showToast(`${r.name.replace(/ on .*/,'')} changed to ${r.fix}. Press Ctrl+Z to undo.`);
+  });
 
   btn.addEventListener('click',()=>{
     if(panel.classList.contains('show')){panel.classList.remove('show');}

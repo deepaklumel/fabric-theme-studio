@@ -542,6 +542,10 @@ button{font-family:inherit}
 .modal-body textarea,.textarea{width:100%;height:260px;padding:6px 12px;resize:none;background:var(--fx-bg1);border:1px solid var(--fx-stroke1);border-bottom-color:var(--fx-stroke-acc);border-radius:var(--fx-r);color:var(--fx-fg1);font:400 14px/20px var(--fx-font);outline:none}
 .modal-body textarea:focus,.textarea:focus{border-bottom:2px solid var(--fx-brand)}
 .modal-foot{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;flex:none;padding:0;border:0}
+.export-apply{margin-top:16px}
+.export-apply h3{margin:0 0 4px;font:600 14px/20px var(--fx-font);color:var(--fx-fg1)}
+.export-apply ol{margin:0;padding-left:20px;font:400 14px/20px var(--fx-font);color:var(--fx-fg1)}
+.export-apply li+li{margin-top:2px}
 @media (max-width:520px){.modal-foot{flex-direction:column-reverse;align-items:stretch}.modal-foot .btn{width:100%}}
 .btn.is-done{background:var(--fx-success-bg1);border-color:var(--fx-success-border);color:var(--fx-fg1)}
 #inlineDialogMsg{font:600 16px/22px var(--fx-font);color:var(--fx-fg1)}
@@ -645,6 +649,8 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
 .wcag-item-info{flex:1;min-width:0}
 .wcag-item-name{font:400 14px/20px var(--fx-font);color:var(--fx-fg1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wcag-item-ratio{font:400 12px/16px var(--fx-font);color:var(--fx-fg3);font-variant-numeric:tabular-nums}
+.wcag-fix{margin-top:6px;gap:6px}
+.wcag-fix-sw{width:12px;height:12px;border-radius:2px;border:1px solid var(--fx-stroke1-hover);flex:none}
 /* Status tags (small, filled) */
 .wcag-item-badge{flex:none;height:20px;padding:0 6px;display:inline-flex;align-items:center;border-radius:var(--fx-r);font:400 12px/16px var(--fx-font);color:var(--fx-fg-on-brand)}
 .wcag-item-badge.pass{background:var(--fx-success-bg3)}
