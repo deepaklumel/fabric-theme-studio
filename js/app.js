@@ -103,6 +103,7 @@ function isDirty(){return JSON.stringify(T)!==JSON.stringify(THEME_ORIGIN);}
 /* ── Update Save button state ── */
 function checkDirty(){
   const dirty=isDirty();
+  if(window._syncToneTwin)window._syncToneTwin();
   const resetAll=document.getElementById('resetAllBtn');if(resetAll)resetAll.disabled=!dirty;
   if(window._syncTabReset)window._syncTabReset();
   const saveBtn=document.getElementById('saveBtn');
@@ -219,7 +220,7 @@ function applyTheme(){
   const sc=c.structuralColors;
   root.style.setProperty('--out1',sc.outline1);root.style.setProperty('--out2',sc.outline2);
   root.style.setProperty('--struct-bg',sc.background);root.style.setProperty('--struct-icon',sc.icon);
-  root.style.setProperty('--struct-accent',sc.accent);root.style.setProperty('--struct-subtle',sc.subtleFill);
+  root.style.setProperty('--struct-accent',sc.accent);root.style.setProperty('--struct-accent-text',tc(sc.accent));root.style.setProperty('--struct-subtle',sc.subtleFill);
   root.style.setProperty('--pos',c.semantic.positive);root.style.setProperty('--neg',c.semantic.negative);root.style.setProperty('--neu',c.semantic.neutral);
   root.style.setProperty('--canvas-bg',p.canvas.background.color);
   // Tone flag for styles that can't be expressed as a single token —
@@ -1848,7 +1849,7 @@ function clampDropdown(btn,drop){
     if(typeof window._planShowLayoutPicker==='function')window._planShowLayoutPicker(name==='planning');
     if(typeof window._intelShowLayoutPicker==='function')window._intelShowLayoutPicker(name==='intelligence');
     if(name==='intelligence'&&typeof window._intelSyncTemplate==='function')window._intelSyncTemplate(lastIntelligencePage);
-    if(typeof window._setVisualsTabEnabled==='function')window._setVisualsTabEnabled(name==='intelligence');
+    if(typeof window._setSheetContext==='function')window._setSheetContext(name);
   }
   btns.forEach(b=>b.addEventListener('click',()=>selectModule(b.dataset.module)));
   window._selectModule=selectModule;
@@ -1920,26 +1921,12 @@ function clampDropdown(btn,drop){
   });
   ['panelExpand','panelExpandLabel'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('click',()=>openTab(activeTab));});
 
-  // The "Visuals" tab (element background/border/radius/shadow/
-  // padding) only applies to Intelligence's chart/table widgets —
-  // Planning's matrix and PowerTable's layouts are flat, full-bleed
-  // sheets with no such element styling, so that tab is disabled
-  // while either of those modules is active. If it was the open tab
-  // when switching away from Intelligence, fall back to Color.
-  window._setVisualsTabEnabled=function(enabled){
-    const btn=document.querySelector('.drawer-tab[data-tab="visuals"]');
-    if(!btn)return;
-    btn.disabled=!enabled;
-    btn.dataset.tip=enabled?'':'Visuals applies to Intelligence only';
-    if(enabled)delete btn.dataset.tip;
-    if(!enabled && activeTab==='visuals')selectTab('colors');
-  };
-
   // Open Color tab by default on load
   openTab('colors');
 
   // ⌘B shortcut
-  window._togglePanel=()=>{ panelOpen ? closePanel() : openTab(activeTab); };
+  window._togglePanel=()=>{ if(document.body.classList.contains('is-creating'))return; panelOpen ? closePanel() : openTab(activeTab); };
+  window._openPanel=()=>{ if(!panelOpen)openTab(activeTab); };
   const closeBtn=document.getElementById('panelClose');
   if(closeBtn)closeBtn.addEventListener('click',closePanel);
   window._closePanel=closePanel;
@@ -2085,6 +2072,7 @@ function clampDropdown(btn,drop){
     else if(sheet==='planning'&&window._planSelectLayout)window._planSelectLayout(leaf);
     else if(sheet==='powertable'&&window._ptSelectLayout)window._ptSelectLayout(leaf);
     markSelected(sheet,leaf);
+    if(window._refreshUsage)window._refreshUsage();
   }
   tree.addEventListener('click',e=>{
     const item=e.target.closest('.tree-item');if(!item)return;
@@ -3176,8 +3164,10 @@ const MAGIC_DIMINISHERS=new Set(['slightly','somewhat','mildly','softly','subtly
    (longer) the matched term was; lightness/saturation bias are picked
    by weighted majority vote. */
 function parseDescription(text){
-  const norm=(text||'').toLowerCase().trim();
-  if(!norm)return{hue:220,light:'balanced',sat:'balanced',matched:[],usedFallback:true};
+  // Literal hex codes ("#1F77B4 and gold") are used as-is, like named colours.
+  const hexes=((text||'').match(/#[0-9a-f]{6}\b/gi)||[]).map(h=>h.toUpperCase());
+  const norm=(text||'').replace(/#[0-9a-f]{6}\b/gi,' ').toLowerCase().trim();
+  if(!norm&&!hexes.length)return{hue:220,light:'balanced',sat:'balanced',matched:[],usedFallback:true};
 
   // Intensity: a single global scalar from any intensifier/diminisher
   // words present, independent of stopword filtering below (checked
@@ -3264,6 +3254,7 @@ function parseDescription(text){
     if(best)matches.push({term:best.term,entry:best.entry,specificity:best.term.length});
   }
 
+  hexes.forEach(hx=>{const[L,C,H]=hexToOklch(hx);matches.push({term:hx,entry:{hueRange:[H,H],light:binLightness(L),sat:binSaturation(C),isColor:true,hex:hx},specificity:7});});
   if(!matches.length){
     const h=magicHash(norm);
     const lightOptions=['dark','balanced','bright'];
@@ -3298,6 +3289,7 @@ function parseDescription(text){
   let multiHex=null;
   if(distinctColors.length>=2){
     multiHex=distinctColors.slice(0,8).map(m=>{
+      if(m.entry.hex)return m.entry.hex;
       const L_MAP={dark:0.32,balanced:0.52,bright:0.72};
       const C_MAP={muted:0.05,balanced:0.11,vivid:0.17};
       return oklchToHex(applyIntensityL(L_MAP[m.entry.light],intensity),applyIntensityC(C_MAP[m.entry.sat],intensity),m.midHue);
@@ -3327,7 +3319,9 @@ function parseDescription(text){
     matched:matches.map(m=>m.term),
     usedFallback:false,
     intensity,
-    multiHex
+    multiHex,
+    seedHex:hexes.length===1&&!multiHex?hexes[0]:null,
+    wantsDark:/\b(dark|night|midnight|noir|black|moody)\b/.test(norm)&&!/\b(not|no|avoid|without)\s+(too\s+|very\s+|so\s+)?(dark|night|black)\b/.test(norm)
   };
 }
 
@@ -3364,146 +3358,9 @@ function seedParamsToHex(params,jitter){
 /* Feed the seed straight into generateTheme() — the exact same
    OKLCH palette engine the Brand-colour flow uses. No separate colour
    logic; the only new part is the text→seed translation above. */
-/* ── Optional online tier: ask an LLM for a seed colour + mood label ──
-   Bring-your-own-key only (never hardcoded, never shipped in this file).
-   Supports three providers — Gemini, OpenAI, and Claude — each with its
-   own key stored separately in localStorage, so switching providers
-   never loses the other two keys. On any failure — missing key,
-   network error, non-2xx (incl. 429 rate-limit), bad JSON, or timeout —
-   the caller falls back to the deterministic engine above, exactly the
-   same way regardless of which provider was tried. */
-const AI_PROVIDERS={
-  gemini:{label:'Gemini AI',keyName:'ntmGeminiKey'},
-  openai:{label:'OpenAI',keyName:'ntmOpenAiKey'},
-  claude:{label:'Claude',keyName:'ntmClaudeKey'},
-};
-function getAiProvider(){
-  try{const p=(localStorage.getItem('ntmAiProvider')||'gemini').trim();return AI_PROVIDERS[p]?p:'gemini';}
-  catch(e){return 'gemini';}
-}
-function setAiProvider(p){
-  try{localStorage.setItem('ntmAiProvider',AI_PROVIDERS[p]?p:'gemini');}catch(e){}
-}
-function getAiKey(provider){
-  provider=provider||getAiProvider();
-  try{return (localStorage.getItem(AI_PROVIDERS[provider].keyName)||'').trim();}catch(e){return '';}
-}
-function setAiKey(provider,key){
-  try{localStorage.setItem(AI_PROVIDERS[provider].keyName,(key||'').trim());}catch(e){}
-}
-// Back-compat alias — existing code/readers may still call this name.
-function extractJsonHexMood(raw){
-  const match=(raw||'').match(/\{[^{}]*\}/);
-  if(!match)throw new Error('bad-response');
-  const parsed=JSON.parse(match[0]);
-  const hex=norm(parsed.hex);
-  if(!hex)throw new Error('bad-hex');
-  return{hex,mood:(parsed.mood||'').toString().slice(0,40)};
-}
-function seedPrompt(text){
-  return `You pick a single representative colour for a UI theme based on a short description.\nDescription: "${text}"\nRespond with ONLY a compact JSON object, no markdown, no code fences, in this exact shape:\n{"hex":"#RRGGBB","mood":"one or two word mood label"}\nThe hex must be a colour that visually evokes the description (consider its typical real-world colours, mood, and industry connotations).`;
-}
-
-const GEMINI_MODEL='gemini-2.0-flash';
-async function callGeminiForSeed(text){
-  const key=getAiKey('gemini');
-  if(!key)throw new Error('no-key');
-  const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),7000);
-  try{
-    const url=`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-    const res=await fetch(url,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-goog-api-key':key},
-      body:JSON.stringify({contents:[{parts:[{text:seedPrompt(text)}]}]}),
-      signal:controller.signal
-    });
-    if(!res.ok){
-      if(res.status===429)throw new Error('rate-limited');
-      throw new Error('http-'+res.status);
-    }
-    const data=await res.json();
-    const raw=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
-    return extractJsonHexMood(raw);
-  }finally{
-    clearTimeout(timeout);
-  }
-}
-
-const OPENAI_MODEL='gpt-4o-mini';
-async function callOpenAIForSeed(text){
-  const key=getAiKey('openai');
-  if(!key)throw new Error('no-key');
-  const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),7000);
-  try{
-    const res=await fetch('https://api.openai.com/v1/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({
-        model:OPENAI_MODEL,
-        messages:[{role:'user',content:seedPrompt(text)}],
-        response_format:{type:'json_object'},
-        max_tokens:60,
-      }),
-      signal:controller.signal
-    });
-    if(!res.ok){
-      if(res.status===429)throw new Error('rate-limited');
-      throw new Error('http-'+res.status);
-    }
-    const data=await res.json();
-    const raw=data?.choices?.[0]?.message?.content||'';
-    return extractJsonHexMood(raw);
-  }finally{
-    clearTimeout(timeout);
-  }
-}
-
-const CLAUDE_MODEL='claude-3-5-haiku-20241022';
-async function callClaudeForSeed(text){
-  const key=getAiKey('claude');
-  if(!key)throw new Error('no-key');
-  const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),7000);
-  try{
-    // Anthropic's API is opt-in for direct browser calls via this header
-    // (it doesn't send permissive CORS headers otherwise, precisely to
-    // discourage exposing keys client-side by default) — needed here
-    // since this is exactly the bring-your-own-key browser use case.
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':key,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true',
-      },
-      body:JSON.stringify({
-        model:CLAUDE_MODEL,
-        max_tokens:60,
-        messages:[{role:'user',content:seedPrompt(text)}],
-      }),
-      signal:controller.signal
-    });
-    if(!res.ok){
-      if(res.status===429)throw new Error('rate-limited');
-      throw new Error('http-'+res.status);
-    }
-    const data=await res.json();
-    const raw=data?.content?.[0]?.text||'';
-    return extractJsonHexMood(raw);
-  }finally{
-    clearTimeout(timeout);
-  }
-}
-
-function callAIForSeed(text,provider){
-  provider=provider||getAiProvider();
-  if(provider==='openai')return callOpenAIForSeed(text);
-  if(provider==='claude')return callClaudeForSeed(text);
-  return callGeminiForSeed(text);
-}
+// The optional bring-your-own-key AI tier was removed: Describe runs fully
+// offline. Clear any keys earlier versions stored in this browser.
+try{['ntmGeminiKey','ntmOpenAiKey','ntmClaudeKey','ntmAiProvider'].forEach(k=>localStorage.removeItem(k));}catch(e){}
 
 /* ══════════════════════════════════════════════════════════
    NEW THEME WIZARD — single screen, Fabric UX
@@ -3519,10 +3376,6 @@ let ntmImageObjectUrl=null;
 let ntmJsonParsed=null;   // validated {label,theme} object from the JSON import box
 let ntmMagicParams=null;  // parsed seed params from the Magic description box
 let ntmMagicJitter={hue:0,light:0}; // randomized on "Try a variation", reset on new text
-let ntmMagicAiHex=null;   // hex seed returned by Gemini, if the online tier succeeded
-let ntmMagicAiPending=false; // true while a Gemini request is in flight
-let ntmMagicAiDebounce=null;
-let ntmMagicAiReqId=0;    // guards against a stale response landing after newer input
 let ntmTone='light';
 let ntmToneManual=false; // true once the user explicitly clicks a tone button
 let ntmGenerated=null;
@@ -3593,6 +3446,7 @@ function showEmptyPreview(){
   document.getElementById('ntmResetGen').style.display='none';
   document.getElementById('ntmEditHint').style.display='none';
   updateEmptyPreviewText();
+  ntmLive();
 }
 
 function generate(){
@@ -3617,12 +3471,12 @@ function generate(){
     base.label=name;
   } else if(ntmMode==='magic'){
     if(!ntmMagicParams){showEmptyPreview();return;}
-    if(!ntmMagicAiHex&&ntmMagicParams.multiHex&&ntmMagicParams.multiHex.length>=2){
+    if(ntmMagicParams.multiHex&&ntmMagicParams.multiHex.length>=2){
       // Explicit multi-colour mention ("navy and gold") — keep the
       // named colours distinct instead of blending to one seed hue.
       base=generateThemeFromPalette(ntmMagicParams.multiHex,ntmTone,name);
     } else {
-      const seedHex=ntmMagicAiHex||seedParamsToHex(ntmMagicParams,ntmMagicJitter);
+      const seedHex=ntmMagicParams.seedHex&&!ntmMagicJitter.hue?ntmMagicParams.seedHex:seedParamsToHex(ntmMagicParams,ntmMagicJitter);
       base=generateTheme(seedHex,ntmTone,name);
     }
   } else {showEmptyPreview();return;}
@@ -3645,6 +3499,7 @@ function generate(){
   palettePreview.style.display='flex';
   document.getElementById('ntmResetGen').style.display='';
   document.getElementById('ntmEditHint').style.display='';
+  ntmLive();
 }
 
 /* ── makeSwatch: click-to-edit coloured box ── */
@@ -3763,6 +3618,7 @@ function mkSw(col,label,touchKey,setter,opts={}){
   wrap.style.background=col;
 
   if(label){
+    wrap.dataset.tip=/^\d+$/.test(label)?'Primary '+label:label; // swatch labels are hidden; name it on hover
     const lbl=document.createElement('span');
     lbl.className='ntm-pal-swatch-label';
     lbl.style.color=tc(col);
@@ -3789,6 +3645,7 @@ function mkSw(col,label,touchKey,setter,opts={}){
     if(touchKey)ntmTouched[touchKey]=n;
     setter(n);
     if(ntmGenerated)previewName.textContent=ntmGenerated.label;
+    ntmLive();
   });
 
   // Drag-to-reorder (primary swatches only — pass opts.reorderIndex).
@@ -3818,6 +3675,7 @@ function reorderPrimaries(fromIdx,toIdx){
   arr.forEach((hex,i)=>{ntmTouched['primaries_'+i]=hex;});
   renderPreview(ntmGenerated);
   previewName.textContent=ntmGenerated.label;
+  ntmLive();
 }
 
 /* ── Render the preview column ── */
@@ -3844,7 +3702,7 @@ function renderPreview(base){
     ['Positive',c.semantic.positive,'posit',nv=>{c.semantic.positive=nv;}],
     ['Negative',c.semantic.negative,'negat',nv=>{c.semantic.negative=nv;}],
     ['Neutral', c.semantic.neutral, 'neutr',nv=>{c.semantic.neutral=nv;}],
-  ].forEach(([lbl,col,tk,setter])=>semRow.appendChild(mkSw(col,lbl,tk,setter,{w:'flex:0 0 80px',h:'32px'})));
+  ].forEach(([lbl,col,tk,setter])=>semRow.appendChild(mkSw(col,lbl,tk,setter,{w:'flex:1 1 0',h:'32px'})));
   semSec.appendChild(semLbl);semSec.appendChild(semRow);
   palettePreview.appendChild(semSec);
 
@@ -3857,7 +3715,7 @@ function renderPreview(base){
     ['Wallpaper',base.theme.page.wallpaper.color,           'wallpaper',nv=>{base.theme.page.wallpaper.color=nv;}],
     ['Elements', base.theme.elements.background.color,      'elBg',     nv=>{base.theme.elements.background.color=nv;}],
     ['Text',     base.theme.typography.color,               'text',     nv=>{base.theme.typography.color=nv;}],
-  ].forEach(([lbl,col,tk,setter])=>surfRow.appendChild(mkSw(col,lbl,tk,setter,{w:'flex:0 0 68px',h:'32px'})));
+  ].forEach(([lbl,col,tk,setter])=>surfRow.appendChild(mkSw(col,lbl,tk,setter,{w:'flex:1 1 0',h:'32px'})));
   surfSec.appendChild(surfLbl);surfSec.appendChild(surfRow);
   palettePreview.appendChild(surfSec);
 }
@@ -3927,13 +3785,16 @@ function renderImageSwatches(hexes){
 const ntmImageDrop=document.getElementById('ntmImageDrop');
 const ntmImageFile=document.getElementById('ntmImageFile');
 ntmImageDrop.addEventListener('click',()=>ntmImageFile.click());
-ntmImageFile.addEventListener('change',()=>{
-  const file=ntmImageFile.files&&ntmImageFile.files[0];
+ntmImageDrop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ntmImageFile.click();}});
+ntmImageFile.addEventListener('change',()=>{const file=ntmImageFile.files&&ntmImageFile.files[0];if(file)loadImageBlob(file,file.name);});
+/* An image can come from the file picker, a drop, or the clipboard (Ctrl+V, or
+   the Paste image button). Everything is read locally — nothing is uploaded. */
+function loadImageBlob(file,name){
   const status=document.getElementById('ntmImageStatus');
-  if(!file)return;
+  if(!file||!/^image\//.test(file.type)){status.textContent='That isn’t an image. Try a JPG, PNG, or WebP.';return;}
   if(ntmImageObjectUrl)URL.revokeObjectURL(ntmImageObjectUrl);
   ntmImageObjectUrl=URL.createObjectURL(file);
-  document.getElementById('ntmImageFileName').textContent=file.name;
+  document.getElementById('ntmImageFileName').textContent=name;
   status.textContent='Extracting colors…';
   const img=new Image();
   img.onload=()=>{
@@ -3957,6 +3818,38 @@ ntmImageFile.addEventListener('change',()=>{
   };
   img.onerror=()=>{status.textContent='Could not read this image — try another file.';};
   img.src=ntmImageObjectUrl;
+}
+const pastedName=()=>'Pasted image';
+// Drop a file onto the box
+['dragenter','dragover'].forEach(t=>ntmImageDrop.addEventListener(t,e=>{e.preventDefault();ntmImageDrop.classList.add('is-drop');}));
+['dragleave','drop'].forEach(t=>ntmImageDrop.addEventListener(t,()=>ntmImageDrop.classList.remove('is-drop')));
+ntmImageDrop.addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer&&e.dataTransfer.files[0];if(f)loadImageBlob(f,f.name);});
+// Ctrl+V / ⌘V while creating a theme: an image on the clipboard switches to the Image
+// starting point (if needed) and is used; plain text pastes are left alone.
+const isMac=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent);
+document.getElementById('ntmImagePasteHint').textContent=isMac?'or press ⌘V':'or press Ctrl+V';
+document.addEventListener('paste',e=>{
+  if(!document.body.classList.contains('is-creating'))return;
+  const item=[...(e.clipboardData&&e.clipboardData.items||[])].find(i=>i.kind==='file'&&/^image\//.test(i.type));
+  if(!item)return;
+  e.preventDefault();
+  if(ntmMode!=='image')document.getElementById('ntmCardImage').click();
+  loadImageBlob(item.getAsFile(),pastedName());
+});
+// Paste image button — reads the clipboard directly (the browser may ask for permission)
+const pasteBtn=document.getElementById('ntmImagePaste');
+if(!(navigator.clipboard&&navigator.clipboard.read))pasteBtn.hidden=true;
+pasteBtn.addEventListener('click',async()=>{
+  const status=document.getElementById('ntmImageStatus');
+  try{
+    for(const it of await navigator.clipboard.read()){
+      const type=it.types.find(t=>/^image\//.test(t));
+      if(type){const blob=await it.getType(type);loadImageBlob(new File([blob],'pasted',{type}),pastedName());return;}
+    }
+    status.textContent='There’s no image on the clipboard. Copy an image, then try again.';
+  }catch(err){
+    status.textContent=`Couldn’t read the clipboard. Press ${isMac?'⌘V':'Ctrl+V'} to paste instead.`;
+  }
 });
 
 /* ── JSON import parsing ── */
@@ -4001,137 +3894,48 @@ document.getElementById('ntmJsonText').addEventListener('input',e=>{
 
 /* ── Magic descriptive generator ── */
 const magicStatusText=document.getElementById('ntmMagicStatusText');
-const magicSpinner=document.getElementById('ntmMagicSpinner');
-const magicBadge=document.getElementById('ntmMagicSourceBadge');
-
-function setMagicBadge(kind){
-  // kind: 'ai' | 'offline' | null
-  if(!kind){magicBadge.style.display='none';return;}
-  magicBadge.style.display='inline-block';
-  magicBadge.className='ntm-magic-source-badge '+kind;
-  magicBadge.textContent=kind==='ai'?AI_PROVIDERS[getAiProvider()].label:'Offline';
-}
-
+const MAGIC_HINT='Describe a mood, industry, place, or colors. Combine colors ("navy and gold"), type hex codes, add "very" or "slightly", or leave one out with "not". Works offline.';
+const MAGIC_EXAMPLES=['Calm ocean','Navy and gold','Warm sunset','Fresh forest','Trustworthy banking','Playful pastel','Midnight luxury','#1F77B4 healthcare'];
+const magicInput=document.getElementById('ntmMagicText');
+document.getElementById('ntmMagicExamples').innerHTML=MAGIC_EXAMPLES.map(t=>`<button type="button" class="ntm-magic-chip">${t}</button>`).join('');
+document.getElementById('ntmMagicExamples').addEventListener('click',e=>{
+  const b=e.target.closest('.ntm-magic-chip');if(!b)return;
+  magicInput.value=b.textContent;runMagicParse(magicInput.value);scheduleGenerate(0);magicInput.focus();
+});
 function runMagicParse(text){
   const variationBtn=document.getElementById('ntmMagicVariation');
   const raw=(text||'').trim();
-  ntmMagicAiHex=null;
-  ntmMagicAiReqId++; // invalidate any in-flight AI request tied to previous text
-  if(ntmMagicAiPending){ntmMagicAiPending=false;magicSpinner.style.display='none';}
   if(!raw){
-    ntmMagicParams=null;
-    variationBtn.disabled=true;
-    setMagicBadge(null);
-    magicStatusText.textContent='Type a mood, industry, color(s), or scene — try combining colors ("navy and gold"), adding "very"/"slightly", or excluding one with "not". Instant, no internet required.';
+    ntmMagicParams=null;variationBtn.disabled=true;magicStatusText.textContent=MAGIC_HINT;
     return;
   }
   ntmMagicParams=parseDescription(raw);
   ntmMagicJitter={hue:0,light:0};
   variationBtn.disabled=false;
-  if(ntmMagicParams.usedFallback){
-    magicStatusText.textContent='No keyword match found — generated a palette from your text anyway. Try a mood, industry, color, or scene for a more targeted result, e.g. "ocean" or "luxury fintech".';
-  } else if(ntmMagicParams.multiHex&&ntmMagicParams.multiHex.length>=2){
-    magicStatusText.textContent=`Matched: ${ntmMagicParams.matched.join(', ')} → kept as ${ntmMagicParams.multiHex.length} distinct colors.`;
+  const p=ntmMagicParams,feel=`${p.light==='balanced'?'':p.light+', '}${p.sat==='balanced'?'balanced':p.sat}`;
+  // Show the words the person actually typed, not internal partial matches ("night" inside "midnight").
+  const typed=p.matched.filter(t=>t.startsWith('#')||new RegExp('(^|[^a-z])'+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(s|es)?([^a-z]|$)','i').test(raw));
+  const words=(typed.length?typed:p.matched).join(', ');
+  if(p.usedFallback){
+    magicStatusText.textContent='Nothing recognized yet, so this palette is a best guess. Try a mood, industry, place, or color, like “ocean” or “luxury fintech”.';
+  } else if(p.multiHex&&p.multiHex.length>=2){
+    magicStatusText.textContent=`Understood: ${words}. Using ${p.multiHex.length} distinct colors.`;
   } else {
-    const tag=ntmMagicParams.intensity>0?' (intensified)':ntmMagicParams.intensity<0?' (softened)':'';
-    magicStatusText.textContent=`Matched: ${ntmMagicParams.matched.join(', ')} → ${ntmMagicParams.light} ${ntmMagicParams.sat} palette${tag}.`;
+    const tag=p.intensity>0?', stronger':p.intensity<0?', softer':'';
+    magicStatusText.textContent=`Understood: ${words}. A ${feel} palette${tag}.`;
   }
-  setMagicBadge(getAiKey()?'offline':null);
-
-  // If the user has supplied a key for their selected provider, try the
-  // online tier in the background after a short pause in typing. The
-  // offline result above is already applied instantly, so there's
-  // nothing to wait on — this just upgrades the preview if/when the AI
-  // responds successfully.
-  clearTimeout(ntmMagicAiDebounce);
-  if(getAiKey()){
-    const reqId=ntmMagicAiReqId;
-    ntmMagicAiDebounce=setTimeout(()=>tryMagicAi(raw,reqId),500);
+  // "midnight", "dark", "night"… switch to the Dark tone unless the user picked one.
+  if(!ntmToneManual){
+    const tone=p.wantsDark?'dark':'light';
+    if(tone!==ntmTone){ntmTone=tone;document.querySelectorAll('.ntm-tone-btn').forEach(b=>b.classList.toggle('active',b.dataset.tone===ntmTone));
+      document.getElementById('ntmToneDesc').textContent=ntmTone==='dark'?'Dark surfaces — near-black canvas, charcoal wallpaper, light text':'Light surfaces — white canvas, light wallpaper, dark text';}
   }
 }
-
-async function tryMagicAi(text,reqId){
-  const provider=getAiProvider();
-  ntmMagicAiPending=true;
-  magicSpinner.style.display='inline-block';
-  magicStatusText.textContent=`Asking ${AI_PROVIDERS[provider].label} for a palette…`;
-  setMagicBadge(null);
-  try{
-    const result=await callAIForSeed(text,provider);
-    if(reqId!==ntmMagicAiReqId)return; // input changed while we were waiting
-    ntmMagicAiHex=result.hex;
-    magicStatusText.textContent=result.mood?`AI match: "${result.mood}" → ${result.hex}`:`AI match → ${result.hex}`;
-    setMagicBadge('ai');
-    scheduleGenerate(0);
-  }catch(err){
-    if(reqId!==ntmMagicAiReqId)return;
-    ntmMagicAiHex=null;
-    const reason=err&&err.name==='AbortError'?'timed out':(err&&err.message==='rate-limited'?'rate-limited':'unavailable');
-    if(ntmMagicParams){
-      magicStatusText.textContent=ntmMagicParams.usedFallback
-        ?'No keyword match found — generated a palette from your text anyway. Try a mood, industry, color, or scene for a more targeted result, e.g. "ocean" or "luxury fintech".'
-        :`Matched: ${ntmMagicParams.matched.join(', ')} → ${ntmMagicParams.light} ${ntmMagicParams.sat} palette.`;
-    }
-    setMagicBadge('offline');
-    console.warn(AI_PROVIDERS[provider].label+' palette request '+reason+' — using offline generator instead.');
-  }finally{
-    if(reqId===ntmMagicAiReqId){ntmMagicAiPending=false;magicSpinner.style.display='none';}
-  }
-}
-
-document.getElementById('ntmMagicText').addEventListener('input',e=>{
-  runMagicParse(e.target.value);
-  scheduleGenerate(300);
-});
+magicInput.addEventListener('input',e=>{runMagicParse(e.target.value);scheduleGenerate(300);});
 document.getElementById('ntmMagicVariation').addEventListener('click',()=>{
   if(!ntmMagicParams)return;
-  ntmMagicAiHex=null;
-  ntmMagicAiReqId++;
-  setMagicBadge(getAiKey()?'offline':null);
   ntmMagicJitter={hue:(Math.random()*2-1)*20,light:(Math.random()*2-1)*0.06};
   scheduleGenerate(0);
-});
-
-/* ── AI provider + key toggle/entry (bring-your-own-key, localStorage only) ── */
-const magicAiToggle=document.getElementById('ntmMagicAiToggle');
-const magicKeyWrap=document.getElementById('ntmMagicKeyWrap');
-const magicAiHelper=document.getElementById('ntmMagicAiHelper');
-const magicApiKeyInput=document.getElementById('ntmMagicApiKey');
-const magicAiProviderSelect=document.getElementById('ntmMagicAiProvider');
-const AI_KEY_PLACEHOLDERS={
-  gemini:'Paste your free Gemini API key',
-  openai:'Paste your OpenAI API key',
-  claude:'Paste your Claude API key',
-};
-magicAiProviderSelect.value=getAiProvider();
-magicApiKeyInput.value=getAiKey();
-magicApiKeyInput.placeholder=AI_KEY_PLACEHOLDERS[getAiProvider()];
-magicAiToggle.addEventListener('click',()=>{
-  const showing=magicKeyWrap.style.display!=='none';
-  magicKeyWrap.style.display=showing?'none':'flex';
-  magicAiHelper.style.display=showing?'none':'block';
-});
-magicAiProviderSelect.addEventListener('change',e=>{
-  const provider=AI_PROVIDERS[e.target.value]?e.target.value:'gemini';
-  setAiProvider(provider);
-  magicApiKeyInput.value=getAiKey(provider);
-  magicApiKeyInput.placeholder=AI_KEY_PLACEHOLDERS[provider];
-  ntmMagicAiHex=null;
-  ntmMagicAiReqId++;
-  const hasParams=!!ntmMagicParams;
-  setMagicBadge(hasParams?(getAiKey(provider)?'offline':null):null);
-});
-magicApiKeyInput.addEventListener('input',e=>{
-  const provider=getAiProvider();
-  setAiKey(provider,e.target.value);
-  const hasParams=!!ntmMagicParams;
-  setMagicBadge(hasParams?(ntmMagicAiHex?'ai':(getAiKey(provider)?'offline':null)):null);
-});
-document.getElementById('ntmMagicKeyClear').addEventListener('click',()=>{
-  magicApiKeyInput.value='';
-  setAiKey(getAiProvider(),'');
-  ntmMagicAiHex=null;
-  setMagicBadge(ntmMagicParams?null:null);
 });
 
 /* ── Brand colour inputs ── */
@@ -4209,7 +4013,7 @@ applyBtn.addEventListener('click',()=>{
     libSave(lib);
   })();
   const wasEdit=ntmEditLibIdx!==null;
-  modal.classList.remove('show');
+  ntmHide(true);
   updateDeleteBtn();
   showToast(wasEdit?`"${T.label}" updated`:`"${T.label}" created and saved to your library`);
 });
@@ -4219,7 +4023,7 @@ let ntmEditLibIdx=null; // index in lib[] when editing, null when creating
 
 function setWizardMode(isEdit){
   document.querySelector('.ntm-title').textContent=isEdit?'Edit theme':'Create a theme';
-  document.querySelector('.ntm-subtitle').textContent=isEdit?'Change this theme\u2019s colors and settings.':'Pick a starting point, then fine-tune the colors in the preview.';
+  document.querySelector('.ntm-subtitle').textContent=isEdit?'Change this theme\u2019s colors. Every change previews live on the sheet.':'Pick a starting point. Every change previews live on the sheet.';
   applyBtn.textContent=isEdit?'Save changes':'Create theme';
 }
 
@@ -4233,7 +4037,7 @@ function nextUntitledName(){
 
 function openWizard(){
   ntmEditLibIdx=null;
-  ntmMode=null;ntmBrandColor='#117865';ntmCoolorsHexes=[];ntmImageHexes=[];ntmJsonParsed=null;ntmMagicParams=null;ntmMagicJitter={hue:0,light:0};ntmMagicAiHex=null;ntmMagicAiPending=false;ntmMagicAiReqId++;clearTimeout(ntmMagicAiDebounce);ntmTone='light';ntmToneManual=false;ntmGenerated=null;ntmTouched={};
+  ntmMode=null;ntmBrandColor='#117865';ntmCoolorsHexes=[];ntmImageHexes=[];ntmJsonParsed=null;ntmMagicParams=null;ntmMagicJitter={hue:0,light:0};ntmTone='light';ntmToneManual=false;ntmGenerated=null;ntmTouched={};
   if(ntmImageObjectUrl){URL.revokeObjectURL(ntmImageObjectUrl);ntmImageObjectUrl=null;}
   document.querySelectorAll('.ntm-source-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById('ntmBrandInput').style.display='none';
@@ -4243,7 +4047,7 @@ function openWizard(){
   document.getElementById('ntmCoolorsStatus').textContent='Paste a Coolors URL or a list of hex codes. If your palette has fewer than 8 colors, we’ll generate the rest to match.';
   document.getElementById('ntmImageInput').style.display='none';
   document.getElementById('ntmImageFile').value='';
-  document.getElementById('ntmImageFileName').textContent='Click to choose an image';
+  document.getElementById('ntmImageFileName').textContent='Choose, drop, or paste an image';
   document.getElementById('ntmImageSwatchRow').innerHTML='';
   document.getElementById('ntmImageStatus').textContent='We’ll pull out the dominant colors from your image. Fewer than 8 found? We’ll generate the rest to match.';
   document.getElementById('ntmImageThumbWrap').innerHTML='<svg viewBox="0 0 16 16" fill="none" stroke="#c0c0c0" stroke-width="1.3" width="18" height="18"><rect x="2" y="2.5" width="12" height="11" rx="1.2"/><circle cx="5.5" cy="6" r="1.1"/><path d="M2.5 11.5l3.2-3.2a1 1 0 0 1 1.4 0l1.9 1.9 2-2a1 1 0 0 1 1.4 0l1.6 1.6"/></svg>';
@@ -4254,11 +4058,7 @@ function openWizard(){
   document.getElementById('ntmMagicInput').style.display='none';
   document.getElementById('ntmMagicText').value='';
   document.getElementById('ntmMagicVariation').disabled=true;
-  document.getElementById('ntmMagicStatusText').textContent='Type a mood, industry, color(s), or scene — try combining colors ("navy and gold"), adding "very"/"slightly", or excluding one with "not". Instant, no internet required.';
-  document.getElementById('ntmMagicSpinner').style.display='none';
-  setMagicBadge(null);
-  document.getElementById('ntmMagicKeyWrap').style.display='none';
-  document.getElementById('ntmMagicAiHelper').style.display='none';
+  document.getElementById('ntmMagicStatusText').textContent=MAGIC_HINT;
   document.getElementById('ntmThemeName').value=nextUntitledName();
   document.querySelectorAll('.ntm-tone-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('ntmToneDesc').textContent='Choose a starting point to preview tone';
@@ -4270,13 +4070,12 @@ function openWizard(){
   updateEmptyPreviewText();
   setWizardMode(false);
   canApply();
-  modal.classList.add('show');
+  ntmShow();
 }
 
 window.openWizardEdit=function openWizardEdit(item, libIdx){
   ntmEditLibIdx=libIdx;
   ntmTouched={};
-  ntmMagicAiHex=null;ntmMagicAiPending=false;ntmMagicAiReqId++;clearTimeout(ntmMagicAiDebounce);
   // Pre-populate name
   document.getElementById('ntmThemeName').value=item.label||'';
   // Detect tone from canvas background lightness
@@ -4317,13 +4116,42 @@ window.openWizardEdit=function openWizardEdit(item, libIdx){
   document.getElementById('ntmEditHint').style.display='';
   setWizardMode(true);
   canApply();
-  modal.classList.add('show');
+  ntmShow();
 }
 
 document.getElementById('newThemeBtn').addEventListener('click',openWizard);
-document.getElementById('ntmCancel').addEventListener('click',()=>modal.classList.remove('show'));
-document.getElementById('ntmCloseX').addEventListener('click',()=>modal.classList.remove('show'));
-modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('show');});
+
+document.getElementById('ntmCancel').addEventListener('click',()=>ntmHide(false));
+document.getElementById('ntmCloseX').addEventListener('click',()=>ntmHide(false));
+
+/* ── New theme in the side panel, always in live preview ──
+   Opening swaps the Properties content for the wizard and sets the current
+   theme aside; from then on every draft change is applied to the real
+   canvas (switch sheets in the Explorer to check them). Cancel puts the
+   set-aside theme back; Create keeps the draft. Nothing is saved or added
+   to undo until Create. The ribbon is read-only meanwhile. */
+let ntmHeld=null;
+function ntmShow(){
+  ntmHeld=JSON.stringify(T);
+  if(window._openPanel)window._openPanel();
+  document.querySelector('.drawer').classList.add('is-creating');document.body.classList.add('is-creating');
+  modal.classList.add('show');ntmLive();
+  setTimeout(()=>{const n=document.getElementById('ntmThemeName');if(n)n.focus();},0);
+}
+function ntmHide(commit){
+  if(ntmHeld===null)return;
+  if(!commit){T=JSON.parse(ntmHeld);applyTheme();requestAnimationFrame(()=>requestAnimationFrame(fit));}
+  ntmHeld=null;
+  document.querySelector('.drawer').classList.remove('is-creating');document.body.classList.remove('is-creating');
+  modal.classList.remove('show');checkDirty();
+}
+function ntmLive(){
+  if(ntmHeld===null)return;
+  if(ntmGenerated){const d=JSON.parse(JSON.stringify(ntmGenerated));d.label=document.getElementById('ntmThemeName').value.trim()||d.label;T=d;}
+  else T=JSON.parse(ntmHeld);
+  applyTheme();requestAnimationFrame(()=>requestAnimationFrame(fit));
+}
+addEventListener('keydown',e=>{if(e.key==='Escape'&&ntmHeld!==null&&!document.querySelector('.modal-bg.show')){e.stopPropagation();ntmHide(false);}},true);
 
 })(); /* end wizard IIFE */
 
@@ -4453,6 +4281,194 @@ function showPage(idx){
    (toggled by showPage() above) and no longer have a click handler;
    pointer-events:none in CSS backs this up so they can't be clicked. */
 
+/* ── Dark / light version ──
+   Builds the current theme's opposite-tone companion as a new custom theme:
+   primaries are kept (only lifted/lowered where they'd be unreadable on the
+   new canvas), every surface / text / structural / semantic colour comes
+   from the generator's light or dark rules, and all non-colour settings
+   (font, borders, radius, padding, shadows, sizes) carry over unchanged.
+   Key order follows the current theme, so the JSON stays in its shape. */
+(function(){
+  const btn=document.getElementById('toneTwinBtn');if(!btn)return;
+  const isDark=()=>lum(T.theme.page.canvas.background.color||'#FFFFFF')<0.18;
+  function sync(){
+    const toDark=!isDark();
+    document.getElementById('toneTwinLabel').textContent=toDark?'Dark version':'Light version';
+    btn.querySelector('.tt-ic').innerHTML=icon(toDark?'moon20':'sunny20','ri-validation');
+    btn.dataset.tip=toDark?'Create a dark version of this theme':'Create a light version of this theme';
+  }
+  window._syncToneTwin=sync;
+  const readable=(hex,toDark)=>{
+    const h=(hex||'').slice(0,7);if(!/^#[0-9a-f]{6}$/i.test(h))return hex;
+    if(toDark)return ensureChartLForTone(h,true);
+    const [L,C,H]=hexToOklch(h);return L>CHART_L_MAX+0.1?oklchToHex(CHART_L_MAX,C,H):hex; // too light for a white canvas
+  };
+  btn.addEventListener('click',()=>{
+    const toDark=!isDark(),tone=toDark?'dark':'light';
+    const base=T.label.replace(/ \((Dark|Light)\)$/,'');
+    const name=`${base} (${toDark?'Dark':'Light'})`;
+    const tw=JSON.parse(JSON.stringify(T)),c=tw.theme.colors;
+    c.primaryColors=c.primaryColors.map(h=>readable(h,toDark));
+    const g=themeFromPrimaries(c.primaryColors,tone,name,hexToOklch((c.primaryColors[0]||'#117865').slice(0,7))[2]).theme;
+    Object.keys(c.structuralColors).forEach(k=>{if(k in g.colors.structuralColors)c.structuralColors[k]=g.colors.structuralColors[k];});
+    Object.keys(c.semantic).forEach(k=>{if(k in g.colors.semantic)c.semantic[k]=g.colors.semantic[k];});
+    const p=tw.theme.page,e=tw.theme.elements,ty=tw.theme.typography;
+    p.canvas.background.color=g.page.canvas.background.color;p.canvas.border.color=g.page.canvas.border.color;p.wallpaper.color=g.page.wallpaper.color;
+    e.background.color=g.elements.background.color;e.border.color=g.elements.border.color;
+    Object.assign(e.header,{backgroundColor:g.elements.header.backgroundColor,borderColor:g.elements.header.borderColor,iconColor:g.elements.header.iconColor});
+    Object.assign(e.tooltip,{backgroundColor:g.elements.tooltip.backgroundColor,color:g.elements.tooltip.color});
+    ty.color=g.typography.color;
+    tw.label=name;tw.themeType=CUSTOM_THEME_TYPE;delete tw.builtIn;
+    T=tw;snapshotOrigin();buildAll();applyTheme();requestAnimationFrame(()=>requestAnimationFrame(fit));
+    const lbl=document.getElementById('ftbThemeName');if(lbl)lbl.textContent=name;
+    const lib=libLoad(),entry={...JSON.parse(JSON.stringify(T)),savedAt:Date.now()},i=lib.findIndex(x=>x.label===name);
+    if(i>=0)lib[i]=entry;else lib.unshift(entry);libSave(lib);
+    updateDeleteBtn();checkDirty();sync();
+    showToast(`"${name}" created and saved to your library`);
+  });
+  sync();
+})();
+
+/* ── Where does this property show up? ──
+   One theme styles every sheet, but not every property is used on every
+   sheet. SHEET_USE says which sheets each Properties section affects (drawn
+   from the preview's own styles — keep in sync with the product). On the
+   current sheet, sections that don't apply are dimmed with a note, and
+   every section says where it's used. Hovering a section or a colour
+   swatch outlines exactly where its values appear in the preview. */
+(function(){
+  const I='intelligence',P='planning',T_='powertable';
+  const NAMES={intelligence:'Intelligence',planning:'Planning',powertable:'PowerTable'};
+  // [tab, section] → {sheets, tokens (CSS vars the preview uses), note?}
+  const SHEET_USE={
+    'colors|Primary':{sheets:[I,P,T_],tokens:['p1','p2','p3','p4','p5','p6','p7','p8'],note:'Intelligence uses all eight, PowerTable 1–4, Planning Primary 1.'},
+    'colors|Structural':{sheets:[I,P,T_],tokens:['out1','out2','struct-bg','struct-icon','struct-accent','struct-subtle'],note:'Accent isn’t used on Planning sheets.'},
+    'colors|Semantic':{sheets:[I,P],tokens:['pos','neg','neu'],note:'Neutral is used on Intelligence only.'},
+    'page|Canvas background':{sheets:[I,P,T_],tokens:['@report']},
+    'page|Wallpaper':{sheets:[I],tokens:['@stage']},
+    'page|Canvas border':{sheets:[I],tokens:['@report']},
+    'page|Corner radius':{sheets:[I],tokens:['@report']},
+    'page|Shadow':{sheets:[I],tokens:['@report']},
+    'visuals|Background':{sheets:[I,P,T_],tokens:['el-bg']},
+    'visuals|Border':{sheets:[I,T_],tokens:['el-border-color','el-border-w']},
+    'visuals|Corner radius':{sheets:[I,T_],tokens:['el-radius']},
+    'visuals|Shadow':{sheets:[I],tokens:['el-shadow']},
+    'visuals|Padding':{sheets:[I],tokens:['el-pad-t','el-pad-r','el-pad-b','el-pad-l']},
+    'visuals|Header':{sheets:[I],tokens:['header-bg','header-border','header-icon'],note:'Icon color isn’t shown in this preview.'},
+    'visuals|Tooltip':{sheets:[I,T_],tokens:['tt-bg','tt-color'],static:true}
+  };
+  const SWATCH_TOKEN={'Outline 1':'out1','Outline 2':'out2','Subtle Fill':'struct-bg','Icon':'struct-icon','Accent':'struct-accent','Background':'struct-subtle','Positive':'pos','Negative':'neg','Neutral':'neu'};
+  let sheet=I;
+  const list=names=>names.length<3?names.join(' and '):names.slice(0,-1).join(', ')+', and '+names[names.length-1];
+
+  function annotate(){
+    document.querySelectorAll('.tabpanel .cgroup').forEach(g=>{
+      const tab=g.closest('.tabpanel').id.replace('tp-',''),name=(g.querySelector('.cg-name')||{}).textContent,u=SHEET_USE[tab+'|'+name];
+      if(!u)return;
+      const onSheet=u.sheets.includes(sheet);
+      // Per layout: page-level and hover-only (tooltip) sections go by the sheet map;
+      // everything else must actually render in the layout on screen.
+      const inLayout=!usage||u.static||u.tokens.some(t=>t.startsWith('@')||usage.has(t));
+      const applies=onSheet&&inLayout,head=g.querySelector('.cghead');
+      g.classList.toggle('na',!applies);g.dataset.tokens=u.tokens.join(' ');
+      if(applies)delete head.dataset.tip;else head.dataset.tip=onSheet?'Not used in this layout':`Not used on ${NAMES[sheet]} sheets`;
+      let hint=g.querySelector(':scope>.cgbody>.cg-uses');
+      if(!hint){hint=document.createElement('div');hint.className='field-hint cg-uses';g.querySelector('.cgbody').prepend(hint);}
+      hint.textContent=`Used on ${list(u.sheets.map(s=>NAMES[s]))}.`+(u.note?' '+u.note:'');
+    });
+    document.querySelectorAll('#tp-colors .swblock').forEach(sw=>{
+      const l=(sw.querySelector('.lbl')||{}).textContent||'',m=/^Color (\d)$/.exec(l);
+      sw.dataset.tokens=m?'p'+m[1]:(SWATCH_TOKEN[l]||'');
+    });
+  }
+  window._setSheetContext=s=>{sheet=s;refreshUsage();};
+  // Which theme variables the layout on screen actually renders — one pass,
+  // each variable swapped for its own marker value for a synchronous moment.
+  let usage=null;
+  function detectUsage(){
+    const tokens=[...new Set(Object.values(SHEET_USE).flatMap(u=>u.tokens).filter(t=>!t.startsWith('@')))];
+    const mark={},lens={},saved=tokens.map(t=>[t,rootEl.style.getPropertyValue('--'+t)]);
+    tokens.forEach((t,k)=>{
+      if(LEN_TOKENS.has(t)){const v=(1+(k+1)/1000).toFixed(3)+'px';lens[v]=t;rootEl.style.setProperty('--'+t,v);}
+      else if(t==='el-border-w')rootEl.style.setProperty('--'+t,'2px');
+      else{mark[k+1]=t;rootEl.style.setProperty('--'+t,t==='el-shadow'?`0 0 0 1px rgb(1, 2, ${k+1})`:`rgb(1, 2, ${k+1})`);}
+    });
+    const found=new Set();
+    try{
+      for(const el of report.querySelectorAll('*')){
+        if(!el.getClientRects().length)continue;
+        const cs=getComputedStyle(el);if(cs.visibility==='hidden'||cs.display==='none')continue;
+        const borders=['Top','Right','Bottom','Left'].filter(s=>cs['border'+s+'Width']!=='0px').map(s=>cs['border'+s+'Color']).join(' ');
+        const txt=[cs.backgroundColor,cs.backgroundImage,borders,cs.fill,cs.stroke,cs.boxShadow,cs.filter,cs.outlineStyle!=='none'?cs.outlineColor:'',hasText(el)?cs.color:''].join(' ');
+        for(const m of txt.matchAll(/rgb\(1, 2, (\d+)\)/g)){const t=mark[m[1]];if(t)found.add(t);}
+        [cs.borderTopLeftRadius,cs.paddingTop,cs.paddingRight,cs.paddingBottom,cs.paddingLeft].forEach(v=>{if(lens[v])found.add(lens[v]);});
+      }
+    }finally{saved.forEach(([t,v])=>v?rootEl.style.setProperty('--'+t,v):rootEl.style.removeProperty('--'+t));}
+    if(found.has('el-border-color'))found.add('el-border-w');
+    return found;
+  }
+  let usageTimer=0;
+  function refreshUsage(){clearTimeout(usageTimer);usageTimer=setTimeout(()=>{usage=detectUsage();annotate();},0);}
+  window._refreshUsage=refreshUsage;
+  const mo=new MutationObserver(()=>{clearTimeout(mo.t);mo.t=setTimeout(annotate,0);});
+  document.querySelectorAll('.tabpanel').forEach(tp=>mo.observe(tp,{childList:true}));
+  annotate();
+  setTimeout(refreshUsage,0);
+
+  // ── Hover highlight ──
+  // Exact, not guessed from CSS selectors: for one synchronous moment the
+  // hovered property's CSS variables are swapped for a marker value, and
+  // whatever element actually renders that marker (background, text, border,
+  // fill/stroke, shadow, radius, padding) is where the property shows up —
+  // striped rows, inherited text and SVG marks included. The real values are
+  // restored before the browser paints, so nothing flickers.
+  const layer=document.createElement('div');layer.className='fx-hl-layer';document.body.appendChild(layer);
+  const report=document.getElementById('report'),stage=document.getElementById('stage'),rootEl=document.documentElement;
+  const MARK='rgb(1, 2, 3)',MARK_LEN='0.37px';
+  const LEN_TOKENS=new Set(['el-radius','el-pad-t','el-pad-r','el-pad-b','el-pad-l']);
+  const hasText=el=>{for(const n of el.childNodes)if(n.nodeType===3&&n.textContent.trim())return true;return el instanceof SVGTextElement;};
+  function targets(tokens){
+    if(tokens.includes('@stage'))return[stage];
+    if(tokens.includes('@report'))return[report];
+    const saved=tokens.map(t=>[t,rootEl.style.getPropertyValue('--'+t)]);
+    tokens.forEach(t=>rootEl.style.setProperty('--'+t,t==='el-shadow'?`0 0 0 1px ${MARK}`:t==='el-border-w'?'2px':LEN_TOKENS.has(t)?MARK_LEN:MARK));
+    const hits=[];
+    try{
+      for(const el of report.querySelectorAll('*')){
+        if(!el.getClientRects().length)continue;
+        const cs=getComputedStyle(el);
+        if(cs.visibility==='hidden'||cs.display==='none'||cs.opacity==='0')continue;
+        const bw=['Top','Right','Bottom','Left'].some(s=>cs['border'+s+'Width']!=='0px'&&cs['border'+s+'Color']===MARK);
+        if(cs.backgroundColor===MARK||cs.backgroundImage.includes(MARK)||bw||cs.fill===MARK||cs.stroke===MARK||
+           cs.boxShadow.includes(MARK)||cs.filter.includes(MARK)||(cs.outlineStyle!=='none'&&cs.outlineColor===MARK)||
+           (cs.color===MARK&&hasText(el))||
+           (LEN_TOKENS.size&&[cs.borderTopLeftRadius,cs.paddingTop,cs.paddingRight,cs.paddingBottom,cs.paddingLeft].includes(MARK_LEN)))hits.push(el);
+      }
+    }finally{saved.forEach(([t,v])=>v?rootEl.style.setProperty('--'+t,v):rootEl.style.removeProperty('--'+t));}
+    // A table row whose every visible cell matched is boxed as one row.
+    const set=new Set(hits);
+    new Set(hits.filter(el=>el.tagName==='TD'||el.tagName==='TH').map(el=>el.parentElement)).forEach(tr=>{
+      const cells=[...tr.children].filter(c=>c.getClientRects().length);
+      if(cells.length&&cells.every(c=>set.has(c))){cells.forEach(c=>set.delete(c));set.add(tr);}
+    });
+    hits.length=0;hits.push(...set);
+    // Outermost only: a highlighted row isn't boxed again cell by cell.
+    return hits.filter(el=>{for(let p=el.parentElement;p&&p!==report;p=p.parentElement)if(set.has(p))return false;return true;});
+  }
+  function show(tokens){
+    const els=targets(tokens),sr=stage.getBoundingClientRect();
+    layer.innerHTML=els.slice(0,160).map(el=>{const r=el.getBoundingClientRect();
+      const x=Math.max(r.left,sr.left),y=Math.max(r.top,sr.top),w=Math.min(r.right,sr.right)-x,h=Math.min(r.bottom,sr.bottom)-y;
+      return w>0&&h>0?`<i style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"></i>`:'';}).join('');
+  }
+  const drawer=document.querySelector('.drawer');
+  drawer.addEventListener('mouseover',e=>{const t=e.target.closest('[data-tokens]');if(t&&t.dataset.tokens)show(t.dataset.tokens.split(' '));else layer.innerHTML='';});
+  drawer.addEventListener('mouseleave',()=>{layer.innerHTML='';});
+  drawer.addEventListener('focusin',e=>{const t=e.target.closest('[data-tokens]');if(t&&t.dataset.tokens)show(t.dataset.tokens.split(' '));});
+  drawer.addEventListener('focusout',()=>{layer.innerHTML='';});
+  stage.addEventListener('scroll',()=>{layer.innerHTML='';},true);
+})();
+
 /* ── Studio tour (FRE Dialog) ──
    Five short steps on what the studio is for and where things live. Opens
    once per browser on first load; "Tour" on the ribbon reopens it. The
@@ -4481,7 +4497,7 @@ function showPage(idx){
         ${row('sheetPT','PowerTable','open',true)}${row('layoutGantt','Gantt','leaf')}${row('layoutCalendar','Calendar','leaf')}
       </div>`},
     {over:'Properties',title:'Edit colors, page, visuals, and font',
-     body:'Each tab in the Properties pane groups related settings, and the preview updates as you type. Reset a single section, the whole tab from the pane footer, or everything with Reset all.',
+     body:'Each tab in the Properties pane groups related settings. Hover a section to see where it appears; sections the current layout doesn’t use are dimmed. Reset a section, a whole tab, or everything with Reset all.',
      media:()=>`<div class="im-frame im-props">
         <h4>Properties</h4>
         <div class="im-tabs"><b>Color</b><span>Page</span><span>Visuals</span><span>Font</span></div>
@@ -4489,7 +4505,7 @@ function showPage(idx){
         <div class="im-acc">${icon('secLayer')}<span>Structural</span><span class="im-badge">6</span></div>
       </div>`},
     {over:'New theme',title:'Start from a built-in theme or your own',
-     body:'Pick a built-in theme from the theme menu on the command bar, or select New theme to start from brand colors, a Coolors palette, an image, theme JSON, or a short description.',
+     body:'Pick a built-in theme from the theme menu, or select New theme to start from brand colors, a Coolors palette, an image, JSON, or a description. It previews live on your sheets as you go. Dark version makes a matching dark theme.',
      media:()=>`<div class="im-tiles">${tile('brand','Brand','pick')}${tile('palette','Coolors')}${tile('image','Image')}${tile('code','JSON')}${tile('sparkle','Describe')}</div>`},
     {over:'Check and export',title:'Check accessibility, then save and export',
      body:'Under Accessibility, Check contrast flags hard-to-read colors and suggests a passing shade, and Simulate color blindness shows how others see the theme. Save keeps it in this browser; Export copies the JSON, shares a link, or downloads the file.',
@@ -4589,7 +4605,7 @@ window.VIZ=window.VIZ||{};
       // Center dot removed — it was only there to mark the exact point
       // under the semi-transparent fill; no longer needed now that
       // there's just the one bubble per city.
-      svg.appendChild(el('circle',{cx:c.x,cy:c.y,r,fill:'var(--p1)','fill-opacity':.80,stroke:'#fff','stroke-width':1.5}));
+      svg.appendChild(el('circle',{cx:c.x,cy:c.y,r,fill:'var(--p1)','fill-opacity':.80,stroke:'var(--el-bg)','stroke-width':1.5}));
     });
   }
   render();

@@ -116,6 +116,7 @@
         <div class="menu ftb-theme-drop" id="ftbThemeDrop"></div>
       </div>
       <button class="btn btn-subtle cmd ftb-btn ftb-btn-create" id="newThemeBtn" data-tip="Create a theme" data-priority="2"><i data-icon="add" class="ri-validation"></i><span class="cmd-label">New theme</span></button>
+      <button class="btn btn-subtle cmd ftb-btn" id="toneTwinBtn" data-tip="Create a dark version of this theme" data-priority="3"><span class="tt-ic"><i data-icon="moon20" class="ri-validation"></i></span><span class="cmd-label" id="toneTwinLabel">Dark version</span></button>
 
       <div class="cmd-divider ftb-sep" role="separator"></div>
 
@@ -189,6 +190,145 @@
         <div class="tabpanel" id="tp-page" role="tabpanel"></div>
         <div class="tabpanel" id="tp-visuals" role="tabpanel"></div>
         <div class="tabpanel" id="tp-font" role="tabpanel"></div>
+        <!-- New theme — lives in the side panel so the draft is always previewed live on
+             the canvas; the Properties content is hidden while it's open. -->
+        <section class="ntm-pane" id="newThemeModal" aria-labelledby="ntmTitle">
+
+
+    <!-- Fabric Dialog Header -->
+    <div class="modal-head">
+      <div class="mh-text">
+        <h2 class="ntm-title" id="ntmTitle">Create a theme</h2>
+        <p class="ntm-subtitle">Pick a starting point. Every change previews live on the sheet.</p>
+      </div>
+      <button class="btn btn-subtle btn-icon ntm-close" id="ntmCloseX" aria-label="Cancel and close" data-tip="Cancel"><i data-icon="dismiss20"></i></button>
+    </div>
+
+    <!-- Two-column body -->
+    <div class="ntm-body">
+
+      <!-- LEFT: inputs -->
+      <div class="ntm-left">
+
+        <!-- Theme name — Fabric TextField -->
+        <div class="ntm-field">
+          <label class="ntm-field-label" for="ntmThemeName">Theme name</label>
+          <input type="text" id="ntmThemeName" class="ntm-input" placeholder="For example, Contoso Brand" maxlength="48" autocomplete="off">
+        </div>
+
+        <!-- Starting point -->
+        <div>
+          <span class="ntm-section-label">Starting point</span>
+          <div class="ntm-source-row">
+            <button class="ntm-source-card" id="ntmCardBrand" aria-pressed="false"><i data-icon="brand"></i><span class="ntm-source-title">Brand</span></button>
+            <button class="ntm-source-card" id="ntmCardCoolors" aria-pressed="false"><i data-icon="palette"></i><span class="ntm-source-title">Coolors</span></button>
+            <button class="ntm-source-card" id="ntmCardImage" aria-pressed="false"><i data-icon="image"></i><span class="ntm-source-title">Image</span></button>
+            <button class="ntm-source-card" id="ntmCardJson" aria-pressed="false"><i data-icon="code"></i><span class="ntm-source-title">JSON</span></button>
+            <button class="ntm-source-card" id="ntmCardMagic" aria-pressed="false"><i data-icon="sparkle"></i><span class="ntm-source-title">Describe</span></button>
+          </div>
+        </div>
+
+        <!-- Brand colour input — revealed on selection -->
+        <div id="ntmBrandInput" style="display:none">
+          <span class="ntm-section-label">Brand color</span>
+          <div class="ntm-brand-row">
+            <input type="color" id="ntmBrandPicker" value="#117865" class="ntm-color-pick">
+            <input type="text" id="ntmBrandHex" value="#117865" class="ntm-hex-input" maxlength="7" placeholder="#000000" spellcheck="false">
+          </div>
+          <p class="ntm-helper">We'll generate 8 primary colors, structural grays and semantic colors from this value.</p>
+        </div>
+
+        <!-- Coolors import — revealed on selection -->
+        <div id="ntmCoolorsInput" style="display:none">
+          <span class="ntm-section-label">Coolors link or hex codes</span>
+          <textarea id="ntmCoolorsText" class="ntm-input" rows="2" style="resize:vertical;padding:6px 8px;font-family:'Consolas','Courier New',monospace;font-size:12.5px" placeholder="https://coolors.co/264653-2a9d8f-e9c46a-f4a261-e76f51" spellcheck="false"></textarea>
+          <div id="ntmCoolorsSwatchRow" class="ntm-swatch-row" style="margin-top:8px"></div>
+          <p class="ntm-helper" id="ntmCoolorsStatus">Paste a Coolors URL or a list of hex codes. If your palette has fewer than 8 colors, we'll generate the rest to match.</p>
+        </div>
+
+        <!-- Image import — revealed on selection -->
+        <div id="ntmImageInput" style="display:none">
+          <span class="ntm-section-label">Upload an image</span>
+          <div id="ntmImageDrop" role="button" tabindex="0" aria-label="Choose an image file" style="border:1px dashed #d1d1d1;border-radius:6px;padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;background:#fafafa">
+            <div id="ntmImageThumbWrap" style="width:44px;height:44px;border-radius:4px;background:#fff;border:1px solid #e0e0e0;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <svg viewBox="0 0 16 16" fill="none" stroke="#c0c0c0" stroke-width="1.3" width="18" height="18"><rect x="2" y="2.5" width="12" height="11" rx="1.2"/><circle cx="5.5" cy="6" r="1.1"/><path d="M2.5 11.5l3.2-3.2a1 1 0 0 1 1.4 0l1.9 1.9 2-2a1 1 0 0 1 1.4 0l1.6 1.6"/></svg>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12.5px;font-weight:600;color:#242424;font-family:'Segoe UI',sans-serif" id="ntmImageFileName">Choose, drop, or paste an image</div>
+              <div style="font-size:11px;color:#5c5c5c;font-family:'Segoe UI',sans-serif">JPG, PNG or WebP — processed locally, never uploaded</div>
+            </div>
+          </div>
+          <input type="file" id="ntmImageFile" accept="image/*" style="display:none">
+          <div class="ntm-image-actions">
+            <button type="button" class="btn btn-default btn-sm" id="ntmImagePaste"><i data-icon="clipboardPaste16"></i>Paste image</button>
+            <span class="ntm-helper" id="ntmImagePasteHint">or press Ctrl+V</span>
+          </div>
+          <div id="ntmImageSwatchRow" class="ntm-swatch-row" style="margin-top:8px"></div>
+          <p class="ntm-helper" id="ntmImageStatus">We'll pull out the dominant colors from your image. Fewer than 8 found? We'll generate the rest to match.</p>
+        </div>
+
+        <!-- JSON import — revealed on selection -->
+        <div id="ntmJsonInput" style="display:none">
+          <span class="ntm-section-label">Theme JSON</span>
+          <textarea id="ntmJsonText" class="ntm-input" rows="4" style="resize:vertical;padding:6px 8px;font-family:'Consolas','Courier New',monospace;font-size:11.5px" placeholder='{"label":"My Theme","themeType":3,"theme":{...}}' spellcheck="false"></textarea>
+          <div id="ntmJsonSwatchRow" class="ntm-swatch-row" style="margin-top:8px"></div>
+          <p class="ntm-helper" id="ntmJsonStatus">Paste a full theme JSON (as produced by Export). The name field below will override the JSON's own label.</p>
+        </div>
+
+        <!-- Magic — descriptive theme generator (revealed on selection) -->
+        <div id="ntmMagicInput" style="display:none">
+          <span class="ntm-section-label">Describe your theme</span>
+          <input type="text" id="ntmMagicText" class="ntm-input" maxlength="80" placeholder="For example, calm ocean, navy and gold, #1F77B4 fintech" spellcheck="false">
+          <div class="ntm-magic-examples" id="ntmMagicExamples" role="group" aria-label="Example descriptions"></div>
+          <p class="ntm-helper" id="ntmMagicStatus"><span id="ntmMagicStatusText"></span></p>
+          <button class="btn btn-default btn-sm ntm-magic-variation" id="ntmMagicVariation" disabled><i data-icon="arrowShuffle"></i>Try a variation</button>
+
+        </div>
+
+        <!-- Tone — Fabric ToggleButton group -->
+        <div>
+          <span class="ntm-section-label">Tone</span>
+          <div class="ntm-tone-row">
+            <button class="ntm-tone-btn" data-tone="light">
+              <i data-icon="weatherSunny"></i>Light
+            </button>
+            <button class="ntm-tone-btn" data-tone="dark">
+              <i data-icon="weatherMoon"></i>Dark
+            </button>
+          </div>
+          <p class="ntm-helper" id="ntmToneDesc">Choose a starting point to preview tone</p>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: live preview -->
+      <div class="ntm-right">
+        <div class="ntm-preview-header">
+          <div class="ntm-preview-name" id="ntmPreviewName" style="font-size:15px;font-weight:700"></div>
+          <button class="ntm-reset-gen" id="ntmResetGen" style="display:none">Reset to generated</button>
+        </div>
+        <div class="ntm-edit-hint" id="ntmEditHint" style="display:none">
+          <i data-icon="infoFilled"></i>Select a swatch to change its color. Drag primary colors to reorder them.
+        </div>
+
+        <!-- Preview populated by buildPreview() -->
+        <div id="ntmPalettePreview"></div>
+
+        <!-- Empty state -->
+        <div id="ntmPreviewEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:8px;color:#5c5c5c;font-size:13px;font-family:'Segoe UI',sans-serif;text-align:center;padding:40px 20px">
+          <i data-icon="palette"></i>
+          <span id="ntmPreviewEmptyText">Choose a starting point to preview your palette</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Fabric Dialog Footer -->
+    <div class="ntm-foot">
+      <button class="btn btn-default" id="ntmCancel">Cancel</button>
+      <button class="btn btn-primary" id="ntmApply" disabled>Create</button>
+    </div>
+        </section>
         <!-- Drawer footer: one reset for the open tab, labelled with what it resets -->
         <div class="drawer-foot">
           <button class="btn btn-default" id="panelTabReset"><i data-icon="reset"></i><span id="panelTabResetLabel">Reset color</span></button>
@@ -406,7 +546,6 @@
              token already, no new schema needed. -->
         <div class="pg" id="pg4" style="display:none">
           <section class="page-canvas" style="overflow:hidden" id="planMatrixView">
-            <div class="vt" style="flex:none">Profit, Sales, Year, Category, Sub-Category</div>
             <div class="plan-table-scroll">
               <table class="matrix" id="planningMatrixTable">
                 <thead>
@@ -419,14 +558,12 @@
           </section>
 
           <section class="page-canvas" style="overflow:auto;display:none" id="planTreeView">
-            <div class="vt" style="flex:none">Sum of Sales, Sum of Profit by Category</div>
             <div class="plan-tree-wrap">
               <div class="plan-tree" id="planTree"></div>
             </div>
           </section>
 
           <section class="page-canvas" style="overflow:hidden;display:none;flex-direction:column" id="planTableView">
-            <div class="vt" style="flex:none">Group, Category, Sum of Enrollment in Thousands, Sum of Credits</div>
             <div class="plan-table-scroll">
               <table class="matrix plan-flat" id="planTable">
                 <thead>
@@ -464,7 +601,6 @@
         <!-- PAGE 5: PowerTable module — "Table layout" / "Kanban layout" -->
         <div class="pg" id="pg5" style="display:none">
           <section class="page-canvas" style="overflow:hidden;display:flex;flex-direction:column" id="ptTableView">
-            <div class="vt" style="flex:none">Task tracker · Table</div>
             <div class="pt-wrap">
               <table class="pt" id="ptTable">
                 <thead>
@@ -476,14 +612,12 @@
           </section>
 
           <section class="page-canvas" style="overflow:hidden;display:none;flex-direction:column" id="ptKanbanView">
-            <div class="vt" style="flex:none">Task tracker · kanban layout</div>
             <div class="pt-kanban-wrap">
               <div class="pt-kanban" id="ptKanban"></div>
             </div>
           </section>
 
           <section class="page-canvas" style="overflow:hidden;display:none;flex-direction:column" id="ptGanttView">
-            <div class="vt" style="flex:none">Task tracker · gantt layout</div>
             <div class="pt-gantt-wrap">
               <div class="pt-gantt" id="ptGantt"></div>
             </div>
@@ -606,154 +740,6 @@
 <!-- ══════════════════════════════════════════════
      NEW THEME WIZARD MODAL
 ══════════════════════════════════════════════ -->
-<div class="modal-bg" id="newThemeModal">
-  <div class="modal ntm" role="dialog" aria-modal="true" aria-labelledby="ntmTitle">
-
-    <!-- Fabric Dialog Header -->
-    <div class="modal-head">
-      <div class="mh-text">
-        <h2 class="ntm-title" id="ntmTitle">Create a theme</h2>
-        <p class="ntm-subtitle">Pick a starting point, then fine-tune the colors in the preview.</p>
-      </div>
-      <button class="btn btn-subtle btn-icon ntm-close" id="ntmCloseX" aria-label="Close"><i data-icon="dismiss20"></i></button>
-    </div>
-
-    <!-- Two-column body -->
-    <div class="ntm-body">
-
-      <!-- LEFT: inputs -->
-      <div class="ntm-left">
-
-        <!-- Theme name — Fabric TextField -->
-        <div class="ntm-field">
-          <label class="ntm-field-label" for="ntmThemeName">Theme name</label>
-          <input type="text" id="ntmThemeName" class="ntm-input" placeholder="For example, Contoso Brand" maxlength="48" autocomplete="off">
-        </div>
-
-        <!-- Starting point -->
-        <div>
-          <span class="ntm-section-label">Starting point</span>
-          <div class="ntm-source-row">
-            <button class="ntm-source-card" id="ntmCardBrand" aria-pressed="false"><i data-icon="brand"></i><span class="ntm-source-title">Brand</span></button>
-            <button class="ntm-source-card" id="ntmCardCoolors" aria-pressed="false"><i data-icon="palette"></i><span class="ntm-source-title">Coolors</span></button>
-            <button class="ntm-source-card" id="ntmCardImage" aria-pressed="false"><i data-icon="image"></i><span class="ntm-source-title">Image</span></button>
-            <button class="ntm-source-card" id="ntmCardJson" aria-pressed="false"><i data-icon="code"></i><span class="ntm-source-title">JSON</span></button>
-            <button class="ntm-source-card" id="ntmCardMagic" aria-pressed="false"><i data-icon="sparkle"></i><span class="ntm-source-title">Describe</span></button>
-          </div>
-        </div>
-
-        <!-- Brand colour input — revealed on selection -->
-        <div id="ntmBrandInput" style="display:none">
-          <span class="ntm-section-label">Brand color</span>
-          <div class="ntm-brand-row">
-            <input type="color" id="ntmBrandPicker" value="#117865" class="ntm-color-pick">
-            <input type="text" id="ntmBrandHex" value="#117865" class="ntm-hex-input" maxlength="7" placeholder="#000000" spellcheck="false">
-          </div>
-          <p class="ntm-helper">We'll generate 8 primary colors, structural grays and semantic colors from this value.</p>
-        </div>
-
-        <!-- Coolors import — revealed on selection -->
-        <div id="ntmCoolorsInput" style="display:none">
-          <span class="ntm-section-label">Coolors link or hex codes</span>
-          <textarea id="ntmCoolorsText" class="ntm-input" rows="2" style="resize:vertical;padding:6px 8px;font-family:'Consolas','Courier New',monospace;font-size:12.5px" placeholder="https://coolors.co/264653-2a9d8f-e9c46a-f4a261-e76f51" spellcheck="false"></textarea>
-          <div id="ntmCoolorsSwatchRow" class="ntm-swatch-row" style="margin-top:8px"></div>
-          <p class="ntm-helper" id="ntmCoolorsStatus">Paste a Coolors URL or a list of hex codes. If your palette has fewer than 8 colors, we'll generate the rest to match.</p>
-        </div>
-
-        <!-- Image import — revealed on selection -->
-        <div id="ntmImageInput" style="display:none">
-          <span class="ntm-section-label">Upload an image</span>
-          <div id="ntmImageDrop" style="border:1px dashed #d1d1d1;border-radius:6px;padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;background:#fafafa">
-            <div id="ntmImageThumbWrap" style="width:44px;height:44px;border-radius:4px;background:#fff;border:1px solid #e0e0e0;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden">
-              <svg viewBox="0 0 16 16" fill="none" stroke="#c0c0c0" stroke-width="1.3" width="18" height="18"><rect x="2" y="2.5" width="12" height="11" rx="1.2"/><circle cx="5.5" cy="6" r="1.1"/><path d="M2.5 11.5l3.2-3.2a1 1 0 0 1 1.4 0l1.9 1.9 2-2a1 1 0 0 1 1.4 0l1.6 1.6"/></svg>
-            </div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:12.5px;font-weight:600;color:#242424;font-family:'Segoe UI',sans-serif" id="ntmImageFileName">Click to choose an image</div>
-              <div style="font-size:11px;color:#5c5c5c;font-family:'Segoe UI',sans-serif">JPG, PNG or WebP — processed locally, never uploaded</div>
-            </div>
-          </div>
-          <input type="file" id="ntmImageFile" accept="image/*" style="display:none">
-          <div id="ntmImageSwatchRow" class="ntm-swatch-row" style="margin-top:8px"></div>
-          <p class="ntm-helper" id="ntmImageStatus">We'll pull out the dominant colors from your image. Fewer than 8 found? We'll generate the rest to match.</p>
-        </div>
-
-        <!-- JSON import — revealed on selection -->
-        <div id="ntmJsonInput" style="display:none">
-          <span class="ntm-section-label">Theme JSON</span>
-          <textarea id="ntmJsonText" class="ntm-input" rows="4" style="resize:vertical;padding:6px 8px;font-family:'Consolas','Courier New',monospace;font-size:11.5px" placeholder='{"label":"My Theme","themeType":3,"theme":{...}}' spellcheck="false"></textarea>
-          <div id="ntmJsonSwatchRow" class="ntm-swatch-row" style="margin-top:8px"></div>
-          <p class="ntm-helper" id="ntmJsonStatus">Paste a full theme JSON (as produced by Export). The name field below will override the JSON's own label.</p>
-        </div>
-
-        <!-- Magic — descriptive theme generator (revealed on selection) -->
-        <div id="ntmMagicInput" style="display:none">
-          <span class="ntm-section-label">Describe your theme</span>
-          <input type="text" id="ntmMagicText" class="ntm-input" maxlength="80" placeholder="e.g. very dark ocean, navy and gold fintech, not too bright…" spellcheck="false">
-          <p class="ntm-helper" id="ntmMagicStatus"><span id="ntmMagicSpinner" class="ntm-spinner" style="display:none"></span><span id="ntmMagicStatusText">Type a mood, industry, color(s), or scene — try combining colors ("navy and gold"), adding "very"/"slightly", or excluding one with "not". Instant, no internet required.</span><span id="ntmMagicSourceBadge" class="ntm-magic-source-badge" style="display:none"></span></p>
-          <button class="btn btn-default btn-sm ntm-magic-variation" id="ntmMagicVariation" disabled><i data-icon="arrowShuffle"></i>Try a variation</button>
-
-          <div class="ntm-magic-ai-row">
-            <button type="button" class="btn btn-subtle btn-sm ntm-magic-ai-toggle" id="ntmMagicAiToggle"><i data-icon="sparkle"></i>Use AI for better matches (optional)</button>
-            <div class="ntm-magic-key-wrap" id="ntmMagicKeyWrap" style="display:none">
-              <select id="ntmMagicAiProvider" class="ntm-input" style="flex:0 0 100px">
-                <option value="gemini">Gemini</option>
-                <option value="openai">OpenAI</option>
-                <option value="claude">Claude</option>
-              </select>
-              <input type="password" id="ntmMagicApiKey" class="ntm-input" placeholder="Paste your free Gemini API key" spellcheck="false">
-              <button type="button" class="btn btn-subtle ntm-magic-key-clear" id="ntmMagicKeyClear">Clear</button>
-            </div>
-            <p class="ntm-helper" id="ntmMagicAiHelper" style="display:none">Stored only in this browser (localStorage) — each provider's key is remembered separately, sent only to that provider's own API. Leave blank to always use the built-in offline generator. If the AI call fails, is rate-limited, or times out, we automatically fall back to the offline generator.</p>
-          </div>
-        </div>
-
-        <!-- Tone — Fabric ToggleButton group -->
-        <div>
-          <span class="ntm-section-label">Tone</span>
-          <div class="ntm-tone-row">
-            <button class="ntm-tone-btn" data-tone="light">
-              <i data-icon="weatherSunny"></i>Light
-            </button>
-            <button class="ntm-tone-btn" data-tone="dark">
-              <i data-icon="weatherMoon"></i>Dark
-            </button>
-          </div>
-          <p class="ntm-helper" id="ntmToneDesc">Choose a starting point to preview tone</p>
-        </div>
-
-      </div>
-
-      <!-- RIGHT: live preview -->
-      <div class="ntm-right">
-        <div class="ntm-preview-header">
-          <div class="ntm-preview-name" id="ntmPreviewName" style="font-size:15px;font-weight:700"></div>
-          <button class="ntm-reset-gen" id="ntmResetGen" style="display:none">Reset to generated</button>
-        </div>
-        <div class="ntm-edit-hint" id="ntmEditHint" style="display:none">
-          <i data-icon="infoFilled"></i>Select a swatch to change its color. Drag primary colors to reorder them.
-        </div>
-
-        <!-- Preview populated by buildPreview() -->
-        <div id="ntmPalettePreview"></div>
-
-        <!-- Empty state -->
-        <div id="ntmPreviewEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:8px;color:#5c5c5c;font-size:13px;font-family:'Segoe UI',sans-serif;text-align:center;padding:40px 20px">
-          <i data-icon="palette"></i>
-          <span id="ntmPreviewEmptyText">Choose a starting point to preview your palette</span>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Fabric Dialog Footer -->
-    <div class="ntm-foot">
-      <button class="btn btn-default" id="ntmCancel">Cancel</button>
-      <button class="btn btn-primary" id="ntmApply" disabled>Create</button>
-    </div>
-
-  </div>
-</div>
-
 <!-- Confirm / prompt dialog (Small) — replaces blocked browser dialogs -->
 <div class="modal-bg" id="inlineDialogBg">
   <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="inlineDialogMsg">

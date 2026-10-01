@@ -171,6 +171,7 @@ button{font-family:inherit}
 .cmd-divider{width:1px;height:28px;background:var(--fx-stroke2);margin:0 4px;flex:none}
 .ftb-space{flex:1}
 .ribbon-collapse{flex:none}
+.tt-ic{display:inline-flex;flex:none}
 .ribbon.collapsed .cmdbar-wrap{display:none}
 .theme-chip{width:20px;height:20px;flex:none}
 #ftbThemeName{max-width:160px;overflow:hidden;text-overflow:ellipsis}
@@ -355,6 +356,13 @@ button{font-family:inherit}
 .cghead .chev .fi{width:20px;height:20px}
 .cgroup.open .cghead .chev{transform:rotate(180deg)}
 .cgbody{display:none;padding:8px 10px 8px}
+/* Section not used on the current sheet: quieter header, still editable (one theme styles every sheet) */
+.cgroup.na .cghead .cg-name,.cgroup.na .cghead .cg-icon{color:var(--fx-fg4)}
+.cgroup.na.open .cghead .cg-icon{color:var(--fx-fg4)}
+.cgbody>.cg-uses{grid-column:1/-1;margin:0 0 12px}
+/* Hover highlight: where the hovered property shows up in the preview */
+.fx-hl-layer{position:fixed;inset:0;pointer-events:none;z-index:var(--z-dropdown)}
+.fx-hl-layer i{position:fixed;box-sizing:border-box;border:2px solid var(--fx-brand);border-radius:3px;background:rgba(17,120,101,.08);transition:opacity .1s}
 /* Accordion forms flow into two equal columns (8px gutter, DESIGN.md → Forms);
    blocks with their own grid span the full width. */
 .cgroup.open .cgbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:8px;align-items:start}
@@ -491,6 +499,7 @@ button{font-family:inherit}
 .modal-bg.show{display:grid}
 .modal{display:flex;flex-direction:column;gap:12px;width:576px;max-width:calc(100vw - 32px);max-height:85vh;padding:24px;background:var(--fx-bg1);border-radius:var(--fx-r-xl);box-shadow:var(--fx-shadow64);overflow:hidden}
 .modal-sm{width:288px}
+
 /* Studio tour (FRE Dialog) */
 .intro .modal-head .intro-overline{margin:0 0 2px;font:600 14px/20px var(--fx-font);color:var(--fx-fg3)}
 .intro-media{height:188px;flex:none;display:grid;place-items:center;padding:16px;box-sizing:border-box;background:var(--fx-bg3);border-radius:var(--fx-r);overflow:hidden}
@@ -551,8 +560,20 @@ button{font-family:inherit}
 #inlineDialogMsg{font:600 16px/22px var(--fx-font);color:var(--fx-fg1)}
 
 /* ── New theme dialog (Large 864) ── */
-.ntm{width:864px;height:min(720px,90vh);padding:0;gap:0}
-.ntm .modal-head{padding:24px 24px 12px}
+.ntm-pane .modal-head{padding:20px 24px 8px}
+/* New theme in the side panel: replaces the Properties content while open */
+.ntm-pane{display:none}
+.drawer.is-creating>:not(.ntm-pane){display:none!important}
+.drawer.is-creating>.ntm-pane{display:flex;flex-direction:column;flex:1;min-height:0}
+.ntm-pane .ntm-body{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto}
+.ntm-pane .ntm-left{overflow:visible;padding:8px 24px 16px}
+.ntm-pane .ntm-right{margin:0 24px 16px;padding:12px;overflow:visible;flex:none}
+.ntm-pane #ntmPreviewEmpty{padding:24px 12px!important}
+.ntm-pane .ntm-source-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ntm-pane .ntm-source-card{height:60px}
+.ntm-pane .ntm-foot{padding:16px 24px;border-top:1px solid var(--fx-stroke2)}
+/* While creating, the ribbon is read-only (it would act on the draft); the Explorer stays usable */
+body.is-creating .ribbon{pointer-events:none;opacity:.55}
 .ntm-title{margin:0;font:600 20px/28px var(--fx-font);color:var(--fx-fg1)}
 .ntm-subtitle{margin:4px 0 0;font:400 14px/20px var(--fx-font);color:var(--fx-fg3)}
 .ntm-close{flex:none}
@@ -587,14 +608,12 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
 .ntm-tone-swatch{display:none}
 .ntm-helper{margin:4px 0 0;font:400 12px/16px var(--fx-font);color:var(--fx-fg3)}
 .ntm-magic-variation{margin-top:8px}
-.ntm-magic-ai-row{margin-top:12px;padding-top:12px;border-top:1px solid var(--fx-stroke2)}
-.ntm-magic-key-wrap{margin-top:8px;display:flex;gap:8px;align-items:center}
-.ntm-magic-key-wrap .ntm-input{height:32px}
-.ntm-magic-key-wrap select.ntm-input{appearance:none;-webkit-appearance:none;cursor:pointer}
-.ntm-spinner{width:12px;height:12px;border:2px solid var(--fx-brand-stroke2);border-top-color:var(--fx-brand);border-radius:50%;display:inline-block;animation:ntm-spin .7s linear infinite;vertical-align:middle;margin-right:6px}
-@keyframes ntm-spin{to{transform:rotate(360deg)}}
-.ntm-magic-source-badge{display:inline-block;margin-left:6px;padding:0 6px;border-radius:var(--fx-r-sm);font:600 10px/14px var(--fx-font);vertical-align:middle;background:var(--fx-bg1-selected);color:var(--fx-fg3)}
-.ntm-magic-source-badge.ai{background:var(--fx-brand-bg2);color:var(--fx-fg1)}
+/* Describe: example descriptions to start from */
+.ntm-magic-examples{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ntm-magic-chip{height:24px;padding:0 8px;border:1px solid var(--fx-stroke1);border-radius:12px;background:var(--fx-bg1);color:var(--fx-fg1);font:400 12px/16px var(--fx-font);cursor:pointer}
+.ntm-magic-chip:hover{background:var(--fx-bg3);border-color:var(--fx-stroke1-hover)}
+.ntm-magic-chip:active{background:var(--fx-bg1-pressed)}
+.ntm-magic-chip:focus-visible{outline:2px solid var(--fx-focus2);outline-offset:1px}
 .ntm-preview-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .ntm-preview-name{flex:1;min-width:0;font:600 16px/22px var(--fx-font)!important;color:var(--fx-fg1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ntm-reset-gen{color:var(--fx-link);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0;font:400 14px/20px var(--fx-font);cursor:pointer}
@@ -620,6 +639,11 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
 .ntm-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;flex:none;padding:12px 24px 24px;border:0;background:var(--fx-bg1)}
 #ntmImageDrop{display:flex;align-items:center;gap:12px;padding:12px;border:1px dashed var(--fx-stroke1)!important;border-radius:var(--fx-r)!important;background:var(--fx-bg2)!important;cursor:pointer}
 #ntmImageDrop:hover{background:var(--fx-bg3)!important}
+#ntmImageDrop.is-drop{border-color:var(--fx-brand)!important;background:var(--fx-bg1-selected)!important}
+#ntmImageDrop:focus-visible{outline:2px solid var(--fx-focus2);outline-offset:1px}
+.ntm-image-actions{display:flex;align-items:center;gap:8px;margin-top:8px}
+.ntm-image-actions .ntm-helper{margin:0}
+.ntm-image-actions [hidden]{display:none}
 @media (max-width:900px){
   .ntm{height:auto;max-height:94vh}
   .ntm-body{grid-template-columns:1fr;overflow-y:auto}
@@ -704,7 +728,7 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
 .stage.sheet-fill .report{width:100%;height:100%;border:0;border-radius:0;box-shadow:none;padding:12px 16px;animation:none}
 .stage.sheet-fill .rheader{display:none}
 .rheader{display:flex;align-items:center;gap:12px;background:var(--header-bg);border:1px solid var(--header-border);border-radius:8px;padding:12px 16px;min-height:60px}
-.logo{width:40px;height:40px;border-radius:8px;background:#117865;display:grid;place-items:center;color:#fff;flex:none}
+.logo{width:40px;height:40px;border-radius:8px;background:var(--struct-accent);display:grid;place-items:center;color:var(--struct-accent-text);flex:none}
 .htitle h2{margin:0;font-size:calc(var(--font-size) + 5px);font-weight:600;color:var(--text-color);font-family:var(--font-family)}
 .htitle p{margin:3px 0 0;font-size:12px;color:var(--text-color);opacity:.72;font-family:var(--font-family)}
 .hspace{margin-left:auto}
@@ -713,7 +737,7 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
    control (see the Intelligence "Template switcher" JS). */
 .pbtns{display:flex;gap:6px;flex-wrap:nowrap;flex:none;pointer-events:none}
 .dbtn{font-family:var(--font-family);font-size:13px;height:32px;padding:0 16px;border-radius:4px;cursor:default;border:1px solid var(--el-border-color);background:var(--el-bg);color:var(--text-color);transition:background .1s,color .1s,border-color .1s}
-.dbtn.primary{background:var(--struct-accent);border-color:var(--struct-accent);color:#fff}
+.dbtn.primary{background:var(--struct-accent);border-color:var(--struct-accent);color:var(--struct-accent-text)}
 
 .rbody{display:grid;grid-template-columns:260px 1fr;gap:var(--gap);align-items:stretch;flex:1;min-height:0}
 .rrail{display:flex;flex-direction:column;gap:var(--vgap)}
@@ -819,7 +843,7 @@ table.pt tbody tr:nth-child(even) td{background:var(--canvas-bg)}
 table.pt tbody tr:hover td{filter:brightness(.97)}
 .pt-rowcheck{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--out1);display:inline-block;box-sizing:border-box}
 .pt-check{width:15px;height:15px;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
-.pt-check.on{background:var(--struct-accent);color:#fff}
+.pt-check.on{background:var(--struct-accent);color:var(--struct-accent-text)}
 .pt-check.off{border:1.5px solid var(--out1)}
 .pt-stars{display:inline-flex;gap:1px}
 .pt-star{fill:var(--struct-accent);stroke:none}
@@ -831,7 +855,7 @@ table.pt tbody tr:hover td{filter:brightness(.97)}
 .pt-bar{position:relative;width:80px;height:4px;background:var(--out2);border-radius:2px;display:inline-block;vertical-align:middle;margin-right:6px}
 .pt-bar-fill{position:absolute;left:0;top:0;bottom:0;background:var(--p1);border-radius:2px}
 .pt-pill{display:inline-flex;align-items:center;line-height:1;padding:5px 10px;border-radius:10px;font-size:11px;font-weight:600;margin-right:4px;white-space:nowrap}
-.pt-btn{display:inline-flex;padding:5px 12px;border-radius:6px;background:var(--struct-accent);color:#fff;font-size:11.5px;font-weight:600;cursor:pointer;border:none;font-family:var(--font-family)}
+.pt-btn{display:inline-flex;padding:5px 12px;border-radius:6px;background:var(--struct-accent);color:var(--struct-accent-text);font-size:11.5px;font-weight:600;cursor:pointer;border:none;font-family:var(--font-family)}
 .pt-logo{width:18px;height:18px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:#fff;flex:none;font-family:var(--font-family)}
 
 /* PowerTable — Kanban layout. Card chrome (bg/border/shadow/radius)
