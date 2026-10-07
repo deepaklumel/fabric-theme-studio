@@ -1,4 +1,5 @@
 <!doctype html>
+<html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Design, check, and share one theme for every sheet in a Fabric Planning workspace: Intelligence, Planning, and PowerTable.">
@@ -72,7 +73,7 @@
     </defs>
   </svg>
   <div class="ah-brand">
-    <span class="ah-title">Fabric Planning Theme Studio</span>
+    <h1 class="ah-title">Fabric Planning Theme Studio</h1>
     <span class="ah-desc">Design, check, and share one theme for every sheet in your Fabric Planning workspace</span>
   </div>
 </header>
@@ -93,6 +94,9 @@
     <div class="ribbon-cluster">
       <button class="btn btn-default btn-sm" id="introBtn" data-tip="Take a quick tour of the studio"><i data-icon="question16"></i><span>Tour</span></button>
       <button class="btn btn-default btn-sm" id="exportBtn" data-tip="Export the theme as JSON"><i data-icon="export16"></i><span>Export</span></button>
+      <!-- Mode switcher (as in the product's Editing/Viewing control): Editing lets you
+           select colors on the canvas; Viewing shows the sheet as people use it -->
+      <button class="btn btn-default btn-sm" id="modeBtn" aria-haspopup="true" data-tip="Switch between editing and viewing"><span class="mode-ic" id="modeIc"><i data-icon="edit16"></i></span><span id="modeLabel">Editing</span><i data-icon="chevronDown12" class="mb-chev"></i></button>
       <button class="btn btn-primary btn-sm" id="saveBtn" data-tip="Save theme" disabled><i data-icon="save16"></i><span id="saveBtnLabel">Save</span></button>
     </div>
   </div>
@@ -163,7 +167,7 @@
     <div class="tree" id="modSwitch" role="tree" aria-label="Sheets and layouts"></div>
     <p class="explorer-empty" id="explorerEmpty" hidden>No sheets or layouts match your search.</p>
   </aside>
-  <aside class="panel">
+  <aside class="panel" aria-label="Properties">
 
       <!-- Collapsed pane rail: only the expand control (mirrors the collapsed Explorer) -->
       <nav class="panel-rail" aria-label="Properties pane">
@@ -338,6 +342,19 @@
     </aside>
 
   <main class="stage" id="stage">
+    <!-- Editing mode: captures pointer input over the canvas so a click selects a theme color -->
+    <div class="cedit-layer" id="ceditLayer" tabindex="0" role="note" aria-label="Canvas. Select a color with the mouse to change it. With the keyboard, edit colors in the Properties pane — press Ctrl+B to open it."></div>
+    <!-- One-time teaching tip for canvas editing -->
+    <div class="cedit-tip" id="ceditTip" role="status" hidden><i data-icon="edit16"></i><span>Click any color on the canvas to change it.</span><button class="btn btn-subtle btn-sm" id="ceditTipClose">Got it</button></div>
+    <!-- Zoom for tree visuals (decomposition tree, Planning tree), as in the product:
+         + / slider / − / fit, stacked in the canvas corner. Wheel zooms, drag pans. -->
+    <div class="zoom-ctl" id="zoomCtl" role="toolbar" aria-label="Zoom" aria-orientation="vertical" hidden>
+      <button class="zoom-btn" id="zoomIn" data-tip="Zoom in" aria-label="Zoom in"><i data-icon="zoomPlus"></i></button>
+      <div class="zoom-slider" id="zoomSlider" role="slider" tabindex="0" aria-label="Zoom" aria-orientation="vertical" aria-valuemin="40" aria-valuemax="300" aria-valuenow="100" aria-valuetext="100%" data-tip="100%"><span class="zoom-track"></span><span class="zoom-thumb" id="zoomThumb"></span></div>
+      <button class="zoom-btn" id="zoomOut" data-tip="Zoom out" aria-label="Zoom out"><i data-icon="zoomMinus"></i></button>
+      <button class="zoom-btn" id="zoomFit" data-tip="Fit to view" aria-label="Fit to view"><i data-icon="zoomFitView"></i></button>
+    </div>
+    <div class="cedit-kbd-hint" id="ceditKbdHint" hidden>Select a color with the mouse to change it. With the keyboard, use the Properties pane (Ctrl+B).</div>
     <div class="scaler" id="scaler">
       <div class="report" id="report">
 
@@ -537,6 +554,18 @@
               </thead>
               <tbody id="p3mbody"></tbody>
             </table>
+          </section>
+        </div>
+
+        <!-- PAGE 6: Decomposition tree (Intelligence). One visual, already
+             expanded three levels: bars (Primary 1), bar background and
+             connectors (Element border), text (Text color), and the card
+             (Element background). Clicking a node in Viewing mode selects the
+             path to it (Primary 1 connectors). -->
+        <div class="pg" id="pg6" style="display:none">
+          <section class="visual flex-fill dt-visual">
+            <div class="vt" style="flex:none">Net profit drivers</div>
+            <div class="dt" id="dtTree" role="tree" aria-label="Net profit decomposition"></div>
           </section>
         </div>
 
@@ -774,6 +803,53 @@
   </div>
 </div>
 
+<div class="menu mode-menu" id="modeMenu" role="menu" aria-label="Mode">
+  <button class="menu-item mode-opt" role="menuitemradio" data-mode="edit"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="edit16" class="mi-icon"></i><span class="mi-label"><span class="mo-title">Editing</span><span class="mo-desc">Select a color on the canvas to change it</span></span></button>
+  <button class="menu-item mode-opt" role="menuitemradio" data-mode="view"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="eye16" class="mi-icon"></i><span class="mi-label"><span class="mo-title">Viewing</span><span class="mo-desc">Use the sheet as people will, with tooltips</span></span></button>
+</div>
+
+<!-- Canvas color editor: floats next to the selected element -->
+<div class="cedit-bar" id="ceditBar" role="dialog" aria-label="Edit color" tabindex="-1" hidden>
+  <div class="ceb-grip" id="cebGrip" data-tip="Drag to move" aria-hidden="true"></div>
+  <button type="button" class="ceb-back" id="cebBack" hidden><i data-icon="chevronLeft20"></i><span id="cebBackLbl"></span></button>
+  <div class="ceb-row ceb-head">
+    <label class="ceb-pick" data-tip="Choose color"><span class="ceb-swatch"><span id="cebChip"></span></span><i data-icon="chevronDown12" class="ceb-pick-chev"></i><input type="color" id="cebPick" aria-label="Choose color"></label>
+    <div class="ceb-info"><div class="ceb-name" id="cebName"></div><div class="ceb-meta" id="cebMeta"></div></div>
+    <div class="ceb-actions">
+      <button class="btn btn-subtle btn-icon" id="cebShow" data-tip="Show in Properties" aria-label="Show in Properties"><i data-icon="panelRight16"></i></button>
+      <button class="btn btn-subtle btn-icon" id="cebClose" data-tip="Close (Esc)" aria-label="Close"><i data-icon="dismiss16"></i></button>
+    </div>
+  </div>
+  <div class="ceb-row ceb-tools">
+    <div class="input ceb-hex" data-tip="Type a hex value. ↑/↓ lighten or darken; hold Shift for bigger steps."><input class="input-el" id="cebHex" spellcheck="false" maxlength="9" aria-label="Hex value. Up and down arrows lighten or darken."></div>
+    <button class="btn btn-subtle btn-icon" id="cebDropper" data-tip="Pick a color from the screen" aria-label="Pick a color from the screen"><i data-icon="eyedropper16"></i></button>
+    <button class="btn btn-subtle btn-icon" id="cebCopy" data-tip="Copy color" aria-label="Copy color"><i data-icon="copy16"></i></button>
+    <button class="btn btn-subtle btn-icon" id="cebPaste" data-tip="Paste color" aria-label="Paste color"><i data-icon="clipboardPaste16"></i></button>
+    <button class="btn btn-subtle btn-icon" id="cebReset" data-tip="Reset to saved value" aria-label="Reset to saved value"><i data-icon="reset16"></i></button>
+  </div>
+  <div class="ceb-err" id="cebErr" role="alert" hidden><i data-icon="errorCircle"></i>Enter a 6-digit hex code, like #1F77B4.</div>
+  <div class="ceb-contrast" id="cebContrast"></div>
+  <div class="ceb-note" id="cebNote"></div>
+  <!-- Where it's used: collapsed until asked for -->
+  <div class="ceb-where" id="cebWhere">
+    <button type="button" class="ceb-where-toggle" id="cebWhereToggle" aria-expanded="false" aria-controls="cebWhereList"><i data-icon="chevronRight20" class="ceb-where-chev"></i><span>Where it’s used</span><span class="ceb-where-sum" id="cebWhereSum"></span></button>
+    <div class="ceb-where-list" id="cebWhereList" hidden></div>
+  </div>
+  <div class="ceb-also" id="cebAlso"></div>
+</div>
+
+<!-- Unsaved changes: asked before another theme replaces the one being edited -->
+<div class="modal-bg" id="unsavedDialog">
+  <div class="modal unsaved-dialog" role="alertdialog" aria-modal="true" aria-labelledby="unsavedTitle" aria-describedby="unsavedBody">
+    <div class="modal-head"><div class="mh-text"><h2 id="unsavedTitle">Save changes?</h2><p id="unsavedBody">If you don’t save, your changes to this theme will be lost.</p></div></div>
+    <div class="modal-foot">
+      <button class="btn btn-default" id="unsavedCancel">Cancel</button>
+      <button class="btn btn-default" id="unsavedDiscard">Don’t save</button>
+      <button class="btn btn-primary" id="unsavedSave">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Layout/template pickers: no longer shown (the Explorer tree switches layouts);
      kept hidden because their scripts own the layout-switching logic. -->
 <div class="legacy-layout-pickers" hidden>
@@ -784,6 +860,7 @@
           <button data-ic="template" class="menu-item pt-layout-opt" data-pg="1" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="template16" class="mi-icon"></i><span class="mi-label">Template 2</span></button>
           <button data-ic="template" class="menu-item pt-layout-opt" data-pg="2" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="template16" class="mi-icon"></i><span class="mi-label">Template 3</span></button>
           <button data-ic="template" class="menu-item pt-layout-opt" data-pg="3" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="template16" class="mi-icon"></i><span class="mi-label">Template 4</span></button>
+          <button data-ic="decompTree" class="menu-item pt-layout-opt" data-pg="6" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="decompTree" class="mi-icon"></i><span class="mi-label">Decomposition tree</span></button>
         </div>
       </div>
       <div class="pt-layout-pick cmd-pick" id="planLayoutPick" style="display:none" data-priority="3">

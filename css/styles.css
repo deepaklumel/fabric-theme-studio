@@ -135,7 +135,7 @@ button{font-family:inherit}
 .app-header{display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;background:var(--fx-header-bg);flex:none;z-index:var(--z-toolbar);overflow:hidden}
 .app-header .ah-logo{width:28px;height:28px;flex:none}
 .app-header .ah-brand{display:flex;align-items:center;gap:12px;min-width:0;overflow:hidden}
-.app-header .ah-title{font:600 14px/20px var(--fx-font);color:var(--fx-header-fg);white-space:nowrap}
+.app-header .ah-title{margin:0;font:600 14px/20px var(--fx-font);color:var(--fx-header-fg);white-space:nowrap}
 /* Power BI app-bar style: a short divider between product name and context */
 .app-header .ah-desc{position:relative;padding-left:13px;font:400 12px/16px var(--fx-font);color:var(--fx-header-fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .app-header .ah-desc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:1px;background:var(--fx-header-divider)}
@@ -362,7 +362,160 @@ button{font-family:inherit}
 .cgbody>.cg-uses{grid-column:1/-1;margin:0 0 12px}
 /* Hover highlight: where the hovered property shows up in the preview */
 .fx-hl-layer{position:fixed;inset:0;pointer-events:none;z-index:var(--z-dropdown)}
-.fx-hl-layer i{position:fixed;box-sizing:border-box;border:2px solid var(--fx-brand);border-radius:3px;background:rgba(17,120,101,.08);transition:opacity .1s}
+/* ── Edit on canvas ── */
+.cedit-layer:focus-visible{outline:2px solid var(--fx-focus2);outline-offset:-2px}
+.cedit-tip{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:8px;max-width:calc(100% - 32px);padding:6px 6px 6px 12px;border-radius:var(--fx-r-xl);background:var(--fx-bg1);box-shadow:var(--fx-shadow16);font:400 14px/20px var(--fx-font);color:var(--fx-fg1);white-space:nowrap}
+.cedit-tip[hidden]{display:none}
+.cedit-tip .fi{width:16px;height:16px;color:var(--fx-brand);flex:none}
+.cedit-tip .btn{flex:none}
+.tip-key{margin-top:6px;padding-top:6px;border-top:1px solid var(--fx-stroke2);font:400 11px/14px var(--fx-font);color:var(--fx-fg3)}
+.tip-key code{font:600 11px/14px var(--fx-font);color:var(--fx-fg1)}
+.cedit-kbd-hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:4;max-width:calc(100% - 32px);padding:8px 12px;border-radius:var(--fx-r);background:var(--fx-bg1);box-shadow:var(--fx-shadow16);font:400 12px/16px var(--fx-font);color:var(--fx-fg1)}
+.cedit-kbd-hint[hidden]{display:none}
+.cedit-kbd-hint{pointer-events:none}
+/* Zoom control for tree visuals: a vertical stack in the canvas corner, above the edit layer */
+.zoom-ctl{position:absolute;right:16px;bottom:16px;z-index:4;display:flex;flex-direction:column;align-items:center;gap:6px}
+.zoom-ctl[hidden]{display:none}
+.zoom-btn{width:24px;height:24px;display:grid;place-items:center;padding:0;border:1px solid var(--fx-stroke1);border-radius:var(--fx-r);background:var(--fx-bg1);color:var(--fx-fg1);box-shadow:var(--fx-shadow2);cursor:pointer}
+.zoom-btn:hover{background:var(--fx-bg3);border-color:var(--fx-stroke1-hover)}
+.zoom-btn:active{background:var(--fx-bg1-pressed)}
+.zoom-btn:focus-visible{outline:2px solid var(--fx-focus2);outline-offset:1px}
+.zoom-btn .fi{width:16px;height:16px}
+.zoom-slider{position:relative;width:24px;height:88px;cursor:pointer;touch-action:none;outline:none}
+.zoom-track{position:absolute;left:50%;top:6px;bottom:6px;width:4px;margin-left:-2px;border-radius:2px;background:var(--fx-fg3)}
+.zoom-thumb{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--fx-fg2);box-shadow:0 0 0 2px var(--fx-bg1),var(--fx-shadow4)}
+.zoom-slider:hover .zoom-thumb{background:var(--fx-fg1)}
+.zoom-slider:focus-visible .zoom-thumb{outline:2px solid var(--fx-focus2);outline-offset:3px}
+.zoom-world{transform-origin:0 0}
+.zoomable{cursor:grab}
+.zoomable.panning,.zoomable.panning *{cursor:grabbing!important}
+body.mode-edit .cedit-layer.panning{cursor:grabbing}
+/* Planning tree: the zoom wrapper takes over the centering, and panning replaces scrolling */
+.plan-tree-wrap{overflow:hidden}
+.plan-zoom-world{margin:auto;flex:none}
+#planTree{margin:0}
+/* Unsaved-changes dialog: three actions need a little more room than Small */
+.unsaved-dialog{width:440px}
+/* Toast action (e.g. Export after saving) */
+.toast-action{flex:none;font-weight:600;color:var(--fx-brand)}
+.toast-action[hidden]{display:none}
+.stage{position:relative}
+.cedit-layer{display:none;position:absolute;inset:0;z-index:3;cursor:pointer}
+body.mode-edit .cedit-layer{display:block}
+body.is-creating .cedit-layer{display:none}
+/* Outlines use the focus pair (black + white ring), not the brand green:
+   green is the default Accent in most themes, so it would blend in. */
+.cedit-hover{display:none;position:fixed;pointer-events:none;z-index:var(--z-dropdown);box-sizing:border-box;border:1px dashed var(--fx-focus2);box-shadow:0 0 0 1px var(--fx-focus1);border-radius:3px}
+body:not(.mode-edit) .cedit-hover,body:not(.mode-edit) .cedit-tag{display:none!important}
+/* What a click would pick, next to the hover outline */
+.cedit-tag{display:none;position:fixed;pointer-events:none;z-index:calc(var(--z-dropdown) + 1);align-items:center;gap:6px;height:24px;padding:0 8px 0 6px;border-radius:var(--fx-r);background:var(--fx-fg1);color:var(--fx-bg1);font:400 12px/16px var(--fx-font);white-space:nowrap;box-shadow:var(--fx-shadow4)}
+.cedit-tag.show{display:inline-flex}
+.cedit-tag-sw{width:12px;height:12px;border-radius:2px;box-shadow:0 0 0 1px rgba(255,255,255,.6);flex:none}
+.cedit-tag-sw:empty{display:none}
+/* Selection: other uses get a thin ring, the clicked one a strong ring */
+.fx-sel-layer i{border:1px solid var(--fx-focus2);box-shadow:0 0 0 1px var(--fx-focus1),inset 0 0 0 1px var(--fx-focus1);background:none}
+.fx-sel-layer i.main{border-width:2px;box-shadow:0 0 0 2px var(--fx-focus1),0 0 0 3px rgba(0,0,0,.3)}
+/* Scrollbars and touch scrolling reach the sheet under the edit layer */
+.cedit-layer{touch-action:none}
+.cedit-layer.pass{pointer-events:none}
+.cedit-bar{position:fixed;z-index:calc(var(--z-dropdown) + 2);display:flex;flex-direction:column;gap:12px;width:380px;max-width:calc(100vw - 16px);padding:16px;box-sizing:border-box;background:var(--fx-bg1);border-radius:var(--fx-r-xl);box-shadow:var(--fx-shadow16);font:400 14px/20px var(--fx-font);color:var(--fx-fg1)}
+.cedit-bar[hidden]{display:none}
+.ceb-row{display:flex;align-items:center;gap:12px}
+.cedit-bar:focus{outline:none}
+.cedit-bar:focus-visible{outline:2px solid var(--fx-focus2);outline-offset:2px}
+/* Drag handle: the grip strip and the name area move the editor */
+.ceb-grip{position:absolute;top:0;left:50%;transform:translateX(-50%);width:64px;height:14px;cursor:move;touch-action:none}
+.ceb-grip::before{content:'';position:absolute;top:5px;left:16px;right:16px;height:4px;border-radius:2px;background:var(--fx-stroke1)}
+.ceb-grip:hover::before{background:var(--fx-stroke1-pressed)}
+.ceb-info{cursor:move;touch-action:none;user-select:none}
+.cedit-bar.dragging{user-select:none}
+.ceb-back{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;height:24px;padding:0 6px 0 2px;margin:-4px 0 -4px -2px;border:0;border-radius:var(--fx-r);background:transparent;color:var(--fx-link);font:400 12px/16px var(--fx-font);cursor:pointer}
+.ceb-back:hover{background:var(--fx-bg3);text-decoration:underline}
+.ceb-back:focus-visible{outline:2px solid var(--fx-focus2);outline-offset:1px}
+.ceb-back[hidden]{display:none}
+.ceb-back .fi{width:14px;height:14px}
+.ceb-err{display:flex;align-items:center;gap:6px;margin-top:-4px;font:400 12px/16px var(--fx-font);color:var(--fx-danger-fg)}
+.ceb-err[hidden]{display:none}
+.ceb-err .fi{width:14px;height:14px;flex:none}
+.ceb-hex.invalid{border-color:var(--fx-danger-bg3)}
+.ceb-contrast{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font:400 12px/16px var(--fx-font);color:var(--fx-fg2)}
+.ceb-contrast:empty{display:none}
+.ceb-contrast .wcag-item-badge{height:20px}
+.ceb-contrast .ceb-fix{margin:0 0 0 auto}
+.ceb-note{display:flex;align-items:flex-start;gap:6px;font:400 12px/16px var(--fx-font);color:var(--fx-fg3)}
+.ceb-note:empty{display:none}
+.ceb-note .fi{width:14px;height:14px;flex:none;margin-top:1px}
+.ceb-note-link{border:0;padding:0;background:none;color:var(--fx-link);font:inherit;cursor:pointer;white-space:nowrap}
+.ceb-note-link:hover{text-decoration:underline}
+.ceb-note-link:focus-visible{outline:2px solid var(--fx-focus2);outline-offset:1px}
+/* Color picker button: swatch + chevron, opens the system color picker */
+.ceb-pick{position:relative;display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 8px 0 4px;flex:none;border:1px solid var(--fx-stroke1);border-radius:var(--fx-r);background:var(--fx-bg1);cursor:pointer}
+.ceb-pick:hover{background:var(--fx-bg3);border-color:var(--fx-stroke1-hover)}
+.ceb-pick:focus-within{outline:2px solid var(--fx-focus2);outline-offset:1px}
+.ceb-swatch{position:relative;width:30px;height:30px;border-radius:3px;border:1px solid var(--fx-stroke1-hover);overflow:hidden;background:conic-gradient(#E6E6E6 25%,#fff 0 50%,#E6E6E6 0 75%,#fff 0) 0 0/8px 8px}
+.ceb-swatch span{position:absolute;inset:0}
+.ceb-pick-chev{width:12px;height:12px;color:var(--fx-fg2)}
+.ceb-pick input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border:0;padding:0}
+.ceb-info{flex:1;min-width:0}
+.ceb-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ceb-meta{margin-top:2px;font:400 12px/16px var(--fx-font);color:var(--fx-fg3)}
+.ceb-row .btn-icon{flex:none}
+.ceb-tools{gap:4px}
+/* Header actions match the tools row: same 32px buttons, same 4px spacing */
+.ceb-actions{display:flex;gap:4px;flex:none}
+.ceb-tools .ceb-hex{margin-right:4px}
+.ceb-row [hidden]{display:none}
+.ceb-hex{flex:1;min-width:0}
+.ceb-show{flex:none}
+.ceb-hex .input-el{text-transform:uppercase;font-variant-numeric:tabular-nums}
+.ceb-actions{display:flex;align-items:center;gap:4px;margin-left:auto}
+/* Other colors at the clicked spot — clearly separate from the selected one */
+/* Where it's used — a disclosure, collapsed by default */
+.ceb-where{padding-top:12px;border-top:1px solid var(--fx-stroke2)}
+.ceb-where[hidden]{display:none}
+.ceb-where-toggle{display:flex;align-items:center;gap:6px;width:100%;height:28px;padding:0 4px;margin:0 -4px;border:0;border-radius:var(--fx-r);background:transparent;color:var(--fx-fg1);font:600 12px/16px var(--fx-font);cursor:pointer;text-align:left}
+.ceb-where-toggle:hover{background:var(--fx-bg3)}
+.ceb-where-toggle:focus-visible{outline:2px solid var(--fx-focus2);outline-offset:-2px}
+.ceb-where-chev{width:12px;height:12px;color:var(--fx-fg2);transition:transform .15s}
+.ceb-where-toggle[aria-expanded="true"] .ceb-where-chev{transform:rotate(90deg)}
+.ceb-where-sum{font-weight:400;color:var(--fx-fg3)}
+.ceb-where-sum:not(:empty)::before{content:'· '}
+.ceb-where-list{margin-top:6px;max-height:220px;overflow-y:auto}
+.ceb-where-list[hidden]{display:none}
+.cw-head{margin:8px 0 4px;font:600 12px/16px var(--fx-font);color:var(--fx-fg3)}
+.cw-head:first-child{margin-top:0}
+.cw-row{display:flex;align-items:center;gap:8px;width:100%;min-height:28px;padding:0 6px;box-sizing:border-box;border:0;border-radius:var(--fx-r);background:transparent;color:var(--fx-fg1);font:400 12px/16px var(--fx-font);text-align:left}
+.cw-area{cursor:default}
+.cw-area:hover,.cw-go:hover{background:var(--fx-bg3)}
+.cw-go{cursor:pointer}
+.cw-go:focus-visible{outline:2px solid var(--fx-focus2);outline-offset:-2px}
+.cw-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cw-sep{color:var(--fx-fg3)}
+.cw-kind{flex:none;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fx-fg3);text-align:right}
+.cw-n{flex:none;min-width:20px;text-align:right;color:var(--fx-fg3);font-variant-numeric:tabular-nums}
+.cw-arrow{width:12px;height:12px;flex:none;color:var(--fx-fg3)}
+.ceb-also{padding-top:12px;border-top:1px solid var(--fx-stroke2)}
+.ceb-also:empty{display:none}
+.ceb-also-lbl{margin-bottom:8px;font:600 12px/16px var(--fx-font);color:var(--fx-fg2)}
+.ceb-chips{display:flex;flex-wrap:wrap;gap:8px}
+.ceb-chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 8px;border:1px solid var(--fx-stroke1);border-radius:14px;background:var(--fx-bg1);color:var(--fx-fg1);font:400 12px/16px var(--fx-font);cursor:pointer}
+.ceb-chip:hover{background:var(--fx-bg3);border-color:var(--fx-stroke1-hover)}
+.ceb-chip:focus-visible{outline:2px solid var(--fx-focus2);outline-offset:1px}
+.ceb-chip-role{color:var(--fx-fg3)}
+.ceb-chip-role::after{content:':'}
+.ceb-chip-sw{width:12px;height:12px;border-radius:2px;border:1px solid var(--fx-stroke1-hover);flex:none}
+/* Mode menu: title + description per option */
+.mode-menu{min-width:300px}
+.mode-menu .mode-opt{height:auto;min-height:44px;padding:6px 8px 6px 12px;align-items:flex-start}
+.mode-menu .mode-opt .mi-check,.mode-menu .mode-opt .mi-icon{margin-top:2px}
+.mode-menu .mi-label{display:flex;flex-direction:column;white-space:normal}
+.mo-title{font:400 14px/20px var(--fx-font);color:var(--fx-fg1)}
+.mo-desc{font:400 12px/16px var(--fx-font);color:var(--fx-fg3)}
+.mode-ic{display:inline-flex}
+/* "Show in Properties" flash */
+@keyframes cgFlash{0%{background:rgba(17,120,101,.18)}100%{background:transparent}}
+.cg-flash{animation:cgFlash 1.2s ease-out}
+.fx-hl-layer i{position:fixed;box-sizing:border-box;border:2px solid var(--fx-focus2);box-shadow:0 0 0 1px var(--fx-focus1),inset 0 0 0 1px var(--fx-focus1);border-radius:3px;background:none;transition:opacity .1s}
 /* Accordion forms flow into two equal columns (8px gutter, DESIGN.md → Forms);
    blocks with their own grid span the full width. */
 .cgroup.open .cgbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:8px;align-items:start}
@@ -732,12 +885,18 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
 .htitle h2{margin:0;font-size:calc(var(--font-size) + 5px);font-weight:600;color:var(--text-color);font-family:var(--font-family)}
 .htitle p{margin:3px 0 0;font-size:12px;color:var(--text-color);opacity:.72;font-family:var(--font-family)}
 .hspace{margin-left:auto}
-/* Non-interactive by design — this is now a "you are here" indicator
-   only; the Template dropdown in the mod-switch-bar is the actual
-   control (see the Intelligence "Template switcher" JS). */
-.pbtns{display:flex;gap:6px;flex-wrap:nowrap;flex:none;pointer-events:none}
-.dbtn{font-family:var(--font-family);font-size:13px;height:32px;padding:0 16px;border-radius:4px;cursor:default;border:1px solid var(--el-border-color);background:var(--el-bg);color:var(--text-color);transition:background .1s,color .1s,border-color .1s}
+/* Page buttons: switch the page in Viewing mode (in step with the Template
+   dropdown); in Editing mode the edit layer on top takes the clicks. Hover
+   shades come from the theme's own colors, not new ones. */
+.pbtns{display:flex;gap:6px;flex-wrap:nowrap;flex:none}
+.dbtn{font-family:var(--font-family);font-size:13px;height:32px;padding:0 16px;border-radius:4px;cursor:pointer;border:1px solid var(--el-border-color);background:var(--el-bg);color:var(--text-color);transition:background .1s,color .1s,border-color .1s}
 .dbtn.primary{background:var(--struct-accent);border-color:var(--struct-accent);color:var(--struct-accent-text)}
+.pbtns.pb-off{display:none}
+.dbtn:not(.primary):hover{background:color-mix(in srgb,var(--el-bg),var(--text-color) 7%)}
+.dbtn.primary:hover{background:color-mix(in srgb,var(--struct-accent),#000 12%);border-color:color-mix(in srgb,var(--struct-accent),#000 12%)}
+.dbtn:active{transform:translateY(.5px)}
+.dbtn:focus-visible{outline:2px solid var(--text-color);outline-offset:1px}
+.fx-probing *,.fx-probing *::before,.fx-probing *::after{transition:none!important}
 
 .rbody{display:grid;grid-template-columns:260px 1fr;gap:var(--gap);align-items:stretch;flex:1;min-height:0}
 .rrail{display:flex;flex-direction:column;gap:var(--vgap)}
@@ -1164,3 +1323,48 @@ table.pt tbody tr:hover td{filter:brightness(.97)}
   .kpi-sub{font-size:11.5px;margin-top:4px;font-family:var(--font-family)}
   .trellis{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:var(--gap)}
 
+
+/* ── Decomposition tree (Intelligence) ──
+   Bars and the selected path: Primary 1. Bar background and other
+   connectors: Element border. Text: Text color. Card: Element background. */
+.dt{position:relative;flex:1;min-height:0;overflow:hidden}
+.dt>.zoom-world{position:absolute;inset:0}
+.dt-links{position:absolute;left:0;top:0;overflow:visible}
+.dt-links path{fill:none}
+.dt-link{stroke:var(--el-border-color);stroke-width:1.25}
+.dt-link.sel{stroke:var(--p1);stroke-width:2}
+.dt-hit{stroke:var(--el-border-color);stroke-width:12;opacity:0}
+.dt-hit.sel{stroke:var(--p1)}
+.dt-node{position:absolute;font-family:var(--font-family);color:var(--text-color);cursor:pointer}
+.dt-barrow{display:flex;align-items:center;gap:6px}
+/* Baseline bar over Compare bar. Hover: dashed outline; selected: solid. */
+.dt-bars{flex:1;display:flex;flex-direction:column;gap:2px;padding:2px;border:1px solid transparent;border-radius:3px}
+.dt-node:hover .dt-bars{border-style:dashed;border-color:var(--out1)}
+.dt-node.sel .dt-bars{border-style:solid;border-color:var(--text-color);box-shadow:inset 0 0 0 .5px var(--text-color)}
+.dt-bar{position:relative;height:6px;background:var(--el-border-color)}
+.dt-bar>i{position:absolute;left:0;top:0;bottom:0;background:var(--p1)}
+.dt-cmp.pos>i{background:var(--pos)}
+.dt-cmp.neg>i{background:var(--neg)}
+.dt-cmp.neu>i{background:var(--neu)}
+/* (the .visual.flex-fill rule stretches svgs to fill the card; these keep their own size) */
+.visual.flex-fill .dt svg{flex:none;min-height:0}
+.visual.flex-fill .dt .dt-exp,.visual.flex-fill .dt .dt-more,.visual.flex-fill .dt .dt-comment{width:14px;height:14px}
+.visual.flex-fill .dt svg.dt-links{height:auto}
+.dt-var svg{width:7px;height:7px}
+.dt-exp,.dt-more,.dt-comment{flex:none;color:var(--struct-icon)}
+.dt-name{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding-right:20px;font-size:var(--font-size);line-height:1.3}
+.dt-name>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dt-acts{display:flex;align-items:center;gap:4px;flex:none}
+.visual.flex-fill .dt .dt-comment{display:none}
+.visual.flex-fill .dt .dt-node:hover .dt-comment{display:block}
+.dt-val{display:flex;align-items:center;gap:8px;margin-top:2px;font-size:calc(var(--font-size) + 4px);font-weight:600;line-height:1.25;white-space:nowrap}
+.dt-var{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:400;line-height:16px}
+.dt-var.pos{color:var(--pos)}
+.dt-var.neg{color:var(--neg)}
+.dt-var.neu{color:var(--neu)}
+.dt-leg{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:11px;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dt-leg+.dt-leg{margin-top:3px}
+.dt-leg>i{flex:none;width:2px;height:12px;background:var(--p1)}
+.dt-leg>i.pos{background:var(--pos)}
+.dt-leg>i.neg{background:var(--neg)}
+.dt-leg>i.neu{background:var(--neu)}

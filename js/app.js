@@ -114,7 +114,7 @@ function checkDirty(){
     // One action per theme: a custom theme saves in place; a built-in can't be
     // overwritten, so the same button becomes "Save a copy" (never both).
     if(saveLabel)saveLabel.textContent=isPreset?'Save a copy':'Save';
-    if(saveBtn)saveBtn.dataset.tip=isPreset?'Save a copy of this built-in theme':'Save changes to this theme';
+    if(saveBtn)saveBtn.dataset.tip=isPreset?'Save a copy to your library in this browser':'Save changes to your library in this browser';
   }
 }
 
@@ -129,7 +129,9 @@ function updateDeleteBtn(){
 }
 
 /* ── Wire Save button ── */
-document.getElementById('saveBtn').addEventListener('click',()=>{
+document.getElementById('saveBtn').addEventListener('click',()=>saveTheme());
+// Saves to the library in this browser; `after` runs once the save went through.
+function saveTheme(after){
   const lib=libLoad();
   const inLib=lib.some(x=>x.label===T.label);
   if(inLib){
@@ -140,12 +142,35 @@ document.getElementById('saveBtn').addEventListener('click',()=>{
     if(idx>=0)lib[idx]=entry;else lib.unshift(entry);
     libSave(lib);
     snapshotOrigin();checkDirty();updateDeleteBtn();
-    showToast(`"${T.label}" saved`);
-  } else saveCopy();
-});
+    savedToast(T.label);
+    if(after)after();
+  } else saveCopy(after);
+}
+// Saving keeps the theme in this browser only; say so, and point to Export for Fabric Planning.
+function savedToast(name){
+  showToast(`"${name}" saved in this browser`,6000,{label:'Export',run:()=>document.getElementById('exportBtn').click()});
+}
+/* Unsaved changes — before another theme replaces the one being edited:
+   Save (then continue), Don't save (continue), or Cancel (stay). */
+function confirmUnsaved(proceed){
+  if(!isDirty())return proceed();
+  const bg=document.getElementById('unsavedDialog'),isPreset=!!PRESETS.find(p=>p.label===T.label);
+  document.getElementById('unsavedTitle').textContent=`Save changes to “${T.label}”?`;
+  document.getElementById('unsavedBody').textContent=isPreset
+    ?'Built-in themes can’t be changed, so your changes would be saved as a copy. If you don’t save, they’ll be lost.'
+    :'If you don’t save, your changes to this theme will be lost.';
+  document.getElementById('unsavedSave').textContent=isPreset?'Save a copy':'Save';
+  const close=()=>bg.classList.remove('show');
+  document.getElementById('unsavedCancel').onclick=close;
+  document.getElementById('unsavedDiscard').onclick=()=>{close();proceed();};
+  document.getElementById('unsavedSave').onclick=()=>{close();saveTheme(proceed);};
+  bg.classList.add('show');
+}
+// Leaving the page with unsaved changes: the browser asks first.
+addEventListener('beforeunload',e=>{if(isDirty()){e.preventDefault();e.returnValue='';}});
 /* Save a copy (built-in themes) — asks for a name and adds a new custom
    theme to the library, leaving the built-in untouched. */
-function saveCopy(){
+function saveCopy(after){
   {
     showPrompt('Name this theme',T.label+' (custom)',name=>{
       // A copy of a built-in is a custom theme: drop the preset's own
@@ -157,7 +182,8 @@ function saveCopy(){
       snapshotOrigin();checkDirty();updateDeleteBtn();
       const nameLbl=document.getElementById('ftbThemeName');
       if(nameLbl)nameLbl.textContent=name;
-      showToast(`"${name}" saved to your library`);
+      savedToast(name);
+      if(after)after();
     });
   }
 }
@@ -186,6 +212,7 @@ document.getElementById('deleteThemeBtn').addEventListener('click',()=>{
   const idx=lib.findIndex(x=>x.label===T.label);
   if(idx<0)return; // not in library, do nothing
   showConfirm(`Delete "${T.label}"? You can’t undo this.`,()=>{
+    const deletedName=T.label;
     lib.splice(idx,1);
     libSave(lib);
     T=JSON.parse(JSON.stringify(DEFAULTS));
@@ -197,7 +224,7 @@ document.getElementById('deleteThemeBtn').addEventListener('click',()=>{
     const nameLbl=document.getElementById('ftbThemeName');
     if(nameLbl)nameLbl.textContent='Classic Theme';
     updateDeleteBtn();
-    showToast('Theme deleted');
+    showToast(`"${deletedName}" deleted`);
   });
 });
 
@@ -250,6 +277,8 @@ function applyTheme(){
   root.style.setProperty('--text-color',ty.autoFontColor?tc(e.background.color):ty.color);root.style.setProperty('--font-family',ty.fontFamily);root.style.setProperty('--font-size',ty.fontSize+'px');
   updateThemeIcon();
   if(window._wcagRefresh)_wcagRefresh();
+  if(window._dtRelayout)_dtRelayout();
+  if(window._ceditSync)_ceditSync();
 }
 
 /* ── Theme-switcher icon: recolour the 2x2 swatch grid to the
@@ -278,7 +307,7 @@ function currentCanvasBg(){
   try{return(T&&T.theme&&T.theme.page&&T.theme.page.canvas&&T.theme.page.canvas.background&&T.theme.page.canvas.background.color)||'#FFFFFF';}
   catch(e){return'#FFFFFF';}
 }
-function tipHTML(hex,bg){
+function tipHTML(hex,bg,key){
   bg=bg||currentCanvasBg();
   const r=cr2(hex,bg);
   const line=(lbl,t)=>{const ok=r>=t;return `<div class="chk"><span class="m ${ok?'pass':'fail'}">${ok?'✓':'✕'}</span><span>${lbl}</span></div>`;};
@@ -286,9 +315,9 @@ function tipHTML(hex,bg){
   return `<div class="th"><span class="sw" style="background:${hex}"></span><span class="hx">${hex}</span><span class="st" style="background:color-mix(in srgb,${st[1]} 15%,#fff);color:${st[1]}">${st[0]}</span></div>
     <div class="ratio">Contrast vs canvas: <b>${r.toFixed(2)}:1</b></div>
     ${line('Normal text — 4.5:1',4.5)}${line('Large / UI — 3:1',3)}${line('AAA — 7:1',7)}
-    <div class="cmp"><span class="sw" style="background:${bg}"></span>Compared vs ${bg.toUpperCase()}</div>`;}
-function attachTip(el,getHex,getBg){
-  el.addEventListener('mouseenter',()=>{_tipTarget=el;_tipHex=getHex;tipEl.innerHTML=tipHTML(getHex(),getBg?getBg():currentCanvasBg());tipEl.classList.add('show');plTip(el);});
+    <div class="cmp"><span class="sw" style="background:${bg}"></span>Compared vs ${bg.toUpperCase()}</div>${key?`<div class="tip-key">JSON key <code>${key}</code></div>`:''}`;}
+function attachTip(el,getHex,getBg,key){
+  el.addEventListener('mouseenter',()=>{_tipTarget=el;_tipHex=getHex;tipEl.innerHTML=tipHTML(getHex(),getBg?getBg():currentCanvasBg(),key);tipEl.classList.add('show');plTip(el);});
   el.addEventListener('mousemove',()=>plTip(el));
   el.addEventListener('mouseleave',()=>{tipEl.classList.remove('show');_tipTarget=null;});}
 function plTip(el){const r=el.getBoundingClientRect(),tw=tipEl.offsetWidth,th=tipEl.offsetHeight;let x=r.left+r.width/2-tw/2,y=r.top-th-8;if(y<8)y=r.bottom+8;x=Math.max(8,Math.min(x,innerWidth-tw-8));tipEl.style.left=x+'px';tipEl.style.top=y+'px';}
@@ -483,7 +512,7 @@ function mkSwblock(parent,label,def,getCurrent,setter,opts={}){
   inp.addEventListener('input',()=>apply(inp.value));
   inp.addEventListener('change',()=>pushUndo());
   rst.addEventListener('click',e=>{e.stopPropagation();reset();pushUndo();});
-  attachTip(el,()=>getCurrent());
+  attachTip(el,()=>getCurrent(),null,opts.key);
   if(opts.reorderIndex!==undefined){
     el.classList.add('swblock-reorderable');
     el.dataset.reorderIndex=String(opts.reorderIndex);
@@ -515,7 +544,7 @@ function buildColors(){
   buildColorGroup(host,'Primary',c.primaryColors,(body,resets)=>{
     const grid=document.createElement('div');grid.className='swcards';
     c.primaryColors.forEach((v,i)=>{
-      const ctrl=mkSwblock(grid,'Color '+(i+1),THEME_ORIGIN.theme.colors.primaryColors[i],()=>c.primaryColors[i],v=>{c.primaryColors[i]=v;},{reorderIndex:i});
+      const ctrl=mkSwblock(grid,'Color '+(i+1),THEME_ORIGIN.theme.colors.primaryColors[i],()=>c.primaryColors[i],v=>{c.primaryColors[i]=v;},{reorderIndex:i,key:`primaryColors[${i}]`});
       resets.push(ctrl.reset);refreshers.push({tab:'colors',fn:ctrl.refresh});});
     body.appendChild(grid);},openNames.has('Primary'));
 
@@ -527,14 +556,14 @@ function buildColors(){
     // Classic), and `subtleFill` holds the pure white/dark base. JSON
     // keys are untouched so exported themes keep the Power BI schema.
     [['outline1','Outline 1'],['outline2','Outline 2'],['background','Subtle Fill'],['icon','Icon'],['accent','Accent'],['subtleFill','Background']].forEach(([k,l])=>{
-      const ctrl=mkSwblock(grid,l,THEME_ORIGIN.theme.colors.structuralColors[k],()=>c.structuralColors[k],v=>{c.structuralColors[k]=v;});
+      const ctrl=mkSwblock(grid,l,THEME_ORIGIN.theme.colors.structuralColors[k],()=>c.structuralColors[k],v=>{c.structuralColors[k]=v;},{key:'structuralColors.'+k});
       resets.push(ctrl.reset);refreshers.push({tab:'colors',fn:ctrl.refresh});});
     body.appendChild(grid);},openNames.has('Structural'));
 
   buildColorGroup(host,'Semantic',Object.values(c.semantic),(body,resets)=>{
     const grid=document.createElement('div');grid.className='swcards';
     [['positive','Positive'],['negative','Negative'],['neutral','Neutral']].forEach(([k,l])=>{
-      const ctrl=mkSwblock(grid,l,THEME_ORIGIN.theme.colors.semantic[k],()=>c.semantic[k],v=>{c.semantic[k]=v;});
+      const ctrl=mkSwblock(grid,l,THEME_ORIGIN.theme.colors.semantic[k],()=>c.semantic[k],v=>{c.semantic[k]=v;},{key:'semantic.'+k});
       resets.push(ctrl.reset);refreshers.push({tab:'colors',fn:ctrl.refresh});});
     body.appendChild(grid);},openNames.has('Semantic'));
 }
@@ -1779,11 +1808,9 @@ function clampDropdown(btn,drop){
 })();
 
 /* ── Intelligence "Template" switcher ──
-   Replaces the old clickable canvas page-switcher (Overview/Sales/
-   Products/Planning) as the actual control for changing which of the
-   four Intelligence report pages is shown — those canvas buttons are
-   now a purely visual, non-interactive indicator (see the module
-   switcher below, and the pointer-events:none rule on #pbtns). */
+   The control for changing which of the four Intelligence report pages
+   is shown. The canvas page buttons (#pbtns) do the same in Viewing
+   mode and stay in step with it. */
 (function(){
   const pick=document.getElementById('intelLayoutPick');
   const btn=document.getElementById('intelLayoutBtn');
@@ -1792,7 +1819,7 @@ function clampDropdown(btn,drop){
   const drop=document.getElementById('intelLayoutDrop');
   if(!pick||!btn||!drop)return;
 
-  const LABELS={0:'Template 1',1:'Template 2',2:'Template 3',3:'Template 4'};
+  const LABELS={0:'Template 1',1:'Template 2',2:'Template 3',3:'Template 4',6:'Decomposition tree'};
   window._intelShowLayoutPicker=function(show){
     pick.style.display=show?'block':'none';
   };
@@ -1927,6 +1954,7 @@ function clampDropdown(btn,drop){
   // ⌘B shortcut
   window._togglePanel=()=>{ if(document.body.classList.contains('is-creating'))return; panelOpen ? closePanel() : openTab(activeTab); };
   window._openPanel=()=>{ if(!panelOpen)openTab(activeTab); };
+  window._openPropTab=tab=>openTab(tab);
   const closeBtn=document.getElementById('panelClose');
   if(closeBtn)closeBtn.addEventListener('click',closePanel);
   window._closePanel=closePanel;
@@ -2044,7 +2072,8 @@ function clampDropdown(btn,drop){
   const empty=document.getElementById('explorerEmpty'),tree=document.getElementById('modSwitch');
   if(!app||!btn||!tree)return;
   const SHEETS=[
-    {id:'intelligence',label:'Intelligence',ic:'sheetIntel',leaves:['tplDashboard','tplBars','tplScatter','tplTrend'].map((ic,i)=>({key:String(i),label:'Template '+(i+1),ic}))},
+    {id:'intelligence',label:'Intelligence',ic:'sheetIntel',leaves:['tplDashboard','tplBars','tplScatter','tplTrend'].map((ic,i)=>({key:String(i),label:'Template '+(i+1),ic}))
+      .concat({key:'6',label:'Decomposition tree',ic:'decompTree'})},
     {id:'planning',label:'Planning',ic:'sheetPlan',leaves:[
       {key:'matrix',label:'Hierarchy',ic:'layoutHierarchy'},{key:'table',label:'Table',ic:'layoutTable'},{key:'tree',label:'Tree',ic:'layoutTree'}]},
     {id:'powertable',label:'PowerTable',ic:'sheetPT',leaves:[
@@ -2133,17 +2162,24 @@ function clampDropdown(btn,drop){
 (function(){
   const app=document.querySelector('.app');
   if(!app||!window.ResizeObserver)return;
-  const NARROW_THRESHOLD=900;
-  let isNarrow=null;
+  // Below 1200px the Explorer collapses so the canvas keeps a usable size;
+  // below 900px the Properties pane floats over the canvas and starts closed.
+  const NARROW_THRESHOLD=900,COMPACT_THRESHOLD=1200;
+  let isNarrow=null,isCompact=null;
   function reflow(){
-    const narrow=app.offsetWidth<NARROW_THRESHOLD;
-    if(narrow===isNarrow)return;
-    isNarrow=narrow;
-    app.classList.toggle('narrow-shell',narrow);
-    if(window._explorerSetCollapsed)window._explorerSetCollapsed(narrow?true:window._explorerPref(),false);
+    const w=app.offsetWidth,narrow=w<NARROW_THRESHOLD,compact=w<COMPACT_THRESHOLD;
+    if(narrow===isNarrow&&compact===isCompact)return;
+    if(narrow!==isNarrow){
+      isNarrow=narrow;app.classList.toggle('narrow-shell',narrow);
+      if(narrow&&window._closePanel)window._closePanel(); // don't cover the canvas
+    }
+    if(compact!==isCompact){
+      isCompact=compact;
+      if(window._explorerSetCollapsed)window._explorerSetCollapsed(compact?true:window._explorerPref(),false);
+    }
     if(typeof fit==='function'){requestAnimationFrame(fit);setTimeout(fit,240);}
   }
-  const ro=new ResizeObserver(()=>requestAnimationFrame(reflow));
+  const ro=new ResizeObserver(()=>reflow());
   ro.observe(app);
   reflow();
   window._shellReflow=reflow;
@@ -2185,6 +2221,8 @@ function clampDropdown(btn,drop){
     const bars=cols6.map((c,i)=>`<div class="ftd-col" style="height:${heights[i]%100}%;background:${c}"></div>`).join('');
     const card=document.createElement('div');
     card.className='ftd-card'+(isActive?' active':'');
+    card.setAttribute('role','menuitemradio');card.setAttribute('aria-checked',isActive?'true':'false');card.setAttribute('aria-label',label);card.tabIndex=-1;
+    card.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target===card){e.preventDefault();onLoad();}});
     card.innerHTML=`
       <div class="ftd-check">${CHECK_SVG}</div>
       <div class="ftd-preview" style="background:${canvasBg||'#fff'}">${bars}</div>
@@ -2214,13 +2252,15 @@ function clampDropdown(btn,drop){
     const container=document.createElement('div');container.id='ftdContainer';
     drop.appendChild(container);
 
-    function loadPreset(p){
+    function loadPreset(p){drop.classList.remove('open');confirmUnsaved(()=>loadPresetNow(p));}
+    function loadUser(item){drop.classList.remove('open');confirmUnsaved(()=>loadUserNow(item));}
+    function loadPresetNow(p){
       T=JSON.parse(JSON.stringify(p));snapshotOrigin();buildAll();applyTheme();
       requestAnimationFrame(fit);checkDirty();updateDeleteBtn();
       if(nameLbl)nameLbl.textContent=p.label;
       drop.classList.remove('open');
     }
-    function loadUser(item){
+    function loadUserNow(item){
       T=JSON.parse(JSON.stringify(item));snapshotOrigin();buildAll();applyTheme();
       requestAnimationFrame(()=>requestAnimationFrame(fit));
       updateDeleteBtn();if(nameLbl)nameLbl.textContent=item.label||'Untitled';
@@ -2246,13 +2286,13 @@ function clampDropdown(btn,drop){
       const filteredLib=lib.filter(item=>!q||(item.label||'').toLowerCase().includes(q));
       if(filteredLib.length){
         const div=document.createElement('div');div.className='ftd-divider';container.appendChild(div);
-        const uh=document.createElement('div');uh.className='ftd-section';uh.textContent='Saved';container.appendChild(uh);
+        const uh=document.createElement('div');uh.className='ftd-section';uh.textContent='Saved in this browser';container.appendChild(uh);
         const ugrid=document.createElement('div');ugrid.className='ftd-grid';
         filteredLib.forEach((item,i)=>{
           const ucolors=(item.theme&&item.theme.colors&&item.theme.colors.primaryColors)||[];
           const ubg=(item.theme&&item.theme.page&&item.theme.page.canvas&&item.theme.page.canvas.background&&item.theme.page.canvas.background.color)||'#fff';
           const isActive=T.label===item.label&&!PRESETS.find(p=>p.label===T.label);
-          ugrid.appendChild(makeCard(ucolors,ubg,item.label||'Untitled',isActive,()=>loadUser(item),()=>{drop.classList.remove('open');openWizardEdit(item,i);}));
+          ugrid.appendChild(makeCard(ucolors,ubg,item.label||'Untitled',isActive,()=>loadUser(item),()=>{drop.classList.remove('open');confirmUnsaved(()=>openWizardEdit(item,i));}));
         });
         container.appendChild(ugrid);
       }
@@ -2322,7 +2362,7 @@ function fit(){
 /* Planning tree opens "fit to view", like the tree visual's default: the
    whole hierarchy scales down (never up) to fit its area, centred. */
 function fitPlanTree(){
-  const tree=document.getElementById('planTree'),wrap=tree&&tree.parentElement;
+  const tree=document.getElementById('planTree'),wrap=tree&&tree.closest('.plan-tree-wrap');
   if(!wrap||!wrap.clientWidth)return;
   tree.style.zoom='';tree.style.transform='';
   const w=parseFloat(tree.style.width)||tree.offsetWidth,h=parseFloat(tree.style.height)||tree.offsetHeight;
@@ -3379,6 +3419,7 @@ let ntmMagicJitter={hue:0,light:0}; // randomized on "Try a variation", reset on
 let ntmTone='light';
 let ntmToneManual=false; // true once the user explicitly clicks a tone button
 let ntmGenerated=null;
+let ntmTwinSrc=null;      // theme a dark/light version is being made from
 let ntmTouched={};        // which swatches the user has manually edited
 let ntmDebounce=null;
 
@@ -3409,7 +3450,7 @@ function inferTone(){
 
 /* ── Enable/disable Apply button ── */
 function canApply(){
-  const hasSource=ntmMode!==null&&(ntmMode==='brand'||(ntmMode==='coolors'&&ntmCoolorsHexes.length>0)||(ntmMode==='image'&&ntmImageHexes.length>0)||(ntmMode==='json'&&ntmJsonParsed!==null)||(ntmMode==='magic'&&ntmMagicParams!==null));
+  const hasSource=ntmMode!==null&&((ntmMode==='twin'&&!!ntmTwinSrc)||ntmMode==='brand'||(ntmMode==='coolors'&&ntmCoolorsHexes.length>0)||(ntmMode==='image'&&ntmImageHexes.length>0)||(ntmMode==='json'&&ntmJsonParsed!==null)||(ntmMode==='magic'&&ntmMagicParams!==null));
   applyBtn.disabled=!hasSource;
 }
 
@@ -3479,6 +3520,9 @@ function generate(){
       const seedHex=ntmMagicParams.seedHex&&!ntmMagicJitter.hue?ntmMagicParams.seedHex:seedParamsToHex(ntmMagicParams,ntmMagicJitter);
       base=generateTheme(seedHex,ntmTone,name);
     }
+  } else if(ntmMode==='twin'){
+    if(!ntmTwinSrc||!window._buildTwin){showEmptyPreview();return;}
+    base=window._buildTwin(ntmTwinSrc,ntmTone,name);
   } else {showEmptyPreview();return;}
 
   // Restore any manually touched swatches
@@ -4015,7 +4059,7 @@ applyBtn.addEventListener('click',()=>{
   const wasEdit=ntmEditLibIdx!==null;
   ntmHide(true);
   updateDeleteBtn();
-  showToast(wasEdit?`"${T.label}" updated`:`"${T.label}" created and saved to your library`);
+  wasEdit?showToast(`"${T.label}" updated`):savedToast(T.label);
 });
 
 /* ── Open/close ── */
@@ -4037,7 +4081,7 @@ function nextUntitledName(){
 
 function openWizard(){
   ntmEditLibIdx=null;
-  ntmMode=null;ntmBrandColor='#117865';ntmCoolorsHexes=[];ntmImageHexes=[];ntmJsonParsed=null;ntmMagicParams=null;ntmMagicJitter={hue:0,light:0};ntmTone='light';ntmToneManual=false;ntmGenerated=null;ntmTouched={};
+  ntmTwinSrc=null;ntmMode=null;ntmBrandColor='#117865';ntmCoolorsHexes=[];ntmImageHexes=[];ntmJsonParsed=null;ntmMagicParams=null;ntmMagicJitter={hue:0,light:0};ntmTone='light';ntmToneManual=false;ntmGenerated=null;ntmTouched={};
   if(ntmImageObjectUrl){URL.revokeObjectURL(ntmImageObjectUrl);ntmImageObjectUrl=null;}
   document.querySelectorAll('.ntm-source-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById('ntmBrandInput').style.display='none';
@@ -4119,7 +4163,18 @@ window.openWizardEdit=function openWizardEdit(item, libIdx){
   ntmShow();
 }
 
-document.getElementById('newThemeBtn').addEventListener('click',openWizard);
+document.getElementById('newThemeBtn').addEventListener('click',()=>confirmUnsaved(openWizard));
+// "Dark version" / "Light version": open the panel on a companion of the current theme.
+window._openTwin=function(src,tone,name){
+  openWizard();
+  ntmTwinSrc=src;ntmMode='twin';ntmTone=tone;ntmToneManual=true;
+  document.querySelectorAll('.ntm-tone-btn').forEach(b=>b.classList.toggle('active',b.dataset.tone===tone));
+  document.getElementById('ntmToneDesc').textContent=tone==='dark'?'Dark surfaces — near-black canvas, charcoal wallpaper, light text':'Light surfaces — white canvas, light wallpaper, dark text';
+  document.getElementById('ntmThemeName').value=name;
+  document.querySelector('.ntm-title').textContent=tone==='dark'?'Create a dark version':'Create a light version';
+  document.querySelector('.ntm-subtitle').textContent=`Starts from “${src.label}”, keeping its colors and settings. Adjust anything; every change previews live on the sheet.`;
+  canApply();scheduleGenerate(0);
+};
 
 document.getElementById('ntmCancel').addEventListener('click',()=>ntmHide(false));
 document.getElementById('ntmCloseX').addEventListener('click',()=>ntmHide(false));
@@ -4199,18 +4254,20 @@ function showPrompt(msg, defaultVal, onOk){
 /* ── Toast notification ── */
 /* Toast (DESIGN.md → Toast): upper-right, white, shadow16, leading status
    badge and a dismiss ✕. Success auto-dismisses; errors hold until dismissed. */
-function showToast(msg,duration=3200){
+function showToast(msg,duration=3200,action){
   let t=document.getElementById('_toast');
   const danger=/couldn’t|can’t|failed|error|invalid/i.test(msg);
   if(!t){
     t=document.createElement('div');t.id='_toast';t.setAttribute('role','status');t.setAttribute('aria-live','polite');
-    t.innerHTML=`<span class="toast-badge"></span><div class="toast-msg"></div><button class="btn btn-subtle btn-icon" aria-label="Dismiss">${icon('dismiss16')}</button>`;
+    t.innerHTML=`<span class="toast-badge"></span><div class="toast-msg"></div><button class="btn btn-subtle btn-sm toast-action" hidden></button><button class="btn btn-subtle btn-icon toast-close" aria-label="Dismiss">${icon('dismiss16')}</button>`;
     document.body.appendChild(t);
-    t.querySelector('button').addEventListener('click',()=>t.classList.remove('show'));
+    t.querySelector('.toast-close').addEventListener('click',()=>t.classList.remove('show'));
+    t.querySelector('.toast-action').addEventListener('click',()=>{t.classList.remove('show');if(t._run)t._run();});
   }
   t.className='toast '+(danger?'danger':'success');
   t.querySelector('.toast-badge').innerHTML=icon(danger?'errorCircle':'checkmarkCircle');
   t.querySelector('.toast-msg').textContent=msg;
+  const act=t.querySelector('.toast-action');act.hidden=!action;if(action){act.textContent=action.label;t._run=action.run;}
   requestAnimationFrame(()=>t.classList.add('show'));
   clearTimeout(t._timer);
   if(!danger)t._timer=setTimeout(()=>t.classList.remove('show'),duration);
@@ -4242,7 +4299,7 @@ $('#resetAllBtn').addEventListener('click',()=>{
   applyTheme();
   buildAll();
   pushUndo();
-  showToast('All changes reset. Press Ctrl+Z to undo.');
+  showToast('Changes reset',5000,{label:'Undo',run:undoAction});
 });
 $('#exportDownload').addEventListener('click',()=>{const blob=new Blob([$('#exportArea').value],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(T.label||'theme').replace(/\s+/g,'-').toLowerCase()+'.json';a.click();URL.revokeObjectURL(a.href);});
 
@@ -4255,9 +4312,11 @@ const PAGE_META=[
   {title:'Product Deep Dive',sub:'FY25 · distribution, relationship &amp; density'},
   {title:'Planning & Forecast',sub:'FY25 · writeback, actuals vs plan vs forecast'},
   {title:'Planning',sub:'Profit, Sales, Year, Category, Sub-Category'},
-  {title:'PowerTable',sub:'Task tracker · Table'}
+  {title:'PowerTable',sub:'Task tracker · Table'},
+  {title:'Profit Drivers',sub:'FY25 · net profit decomposition · updated 06 Jul'}
 ];
-PAGES.push('pg4','pg5');
+PAGES.push('pg4','pg5','pg6');
+const DECOMP_PAGE=6;
 function showPage(idx){
   PAGES.forEach((id,i)=>{
     const el=document.getElementById(id);
@@ -4266,6 +4325,9 @@ function showPage(idx){
   document.querySelectorAll('#pbtns .dbtn').forEach((b,i)=>{
     b.classList.toggle('primary',i===idx);
   });
+  // The page buttons stand for Templates 1–4; the decomposition tree page has its own view.
+  const pb=document.getElementById('pbtns');if(pb)pb.classList.toggle('pb-off',idx===DECOMP_PAGE);
+  if(idx===DECOMP_PAGE&&window._dtRelayout)setTimeout(()=>window._dtRelayout(true),0);
   const m=PAGE_META[idx];
   const t=document.getElementById('pgTitle'),s=document.getElementById('pgSub');
   if(m){
@@ -4274,12 +4336,215 @@ function showPage(idx){
   }
   requestAnimationFrame(()=>requestAnimationFrame(fit));
 }
-/* Canvas page-switcher (#pbtns) is intentionally non-interactive —
-   see the "Template" dropdown in the mod-switch-bar, which is now
-   the actual control for changing the Intelligence report page.
-   These buttons remain as a purely visual "you are here" indicator
-   (toggled by showPage() above) and no longer have a click handler;
-   pointer-events:none in CSS backs this up so they can't be clicked. */
+/* ── Decomposition tree (Intelligence) ──
+   Colors follow the product's mapping: bars and the selected path's
+   connectors use Primary 1; bar background and the other connectors use the
+   element border color; text uses Text color; the card uses Element
+   background. Laid out as a tidy tree: the visible leaves stack top to
+   bottom and each parent sits midway between its first and last child.
+   Nothing is selected until someone clicks a node in Viewing mode, as in the
+   product; clicking it again, or an empty spot, clears the selection. */
+(function(){
+  const host=document.getElementById('dtTree');if(!host)return;
+  const world=document.createElement('div');world.className='zoom-world';host.appendChild(world);
+  // Each node compares two values: Baseline (the node's value) and Compare.
+  // st is the status of Compare against Baseline: pos / neg / neu.
+  const N=(id,name,val,cmp,v,st,bPY,cPY,size,kids)=>({id,name,val,cmp,v,st,bPY,cPY,size,kids});
+  const DATA=N('np','Net Profit','$56.8m','$59.6m',4.9,'pos','+6.2%','+11.4%',.62,[
+    N('rev','Revenue','$389.8m','$402.1m',3.2,'pos','+4.1%','+7.4%',.8,[
+      N('cs','Copper Sold','69,546t','71,880t',3.4,'pos','+2.8%','+6.2%',.66,[
+        N('gr','Grade','0.7147%','0.7392%',3.4,'pos','+0.9%','+4.3%',.55),
+        N('rec','Recovery','81.51%','80.12%',-1.7,'neg','+0.4%','−1.3%',.78)]),
+      N('cp','Copper Price','$2.54/lb','$2.41/lb',-5.1,'neg','−1.6%','−6.6%',.5),
+      N('cv','Conversion','2,205/t','2,214/t',.4,'neu','+1.2%','+1.6%',.34)]),
+    N('cost','Costs','$333.0m','$342.5m',-2.9,'neg','+3.6%','+6.6%',.68)]);
+  const nodes=[];
+  (function walk(n,d,parent){n.depth=d;n.parent=parent;nodes.push(n);(n.kids||[]).forEach(k=>walk(k,d+1,n));})(DATA,0,null);
+  const byId=Object.fromEntries(nodes.map(n=>[n.id,n]));
+  let selId=null,lastKey='';
+  const onPath=n=>{for(let p=selId&&byId[selId];p;p=p.parent)if(p===n)return true;return false;};
+  const EXP='<svg class="dt-exp" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor"/><path d="M7 5.5 9.5 8 7 10.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const MORE='<svg class="dt-more" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="3.5" r="1.1" fill="currentColor"/><circle cx="8" cy="8" r="1.1" fill="currentColor"/><circle cx="8" cy="12.5" r="1.1" fill="currentColor"/></svg>';
+  const COMMENT='<svg class="dt-comment" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3.5 3h9A1.5 1.5 0 0 1 14 4.5v5a1.5 1.5 0 0 1-1.5 1.5H8.2L5 13.4V11H3.5A1.5 1.5 0 0 1 2 9.5v-5A1.5 1.5 0 0 1 3.5 3Z" fill="none" stroke="currentColor" stroke-linejoin="round"/></svg>';
+  // ▲ better, ▼ worse, ● about the same
+  const MARK={pos:'<svg viewBox="0 0 8 8" width="7" height="7" aria-hidden="true"><path d="M4 1.5 7 6H1z" fill="currentColor"/></svg>',
+    neg:'<svg viewBox="0 0 8 8" width="7" height="7" aria-hidden="true"><path d="M4 6.5 1 2h6z" fill="currentColor"/></svg>',
+    neu:'<svg viewBox="0 0 8 8" width="7" height="7" aria-hidden="true"><circle cx="4" cy="4" r="3" fill="currentColor"/></svg>'};
+  const ST_NAME={pos:'better',neg:'worse',neu:'about the same'};
+  const pct=v=>(v>=0?'+':'−')+Math.abs(v).toFixed(1)+'%';
+  const cmpW=n=>Math.min(.98,Math.max(.04,n.size*(1+n.v/100*5)));
+  function render(){
+    const W=host.clientWidth,H=host.clientHeight;if(!W||!H)return;
+    const depth=Math.max(...nodes.map(n=>n.depth))+1,gap=Math.max(32,Math.round(W*.04)),colW=(W-gap*(depth-1))/depth;
+    world.innerHTML='<svg class="dt-links" aria-hidden="true"></svg>'+nodes.map(n=>`<div class="dt-node${n.id===selId?' sel':''}" role="treeitem" aria-level="${n.depth+1}" aria-selected="${n.id===selId}" data-id="${n.id}" aria-label="${n.name}: baseline ${n.val}, compare ${n.cmp}, ${pct(n.v)}, ${ST_NAME[n.st]}" style="left:${n.depth*(colW+gap)}px;width:${colW}px">
+      <div class="dt-barrow"><div class="dt-bars"><div class="dt-bar"><i style="width:${Math.round(n.size*100)}%"></i></div><div class="dt-bar dt-cmp ${n.st}"><i style="width:${Math.round(cmpW(n)*100)}%"></i></div></div>${EXP}</div>
+      <div class="dt-name"><span>${n.name}</span><span class="dt-acts">${COMMENT}${MORE}</span></div>
+      <div class="dt-val"><span>${n.val}</span><span class="dt-var ${n.st}">${MARK[n.st]}${pct(n.v)}</span></div>
+      <div class="dt-leg"><i></i>${n.val} Baseline (${n.bPY})</div>
+      <div class="dt-leg"><i class="${n.st}"></i>${n.cmp} Compare (${n.cPY})</div>
+    </div>`).join('');
+    const els=Object.fromEntries([...host.querySelectorAll('.dt-node')].map(e=>[e.dataset.id,e]));
+    const bars=els.np.querySelector('.dt-bars'),nodeH=Math.max(...Object.values(els).map(e=>e.offsetHeight)),barY=bars.offsetTop+bars.offsetHeight/2;
+    const leaves=nodes.filter(n=>!n.kids);
+    const S=Math.max(nodeH+10,Math.min(nodeH*2.2,(H-nodeH)/Math.max(1,leaves.length-1)));
+    const total=S*(leaves.length-1)+nodeH,top=Math.max(0,(H-total)/2);
+    leaves.forEach((n,i)=>{n.y=top+i*S;});
+    (function place(n){if(n.kids){n.kids.forEach(place);n.y=(n.kids[0].y+n.kids[n.kids.length-1].y)/2;}})(DATA);
+    nodes.forEach(n=>{els[n.id].style.top=n.y+'px';});
+    // connectors: unselected first, the selected path on top; a wide invisible twin makes each one easy to click
+    const links=nodes.filter(n=>n.parent).sort((a,b)=>onPath(a)-onPath(b)).map(n=>{
+      const x0=n.parent.depth*(colW+gap)+colW+2,y0=n.parent.y+barY,x1=n.depth*(colW+gap),y1=n.y+barY,c=gap/2;
+      const d=`M${x0} ${y0}C${x0+c} ${y0} ${x1-c} ${y1} ${x1} ${y1}`,cls=onPath(n)?' sel':'';
+      return `<path class="dt-hit${cls}" d="${d}"/><path class="dt-link${cls}" d="${d}"/>`;
+    }).join('');
+    const svg=host.querySelector('.dt-links'),sh=Math.max(H,top+total);svg.setAttribute('width',W);svg.setAttribute('height',sh);svg.style.width=W+'px';svg.style.height=sh+'px';svg.innerHTML=links;
+  }
+  // Re-lay out only when size or type changes; color edits must keep these elements
+  // (the canvas editor outlines them).
+  function relayout(force){
+    if(!host.getClientRects().length)return;
+    const cs=getComputedStyle(host),key=[host.clientWidth,host.clientHeight,cs.fontSize,cs.fontFamily,getComputedStyle(document.documentElement).getPropertyValue('--font-size')].join('|');
+    if(!force&&key===lastKey)return;lastKey=key;render();
+  }
+  window._dtRelayout=relayout;
+  new ResizeObserver(()=>relayout()).observe(host);
+  host.addEventListener('click',e=>{
+    const n=e.target.closest('.dt-node'),id=n&&n.dataset.id!==selId?n.dataset.id:null;
+    if(id===selId)return;
+    selId=id;render();
+  });
+  host.addEventListener('mousemove',e=>{
+    const el=e.target.closest('.dt-node');if(!el){hideChartTip();return;}
+    const n=byId[el.dataset.id];
+    showChartTip(e,n.name,[{label:'Baseline',value:`${n.val} (${n.bPY} vs PY)`},{label:'Compare',value:`${n.cmp} (${n.cPY} vs PY)`},{label:'Compare vs baseline',value:pct(n.v)}]);
+  });
+  host.addEventListener('mouseleave',hideChartTip);
+})();
+
+/* ── Zoom and drag for tree visuals ──
+   Decomposition tree and Planning tree: the mouse wheel zooms around the
+   pointer, dragging pans, and the control in the canvas corner zooms in,
+   out, back to 100% or fits the whole tree. A drag never counts as a click,
+   so selecting a node (Viewing) or a color (Editing) still works. In
+   Editing mode the edit layer hands wheel and drag over (see _zoomAt). */
+(function(){
+  const ctl=document.getElementById('zoomCtl'),slider=document.getElementById('zoomSlider'),thumb=document.getElementById('zoomThumb');
+  const MIN=.4,MAX=3,STEP=1.25;
+  const all=[];
+  function make(viewport,world){
+    const z={viewport,world,k:1,tx:0,ty:0};
+    viewport.classList.add('zoomable');viewport.dataset.zoomable=all.length;
+    // viewport px per client px: the Intelligence page itself is scaled to fit the stage
+    const scale=()=>{const r=viewport.getBoundingClientRect();return r.width/(viewport.offsetWidth||r.width||1)||1;};
+    z.apply=()=>{
+      world.style.transform=z.k===1&&!z.tx&&!z.ty?'':`translate(${z.tx}px,${z.ty}px) scale(${z.k})`;
+      if(active()===z)showK(z.k);
+      if(window._ceditRedraw)window._ceditRedraw();
+    };
+    // keep the point under (cx, cy) where it is while the scale changes
+    z.zoomTo=(k,cx,cy)=>{
+      k=Math.max(MIN,Math.min(MAX,k));
+      const s=scale(),wr=world.getBoundingClientRect(),vr=viewport.getBoundingClientRect();
+      if(cx==null){cx=vr.left+vr.width/2;cy=vr.top+vr.height/2;}
+      const ox=wr.left-z.tx*s,oy=wr.top-z.ty*s,vx=(cx-ox)/s,vy=(cy-oy)/s;
+      const px=(vx-z.tx)/z.k,py=(vy-z.ty)/z.k;
+      z.k=k;z.tx=vx-k*px;z.ty=vy-k*py;z.apply();
+    };
+    z.wheel=e=>{
+      e.preventDefault();
+      const d=e.deltaMode===1?e.deltaY*16:e.deltaMode===2?e.deltaY*400:e.deltaY;
+      z.zoomTo(z.k*Math.exp(-d*.0015),e.clientX,e.clientY);
+    };
+    z.reset=()=>{z.k=1;z.tx=0;z.ty=0;z.apply();};
+    // drag to pan; onMoved runs once the pointer has really moved (so the click is skipped)
+    z.drag=(e,capture,onMoved)=>{
+      const s=scale(),x0=e.clientX,y0=e.clientY,t0=[z.tx,z.ty];let moved=false;
+      try{capture.setPointerCapture(e.pointerId);}catch(err){}
+      const move=ev=>{
+        if(ev.pointerId!==e.pointerId)return;
+        if(!moved&&Math.hypot(ev.clientX-x0,ev.clientY-y0)<4)return;
+        if(!moved){moved=true;viewport.classList.add('panning');capture.classList.add('panning');if(onMoved)onMoved();}
+        z.tx=t0[0]+(ev.clientX-x0)/s;z.ty=t0[1]+(ev.clientY-y0)/s;z.apply();
+      };
+      const up=ev=>{
+        if(ev.pointerId!==e.pointerId)return;
+        capture.removeEventListener('pointermove',move);capture.removeEventListener('pointerup',up);capture.removeEventListener('pointercancel',up);
+        viewport.classList.remove('panning');capture.classList.remove('panning');
+        if(moved){const stop=c=>{c.stopPropagation();c.preventDefault();};addEventListener('click',stop,{capture:true,once:true});setTimeout(()=>removeEventListener('click',stop,true),0);if(onMoved)onMoved();}
+      };
+      capture.addEventListener('pointermove',move);capture.addEventListener('pointerup',up);capture.addEventListener('pointercancel',up);
+    };
+    // Viewing mode: the viewport gets the mouse directly
+    viewport.addEventListener('wheel',z.wheel,{passive:false});
+    viewport.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button===0)z.drag(e,viewport);});
+    new ResizeObserver(sync).observe(viewport);
+    all.push(z);return z;
+  }
+  const active=()=>all.find(z=>z.viewport.getClientRects().length&&z.viewport.clientWidth);
+  function sync(){const z=active();ctl.hidden=!z;if(z)showK(z.k);}
+  // Slider: log scale, bigger zoom higher up (+ sits on top)
+  const PAD=6,toT=k=>(Math.log(k)-Math.log(MIN))/(Math.log(MAX)-Math.log(MIN));
+  function showK(k){
+    const h=slider.clientHeight||88,pct=Math.round(k*100)+'%';
+    thumb.style.top=(PAD+(1-toT(k))*(h-2*PAD))+'px';
+    slider.setAttribute('aria-valuenow',Math.round(k*100));slider.setAttribute('aria-valuetext',pct);slider.dataset.tip=pct;
+  }
+  function fromY(y){
+    const r=slider.getBoundingClientRect(),t=1-Math.max(0,Math.min(1,(y-r.top-PAD)/(r.height-2*PAD)));
+    return Math.exp(Math.log(MIN)+t*(Math.log(MAX)-Math.log(MIN)));
+  }
+  slider.addEventListener('pointerdown',e=>{
+    const z=active();if(!z||e.button!==0)return;e.preventDefault();slider.focus();
+    z.zoomTo(fromY(e.clientY));try{slider.setPointerCapture(e.pointerId);}catch(err){}
+    const move=ev=>z.zoomTo(fromY(ev.clientY));
+    const up=()=>{slider.removeEventListener('pointermove',move);slider.removeEventListener('pointerup',up);slider.removeEventListener('pointercancel',up);};
+    slider.addEventListener('pointermove',move);slider.addEventListener('pointerup',up);slider.addEventListener('pointercancel',up);
+  });
+  slider.addEventListener('dblclick',()=>{const z=active();if(z)z.zoomTo(1);});
+  slider.addEventListener('keydown',e=>{
+    const z=active();if(!z)return;
+    const k={ArrowUp:z.k*1.1,ArrowRight:z.k*1.1,ArrowDown:z.k/1.1,ArrowLeft:z.k/1.1,PageUp:z.k*STEP,PageDown:z.k/STEP,Home:MIN,End:MAX}[e.key];
+    if(k){e.preventDefault();z.zoomTo(k);}
+  });
+  // Fit: the whole tree in view, centered, never above 100%
+  function fit(z){
+    z.k=1;z.tx=0;z.ty=0;z.apply();
+    const s=z.viewport.getBoundingClientRect(),c=z.world.getBoundingClientRect();
+    let b=null;
+    for(const el of z.world.querySelectorAll('.dt-node,.plan-tree')){
+      const r=el.getBoundingClientRect();if(!r.width)continue;
+      b=b?{l:Math.min(b.l,r.left),t:Math.min(b.t,r.top),r:Math.max(b.r,r.right),b:Math.max(b.b,r.bottom)}:{l:r.left,t:r.top,r:r.right,b:r.bottom};
+    }
+    if(!b)return;
+    const k=Math.max(MIN,Math.min(1,(s.width-24)/(b.r-b.l),(s.height-24)/(b.b-b.t)));
+    const sc=s.width/(z.viewport.offsetWidth||s.width);
+    // center the tree's box in the viewport
+    z.k=k;
+    const cx=(b.l+b.r)/2-c.left,cy=(b.t+b.b)/2-c.top;
+    z.tx=(s.left+s.width/2-c.left)/sc-cx/sc*k;z.ty=(s.top+s.height/2-c.top)/sc-cy/sc*k;
+    z.apply();
+  }
+  document.getElementById('zoomIn').addEventListener('click',()=>{const z=active();if(z)z.zoomTo(z.k*STEP);});
+  document.getElementById('zoomOut').addEventListener('click',()=>{const z=active();if(z)z.zoomTo(z.k/STEP);});
+  document.getElementById('zoomFit').addEventListener('click',()=>{const z=active();if(z)fit(z);});
+
+  const dt=document.getElementById('dtTree');
+  if(dt)make(dt,dt.querySelector('.zoom-world'));
+  const pt=document.getElementById('planTree');
+  if(pt){const w=document.createElement('div');w.className='zoom-world plan-zoom-world';pt.parentNode.insertBefore(w,pt);w.appendChild(pt);make(pt.closest('.plan-tree-wrap'),w);}
+  // For the edit layer: the zoomable tree under an element, if any
+  window._zoomSync=sync;
+  window._zoomAt=el=>{const v=el&&el.closest&&el.closest('.zoomable');return v?all[+v.dataset.zoomable]:null;};
+  sync();
+})();
+
+/* Canvas page buttons (#pbtns) are real buttons, as on an Intelligence
+   sheet: in Viewing mode they switch the page, kept in step with the
+   Template dropdown. In Editing mode the edit layer sits on top, so a
+   click picks their colors instead. */
+document.querySelectorAll('#pbtns .dbtn').forEach(b=>b.addEventListener('click',()=>{
+  if(typeof window._intelSelectTemplate==='function')window._intelSelectTemplate(parseInt(b.dataset.pg));
+}));
 
 /* ── Dark / light version ──
    Builds the current theme's opposite-tone companion as a new custom theme:
@@ -4303,11 +4568,10 @@ function showPage(idx){
     if(toDark)return ensureChartLForTone(h,true);
     const [L,C,H]=hexToOklch(h);return L>CHART_L_MAX+0.1?oklchToHex(CHART_L_MAX,C,H):hex; // too light for a white canvas
   };
-  btn.addEventListener('click',()=>{
-    const toDark=!isDark(),tone=toDark?'dark':'light';
-    const base=T.label.replace(/ \((Dark|Light)\)$/,'');
-    const name=`${base} (${toDark?'Dark':'Light'})`;
-    const tw=JSON.parse(JSON.stringify(T)),c=tw.theme.colors;
+  // Builds the companion of `src` for `tone` (also used by the New theme panel's tone switch).
+  function buildTwin(src,tone,name){
+    const toDark=tone==='dark';
+    const tw=JSON.parse(JSON.stringify(src)),c=tw.theme.colors;
     c.primaryColors=c.primaryColors.map(h=>readable(h,toDark));
     const g=themeFromPrimaries(c.primaryColors,tone,name,hexToOklch((c.primaryColors[0]||'#117865').slice(0,7))[2]).theme;
     Object.keys(c.structuralColors).forEach(k=>{if(k in g.colors.structuralColors)c.structuralColors[k]=g.colors.structuralColors[k];});
@@ -4319,13 +4583,14 @@ function showPage(idx){
     Object.assign(e.tooltip,{backgroundColor:g.elements.tooltip.backgroundColor,color:g.elements.tooltip.color});
     ty.color=g.typography.color;
     tw.label=name;tw.themeType=CUSTOM_THEME_TYPE;delete tw.builtIn;
-    T=tw;snapshotOrigin();buildAll();applyTheme();requestAnimationFrame(()=>requestAnimationFrame(fit));
-    const lbl=document.getElementById('ftbThemeName');if(lbl)lbl.textContent=name;
-    const lib=libLoad(),entry={...JSON.parse(JSON.stringify(T)),savedAt:Date.now()},i=lib.findIndex(x=>x.label===name);
-    if(i>=0)lib[i]=entry;else lib.unshift(entry);libSave(lib);
-    updateDeleteBtn();checkDirty();sync();
-    showToast(`"${name}" created and saved to your library`);
-  });
+    return tw;
+  }
+  window._buildTwin=buildTwin;
+  btn.addEventListener('click',()=>confirmUnsaved(()=>{
+    const toDark=!isDark();
+    const name=`${T.label.replace(/ \((Dark|Light)\)$/,'')} (${toDark?'Dark':'Light'})`;
+    if(window._openTwin)window._openTwin(JSON.parse(JSON.stringify(T)),toDark?'dark':'light',name);
+  }));
   sync();
 })();
 
@@ -4371,10 +4636,12 @@ function showPage(idx){
       const inLayout=!usage||u.static||u.tokens.some(t=>t.startsWith('@')||usage.has(t));
       const applies=onSheet&&inLayout,head=g.querySelector('.cghead');
       g.classList.toggle('na',!applies);g.dataset.tokens=u.tokens.join(' ');
-      if(applies)delete head.dataset.tip;else head.dataset.tip=onSheet?'Not used in this layout':`Not used on ${NAMES[sheet]} sheets`;
+      const usedOn=`Used on ${list(u.sheets.map(s=>NAMES[s]))}.`+(u.note?' '+u.note:'');
+      const why=onSheet?'Not used in this layout.':`Not used on ${NAMES[sheet]} sheets.`;
+      head.dataset.tip=applies?usedOn:why+' '+usedOn;
       let hint=g.querySelector(':scope>.cgbody>.cg-uses');
-      if(!hint){hint=document.createElement('div');hint.className='field-hint cg-uses';g.querySelector('.cgbody').prepend(hint);}
-      hint.textContent=`Used on ${list(u.sheets.map(s=>NAMES[s]))}.`+(u.note?' '+u.note:'');
+      if(applies){if(hint)hint.remove();}
+      else{if(!hint){hint=document.createElement('div');hint.className='field-hint cg-uses';g.querySelector('.cgbody').prepend(hint);}hint.textContent=why+' '+usedOn;}
     });
     document.querySelectorAll('#tp-colors .swblock').forEach(sw=>{
       const l=(sw.querySelector('.lbl')||{}).textContent||'',m=/^Color (\d)$/.exec(l);
@@ -4388,6 +4655,7 @@ function showPage(idx){
   function detectUsage(){
     const tokens=[...new Set(Object.values(SHEET_USE).flatMap(u=>u.tokens).filter(t=>!t.startsWith('@')))];
     const mark={},lens={},saved=tokens.map(t=>[t,rootEl.style.getPropertyValue('--'+t)]);
+    probeOn();
     tokens.forEach((t,k)=>{
       if(LEN_TOKENS.has(t)){const v=(1+(k+1)/1000).toFixed(3)+'px';lens[v]=t;rootEl.style.setProperty('--'+t,v);}
       else if(t==='el-border-w')rootEl.style.setProperty('--'+t,'2px');
@@ -4403,7 +4671,7 @@ function showPage(idx){
         for(const m of txt.matchAll(/rgb\(1, 2, (\d+)\)/g)){const t=mark[m[1]];if(t)found.add(t);}
         [cs.borderTopLeftRadius,cs.paddingTop,cs.paddingRight,cs.paddingBottom,cs.paddingLeft].forEach(v=>{if(lens[v])found.add(lens[v]);});
       }
-    }finally{saved.forEach(([t,v])=>v?rootEl.style.setProperty('--'+t,v):rootEl.style.removeProperty('--'+t));}
+    }finally{saved.forEach(([t,v])=>v?rootEl.style.setProperty('--'+t,v):rootEl.style.removeProperty('--'+t));probeOff();}
     if(found.has('el-border-color'))found.add('el-border-w');
     return found;
   }
@@ -4425,12 +4693,18 @@ function showPage(idx){
   const layer=document.createElement('div');layer.className='fx-hl-layer';document.body.appendChild(layer);
   const report=document.getElementById('report'),stage=document.getElementById('stage'),rootEl=document.documentElement;
   const MARK='rgb(1, 2, 3)',MARK_LEN='0.37px';
+  // Transitions would report the old color mid-swap (the page buttons fade
+  // their background), so they're off while probing. The flush before
+  // switching them back keeps the restore from animating.
+  function probeOn(){rootEl.classList.add('fx-probing');}
+  function probeOff(){void report.offsetWidth;rootEl.classList.remove('fx-probing');}
   const LEN_TOKENS=new Set(['el-radius','el-pad-t','el-pad-r','el-pad-b','el-pad-l']);
   const hasText=el=>{for(const n of el.childNodes)if(n.nodeType===3&&n.textContent.trim())return true;return el instanceof SVGTextElement;};
   function targets(tokens){
     if(tokens.includes('@stage'))return[stage];
     if(tokens.includes('@report'))return[report];
     const saved=tokens.map(t=>[t,rootEl.style.getPropertyValue('--'+t)]);
+    probeOn();
     tokens.forEach(t=>rootEl.style.setProperty('--'+t,t==='el-shadow'?`0 0 0 1px ${MARK}`:t==='el-border-w'?'2px':LEN_TOKENS.has(t)?MARK_LEN:MARK));
     const hits=[];
     try{
@@ -4444,7 +4718,7 @@ function showPage(idx){
            (cs.color===MARK&&hasText(el))||
            (LEN_TOKENS.size&&[cs.borderTopLeftRadius,cs.paddingTop,cs.paddingRight,cs.paddingBottom,cs.paddingLeft].includes(MARK_LEN)))hits.push(el);
       }
-    }finally{saved.forEach(([t,v])=>v?rootEl.style.setProperty('--'+t,v):rootEl.style.removeProperty('--'+t));}
+    }finally{saved.forEach(([t,v])=>v?rootEl.style.setProperty('--'+t,v):rootEl.style.removeProperty('--'+t));probeOff();}
     // A table row whose every visible cell matched is boxed as one row.
     const set=new Set(hits);
     new Set(hits.filter(el=>el.tagName==='TD'||el.tagName==='TH').map(el=>el.parentElement)).forEach(tr=>{
@@ -4467,6 +4741,648 @@ function showPage(idx){
   drawer.addEventListener('focusin',e=>{const t=e.target.closest('[data-tokens]');if(t&&t.dataset.tokens)show(t.dataset.tokens.split(' '));});
   drawer.addEventListener('focusout',()=>{layer.innerHTML='';});
   stage.addEventListener('scroll',()=>{layer.innerHTML='';},true);
+
+  /* ── Edit on canvas ──
+     Editing mode (default): a transparent layer over the canvas takes the
+     pointer, so hovering outlines what a click would pick and the sheet's own
+     tooltips stay quiet. A click works out — with the same marker swap as
+     the highlight — which theme colors paint that exact spot (shape, text,
+     background, border), selects the most specific one, outlines every place
+     it's used, and opens a small floating editor. Viewing mode removes the
+     layer so the sheet behaves as people will use it. */
+  const at=(o,p)=>p.reduce((x,k)=>x&&x[k],o);
+  const put=(o,p,v)=>{const last=p[p.length-1];at(o,p.slice(0,-1))[last]=v;};
+  const COLOR={};
+  const def=(tok,label,path,tab,section)=>{COLOR[tok]={label,path,tab,section};};
+  for(let i=1;i<=8;i++)def('p'+i,'Primary '+i,['colors','primaryColors',i-1],'colors','Primary');
+  def('out1','Outline 1',['colors','structuralColors','outline1'],'colors','Structural');
+  def('out2','Outline 2',['colors','structuralColors','outline2'],'colors','Structural');
+  def('struct-bg','Subtle Fill',['colors','structuralColors','background'],'colors','Structural');
+  def('struct-icon','Icon',['colors','structuralColors','icon'],'colors','Structural');
+  def('struct-accent','Accent',['colors','structuralColors','accent'],'colors','Structural');
+  def('struct-subtle','Background',['colors','structuralColors','subtleFill'],'colors','Structural');
+  def('pos','Positive',['colors','semantic','positive'],'colors','Semantic');
+  def('neg','Negative',['colors','semantic','negative'],'colors','Semantic');
+  def('neu','Neutral',['colors','semantic','neutral'],'colors','Semantic');
+  def('canvas-bg','Canvas background',['page','canvas','background','color'],'page','Canvas background');
+  def('canvas-border-color','Canvas border',['page','canvas','border','color'],'page','Canvas border');
+  def('wallpaper','Wallpaper',['page','wallpaper','color'],'page','Wallpaper');
+  def('el-bg','Element background',['elements','background','color'],'visuals','Background');
+  def('el-border-color','Element border',['elements','border','color'],'visuals','Border');
+  def('header-bg','Header background',['elements','header','backgroundColor'],'visuals','Header');
+  def('header-border','Header border',['elements','header','borderColor'],'visuals','Header');
+  def('text-color','Text color',['typography','color'],'font',null);
+  const SURFACES=new Set(['canvas-bg','wallpaper','el-bg','struct-bg','struct-subtle','header-bg']);
+  const ROLE_ORDER=['Shape','Line','Text','Background','Border'];
+  // How each role reads to a person: what the color does at the clicked spot.
+  const ROLE_NAME={Shape:'Fill',Line:'Outline',Text:'Text',Background:'Behind it',Border:'Border'};
+  const ROLE_META={Shape:'Fill',Line:'Outline',Text:'Text',Background:'Background',Border:'Border'};
+  const editLayer=document.getElementById('ceditLayer'),bar=document.getElementById('ceditBar');
+  const selLayer=document.createElement('div');selLayer.className='fx-hl-layer fx-sel-layer';document.body.appendChild(selLayer);
+  const hoverBox=document.createElement('i');hoverBox.className='cedit-hover';document.body.appendChild(hoverBox);
+  let mode='edit',sel=null; // sel: {token, el, picks:[{token,role}], x, y}
+  const isEditing=()=>mode==='edit'&&!document.body.classList.contains('is-creating');
+
+  function under(x,y){
+    editLayer.style.pointerEvents='none';
+    const el=document.elementFromPoint(x,y);
+    editLayer.style.pointerEvents='';
+    return el;
+  }
+  // Which theme colors paint this spot, most specific first.
+  function colorsAt(el,x,y){
+    if(!el)return[];
+    if(!report.contains(el))return stage.contains(el)?[{token:'wallpaper',role:'Background'}]:[];
+    const toks=Object.keys(COLOR),saved=toks.map(t=>[t,rootEl.style.getPropertyValue('--'+t)]),mark={};
+    const savedAuto=rootEl.style.getPropertyValue('--struct-accent-text'),AUTO='rgb(1, 3, 1)';
+    probeOn();
+    toks.forEach((t,k)=>{mark[`rgb(1, 2, ${k+1})`]=t;rootEl.style.setProperty('--'+t,`rgb(1, 2, ${k+1})`);});
+    rootEl.style.setProperty('--struct-accent-text',AUTO);
+    const picks=[];const add=(v,role)=>{const t=mark[v];if(t&&!picks.some(p=>p.token===t))picks.push({token:t,role});};
+    try{
+      const cs=getComputedStyle(el);
+      if(el instanceof SVGElement&&el.tagName!=='svg'){add(cs.fill,'Shape');add(cs.stroke,'Line');}
+      if(hasText(el)||el instanceof SVGTextElement)add(cs.color,'Text');
+      if(hasText(el)&&cs.color===AUTO)picks.note='accent-text'; // text on Accent is picked automatically
+      for(let p=el;p&&report.contains(p);p=p.parentElement){ // first painted background up the tree
+        const bg=getComputedStyle(p).backgroundColor;
+        if(bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent'){add(bg,'Background');break;}
+      }
+      ['Top','Right','Bottom','Left'].forEach(s=>{if(cs['border'+s+'Width']!=='0px')add(cs['border'+s+'Color'],'Border');});
+      // Clicked inside a border band of this element or a parent (e.g. a card's status bar)? That border wins.
+      for(let p=el;p&&p!==report&&x!=null;p=p.parentElement){
+        if(p instanceof SVGElement)continue;
+        const ps=getComputedStyle(p),r=p.getBoundingClientRect(),z=r.width/(p.offsetWidth||r.width||1);
+        const side=[['Left',x-r.left],['Right',r.right-x],['Top',y-r.top],['Bottom',r.bottom-y]].find(([s,d])=>{const w=parseFloat(ps['border'+s+'Width'])*z;return w>0&&d>=-1&&d<=Math.max(w+1,3);});
+        if(side){const t=mark[ps['border'+side[0]+'Color']];if(t){const i=picks.findIndex(q=>q.token===t);if(i>=0)picks.splice(i,1);picks.unshift({token:t,role:'Border',hit:true});}break;}
+      }
+    }finally{saved.forEach(([t,v])=>v?rootEl.style.setProperty('--'+t,v):rootEl.style.removeProperty('--'+t));savedAuto?rootEl.style.setProperty('--struct-accent-text',savedAuto):rootEl.style.removeProperty('--struct-accent-text');probeOff();}
+    return picks.sort((a,b)=>(b.hit?1:0)-(a.hit?1:0)||ROLE_ORDER.indexOf(a.role)-ROLE_ORDER.indexOf(b.role));
+  }
+  const boxHTML=(els,main)=>{const sr=stage.getBoundingClientRect();return els.slice(0,200).map(el=>{const r=el.getBoundingClientRect();
+    const x=Math.max(r.left,sr.left),y=Math.max(r.top,sr.top),w=Math.min(r.right,sr.right)-x,h=Math.min(r.bottom,sr.bottom)-y;
+    return w>0&&h>0?`<i${el===main?' class="main"':''} style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"></i>`:'';}).join('');};
+  function drawSelection(){
+    if(!sel){selLayer.innerHTML='';return;}
+    const els=sel.token==='wallpaper'?[stage]:sel.token==='canvas-bg'?[report]:targets([sel.token]);
+    const e=sel.el;
+    sel.els=els;sel.count=els.length;
+    sel.main=e&&(els.find(t=>t===e||t.contains(e))||els.find(t=>e.contains(t)));
+    redrawBoxes();
+  }
+  const redrawBoxes=()=>{if(sel&&sel.els)selLayer.innerHTML=boxHTML(sel.els,sel.main);};
+  window._ceditRedraw=()=>{redrawBoxes();hoverBox.style.display='none';};
+  const valueOf=t=>at(T.theme,COLOR[t].path)||'';
+  const savedOf=t=>at(THEME_ORIGIN.theme,COLOR[t].path)||'';
+  function paintBar(){
+    if(!sel)return;
+    const t=sel.token,v=valueOf(t),c=COLOR[t];
+    document.getElementById('cebChip').style.background=v;
+    const nm=document.getElementById('cebName');nm.textContent=c.label;nm.dataset.tip='JSON key: '+c.path.join('.').replace(/\.(\d+)(?=\.|$)/g,'[$1]');
+    const hx=document.getElementById('cebHex');if(document.activeElement!==hx)hx.value=v.toUpperCase();
+    document.getElementById('cebPick').value=v.slice(0,7).toLowerCase();
+    const n=sel.count||0,pageLevel=t==='wallpaper'||t==='canvas-bg';
+    const role=(sel.picks.find(p=>p.token===t)||{}).role;
+    document.getElementById('cebMeta').textContent=role?ROLE_META[role]:'';
+    bar.setAttribute('aria-label','Edit '+c.label);
+    const hxw=hx.closest('.ceb-hex');if(document.activeElement!==hx){hxw.classList.remove('invalid');hx.removeAttribute('aria-invalid');document.getElementById('cebErr').hidden=true;}
+    // Contrast, with a verdict: text needs 4.5:1, shapes and icons 3:1. Outlines and borders are decorative.
+    const ct=contrastOf(t,v);
+    document.getElementById('cebContrast').innerHTML=ct?`<span class="wcag-item-badge ${ct.ok?'pass':'fail'}">${ct.ok?'Pass':'Fail'}</span><span>${ct.what} ${ct.ratio.toFixed(1)}:1, needs ${ct.need}:1</span>`+
+      (!ct.ok&&ct.fix?`<button type="button" class="btn btn-default btn-sm wcag-fix ceb-fix" data-fix="${ct.fix}" data-tip="Changes only the lightness, just enough to pass"><span class="wcag-fix-sw" style="background:${ct.fix}"></span>Use ${ct.fix}</button>`:''):'';
+    // Colors the canvas can't show at this spot
+    const view=visibleView(),info=icon('info16');
+    let note='';
+    if(t==='struct-accent'&&sel.picks.note==='accent-text')note=`${info}<span>The text on Accent is set automatically, white or dark, so it stays readable.</span>`;
+    else if((t==='el-bg'||t==='text-color')&&view&&view.sheet!=='planning')note=`${info}<span>Tooltips only appear on hover. <button type="button" class="ceb-note-link" data-open="visuals|Tooltip">Edit tooltip colors</button></span>`;
+    document.getElementById('cebNote').innerHTML=note;
+    const bk=document.getElementById('cebBack');bk.hidden=!back;
+    if(back)document.getElementById('cebBackLbl').textContent=`Back to ${back.sheetName} · ${back.layout}`;
+    document.getElementById('cebWhere').hidden=pageLevel;
+    if(!whereOpen)document.getElementById('cebWhereSum').textContent=pageLevel?'':`${n} on this layout`;
+    document.getElementById('cebReset').disabled=v===savedOf(t);
+    const also=sel.picks.filter(p=>p.token!==t);
+    document.getElementById('cebAlso').innerHTML=also.length?`<div class="ceb-also-lbl">Other colors at this spot</div><div class="ceb-chips">`+also.map(p=>`<button type="button" class="ceb-chip" data-token="${p.token}" data-tip="Edit ${COLOR[p.token].label} instead"><span class="ceb-chip-sw" style="background:${valueOf(p.token)}"></span><span class="ceb-chip-role">${ROLE_NAME[p.role]}</span>${COLOR[p.token].label}</button>`).join('')+'</div>':'';
+  }
+  const GRAPHIC=new Set(['p1','p2','p3','p4','p5','p6','p7','p8','pos','neg','neu','struct-accent','struct-icon']);
+  function contrastOf(t,v){
+    const hex=(v||'').slice(0,7);if(!/^#[0-9a-f]{6}$/i.test(hex))return null;
+    const canvas=(T.theme.page.canvas.background.color||'#FFFFFF').slice(0,7),text=(T.theme.typography.color||'#242424').slice(0,7);
+    const fx=window._suggestFix||(()=>null);
+    let r=null;
+    if(SURFACES.has(t)&&t!=='wallpaper')r={what:'Text on it',ratio:cr2(text,hex),need:4.5,fix:()=>fx(hex,text,4.5)};
+    else if(t==='text-color')r={what:'On canvas',ratio:cr2(hex,canvas),need:4.5,fix:()=>fx(hex,canvas,4.5)};
+    else if(GRAPHIC.has(t))r={what:'On canvas',ratio:cr2(hex,canvas),need:3,fix:()=>fx(hex,canvas,3)};
+    if(!r)return null;
+    r.ok=r.ratio>=r.need;r.fix=r.ok?null:r.fix();
+    return r;
+  }
+  // Where the editor goes: of the spots around the selection and the canvas
+  // corners, the one that hides the least — never the clicked element if it
+  // can help it, then as few of the outlined uses as possible. Once dragged,
+  // it stays where it was put until it's closed.
+  let barPos=null;
+  function placeBar(keep){
+    if(!sel)return;
+    bar.hidden=false;
+    const bw=bar.offsetWidth,bh=bar.offsetHeight,sr=stage.getBoundingClientRect();
+    const minY=bh<=innerHeight-sr.top-16?sr.top+8:8,maxY=innerHeight-bh-8;
+    const clampY=y=>Math.max(minY,Math.min(y,maxY));
+    const clampX=x=>Math.max(8,Math.min(Math.min(Math.max(x,sr.left+8),sr.right-bw-8),innerWidth-bw-8));
+    if(barPos){
+      bar.style.left=Math.max(8,Math.min(barPos.x,innerWidth-bw-8))+'px';bar.style.top=Math.max(8,Math.min(barPos.y,maxY))+'px';return;
+    }
+    if(keep&&bar.style.top){bar.style.top=clampY(parseFloat(bar.style.top))+'px';return;}
+    const r=sel.el&&sel.el.isConnected?sel.el.getBoundingClientRect():{left:sel.x,right:sel.x,top:sel.y,bottom:sel.y};
+    const boxes=[...selLayer.children].map(i=>i.getBoundingClientRect());
+    const ov=(a,b)=>Math.max(0,Math.min(a.right,b.right)-Math.max(a.left,b.left))*Math.max(0,Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top));
+    const area=Math.max(1,Math.min(bw*bh,(r.right-r.left)*(r.bottom-r.top)));
+    const spots=[[sel.x-bw/2,r.bottom+8],[sel.x-bw/2,r.top-bh-8],[r.right+8,r.top],[r.left-bw-8,r.top],
+      [sr.right-bw-8,sr.top+8],[sr.right-bw-8,sr.bottom-bh-8],[sr.left+8,sr.top+8],[sr.left+8,sr.bottom-bh-8]];
+    let best=null;
+    spots.forEach(([cx,cy],k)=>{
+      const x=clampX(cx),y=clampY(cy),b={left:x,top:y,right:x+bw,bottom:y+bh};
+      const hidden=boxes.filter(q=>ov(b,q)>0.3*q.width*q.height).length;
+      const score=ov(b,r)/area*100+hidden+k*0.01;
+      if(!best||score<best.score)best={score,x,y};
+    });
+    bar.style.left=best.x+'px';bar.style.top=best.y+'px';
+  }
+  function select(token,el,picks,x,y){
+    sel={token,el,picks,x,y};drawSelection();paintBar();if(whereOpen)renderWhere();placeBar();
+  }
+  let back=null; // the layout "Where it's used" jumped from
+
+  /* ── Where it's used (on demand) ──
+     Every sheet layout is in the page (hidden ones too), so the same marker
+     swap can count uses everywhere at once. Areas get readable names: the
+     visual's title, KPI cards, page header, or rows / headers / nodes. */
+  let whereOpen=false;
+  const VIEWS=[
+    ['intelligence','0','Intelligence','Template 1','#pg0'],['intelligence','1','Intelligence','Template 2','#pg1'],
+    ['intelligence','2','Intelligence','Template 3','#pg2'],['intelligence','3','Intelligence','Template 4','#pg3'],['intelligence','6','Intelligence','Decomposition tree','#pg6'],
+    ['planning','matrix','Planning','Hierarchy','#planMatrixView'],['planning','table','Planning','Table','#planTableView'],['planning','tree','Planning','Tree','#planTreeView'],
+    ['powertable','table','PowerTable','Table','#ptTableView'],['powertable','gantt','PowerTable','Gantt','#ptGanttView'],['powertable','ganttres','PowerTable','Gantt resources','#ptGanttResView'],
+    ['powertable','calendar','PowerTable','Calendar','#ptCalendarView'],['powertable','kanban','PowerTable','Kanban','#ptKanbanView']
+  ].map(([sheet,leaf,sheetName,layout,sel])=>({sheet,leaf,sheetName,layout,root:document.querySelector(sel)}));
+  function areaOf(el,view){
+    if(el.closest('.dt')){
+      if(el.closest('.dt-links'))return'Connectors';
+      if(el.closest('.dt-bar'))return'Bars';
+      return'Nodes';
+    }
+    const v=el.closest('.visual');
+    if(v){if(v.classList.contains('kpi-card'))return'KPI cards';const t=v.querySelector('.vt');if(t)return t.textContent.trim();}
+    if(el.closest('.pbtns'))return'Page buttons';
+    if(el.closest('.logo'))return'Logo';
+    if(el.closest('.rheader'))return'Page header';
+    if(el.closest('thead')||el.closest('.head'))return'Column headers';
+    if(el.closest('.pt-cal-toolbar'))return'Toolbar';
+    if(el.closest('.plan-tree-card,.plan-tree-beak'))return'Tree nodes';
+    if(el.closest('.plan-tree-conn'))return'Connectors';
+    if(el.closest('.pt-kanban-col,.pt-kcard,[class*=kanban]'))return'Cards and columns';
+    if(el.closest('tbody,.pt-gantt-body,.ptgr-row,.pt-cal-body'))return'Rows';
+    return view.sheet==='intelligence'?'Report page':view.layout;
+  }
+  function usageEverywhere(token){
+    const saved=rootEl.style.getPropertyValue('--'+token),M='rgb(1, 2, 3)';
+    probeOn();
+    rootEl.style.setProperty('--'+token,M);
+    const out=[];
+    try{
+      const scan=(root,view)=>{
+        const hits=[];
+        for(const el of root.querySelectorAll('*')){
+          const cs=getComputedStyle(el);if(cs.opacity==='0')continue;
+          const b=['Top','Right','Bottom','Left'].some(s=>cs['border'+s+'Width']!=='0px'&&cs['border'+s+'Color']===M);
+          if(cs.backgroundColor===M||cs.fill===M||cs.stroke===M||b||cs.boxShadow.includes(M)||(cs.color===M&&hasText(el)))hits.push(el);
+        }
+        const set=new Set(hits);
+        // whole table rows count once (same as the outline count)
+        new Set(hits.filter(el=>el.tagName==='TD'||el.tagName==='TH').map(el=>el.parentElement)).forEach(tr=>{const cells=[...tr.children];if(cells.length&&cells.every(c=>set.has(c))){cells.forEach(c=>set.delete(c));set.add(tr);}});
+        const merged=[...set],outer=merged.filter(el=>{for(let p=el.parentElement;p&&p!==root;p=p.parentElement)if(set.has(p))return false;return true;});
+        const areas=new Map();outer.forEach(el=>{const a=areaOf(el,view);areas.set(a,(areas.get(a)||[]).concat(el));});
+        return{count:outer.length,areas};
+      };
+      VIEWS.forEach(view=>{if(!view.root)return;const r=scan(view.root,view);if(view.sheet==='intelligence'){const h=scan(document.querySelector('.rheader'),view);h.areas.forEach((els,a)=>r.areas.set(a,(r.areas.get(a)||[]).concat(els)));r.count+=h.count;}if(r.count)out.push({...view,...r});});
+    }finally{saved?rootEl.style.setProperty('--'+token,saved):rootEl.style.removeProperty('--'+token);probeOff();}
+    return out;
+  }
+  // What kind of thing each use is, so a chart reads "1 line, 26 points" rather than "27".
+  const KIND_NAMES={point:['point','points'],bar:['bar','bars'],line:['line','lines'],shape:['shape','shapes'],label:['label','labels'],button:['button','buttons'],row:['row','rows'],cell:['cell','cells'],key:['legend key','legend keys'],element:['area','areas']};
+  function kindOf(el){
+    const t=el.tagName.toLowerCase();
+    if(t==='circle'||t==='ellipse')return'point';
+    if(t==='rect')return'bar';
+    if(el.closest('.dt-bar'))return'bar';
+    if(t==='line'||t==='polyline')return'line';
+    if(t==='path'){const f=getComputedStyle(el).fill;return f==='none'||el.getAttribute('fill')==='none'?'line':'shape';}
+    if(t==='text'||t==='tspan')return'label';
+    if(t==='tr')return'row';
+    if(t==='td'||t==='th')return'cell';
+    if(t==='button'||el.classList.contains('pt-btn'))return'button';
+    if(hasText(el))return'label';
+    return el.closest('[class*=legend]')?'key':'element';
+  }
+  function describe(els){
+    const n={};els.forEach(e=>{const k=kindOf(e);n[k]=(n[k]||0)+1;});
+    return Object.keys(KIND_NAMES).filter(k=>n[k]).map(k=>`${n[k]} ${KIND_NAMES[k][n[k]===1?0:1]}`).join(', ');
+  }
+  const visibleView=()=>VIEWS.find(v=>v.root&&v.root.getClientRects().length&&(v.sheet!=='intelligence'||!document.getElementById('stage').classList.contains('sheet-fill')));
+  function renderWhere(){
+    const list=document.getElementById('cebWhereList');if(!sel){list.innerHTML='';return;}
+    const all=usageEverywhere(sel.token),cur=visibleView(),here=cur&&all.find(v=>v.root===cur.root),others=all.filter(v=>!cur||v.root!==cur.root);
+    let html='';
+    if(here){
+      html+=`<div class="cw-head">On this layout</div>`+[...here.areas].map(([a,els],i)=>`<div class="cw-row cw-area" data-i="${i}"><span class="cw-name">${a}</span><span class="cw-kind">${describe(els)}</span></div>`).join('');
+    }
+    html+=`<div class="cw-head">${others.length?'Other layouts':'Not used on other layouts'}</div>`;
+    html+=others.map((v,i)=>`<button type="button" class="cw-row cw-go" data-o="${i}" data-tip="Go to ${v.sheetName} · ${v.layout}"><span class="cw-name">${v.sheetName} <span class="cw-sep">·</span> ${v.layout}</span><span class="cw-n">${v.count}</span><i data-icon="chevronRight20" class="cw-arrow"></i></button>`).join('');
+    list.innerHTML=html;hydrateIcons(list);
+    const n=here?here.count:0;
+    const elsewhere=others.reduce((s,v)=>s+v.count,0);
+    document.getElementById('cebWhereSum').textContent=`${n} on this layout${others.length?`, ${elsewhere} on ${others.length} other layout${others.length===1?'':'s'}`:''}`;
+    list._here=here?[...here.areas.values()]:[];list._others=others;
+    placeBar(true);
+  }
+  document.getElementById('cebWhereToggle').addEventListener('click',e=>{
+    whereOpen=!whereOpen;const b=e.currentTarget,list=document.getElementById('cebWhereList');
+    b.setAttribute('aria-expanded',whereOpen?'true':'false');list.hidden=!whereOpen;
+    if(whereOpen)renderWhere();else placeBar(true);
+  });
+  // Hover an area: outline just those elements; leave: back to the full selection
+  document.getElementById('cebWhereList').addEventListener('mouseover',e=>{
+    const r=e.target.closest('.cw-area');const list=e.currentTarget;
+    if(r){selLayer.innerHTML=boxHTML(list._here[+r.dataset.i]||[]);}
+  });
+  document.getElementById('cebWhereList').addEventListener('mouseleave',()=>drawSelection());
+  // Go to another layout and keep the same color selected there
+  const goTo=v=>{const leaf=document.querySelector(`.tree-leaf[data-sheet="${v.sheet}"][data-leaf="${v.leaf}"]`);if(leaf)leaf.click();};
+  document.getElementById('cebWhereList').addEventListener('click',e=>{
+    const b=e.target.closest('.cw-go');if(!b)return;
+    const v=e.currentTarget._others[+b.dataset.o],from=visibleView();
+    if(from&&from.root!==v.root)back=from;
+    goTo(v); // the layout watcher below keeps the color selected there
+  });
+  document.getElementById('cebBack').addEventListener('click',()=>{if(!back)return;const v=back;back=null;goTo(v);});
+  // Same color on a new layout: outline it there, or close if it isn't used.
+  function reselect(token){
+    if(!sel)return;
+    if(token==='wallpaper'||token==='canvas-bg'){drawSelection();paintBar();placeBar();return;}
+    const els=targets([token]),el=els[0];
+    if(!el){const name=COLOR[token].label;clear();showToast(`${name} isn’t used on this layout`,2500);return;}
+    // the first use may sit outside a scrolled table; bring it into view
+    const sr=stage.getBoundingClientRect(),er=el.getBoundingClientRect();
+    if(er.right<sr.left||er.left>sr.right||er.bottom<sr.top||er.top>sr.bottom)el.scrollIntoView({block:'nearest',inline:'nearest'});
+    const r=el.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+Math.min(r.height/2,12);
+    const picks=colorsAt(el,x,y),i=picks.findIndex(p=>p.token===token);
+    const ordered=i>=0?[picks[i],...picks.filter((_,k)=>k!==i)]:[{token,role:'Background'},...picks];
+    ordered.note=picks.note;
+    select(token,el,ordered,x,y);
+  }
+  // Any way the layout changes (Explorer, Template dropdown, page buttons, module
+  // switch) shows or hides one of these roots, so watching them catches all of them.
+  let lastRoot=null,relayTimer=0;
+  const rootNow=()=>{const v=visibleView();return v?v.root:null;};
+  const relayObs=new MutationObserver(()=>{clearTimeout(relayTimer);relayTimer=setTimeout(()=>{
+    if(window._zoomSync)window._zoomSync(); // show or hide the tree zoom control
+    const root=rootNow();if(root===lastRoot)return;lastRoot=root;
+    hideHover();
+    if(!sel)return;
+    selLayer.innerHTML='';
+    fit();setTimeout(()=>{if(sel)reselect(sel.token);},60);
+  },60);});
+  [...VIEWS.map(v=>v.root),...['pg0','pg1','pg2','pg3','pg4','pg5'].map(id=>document.getElementById(id))].filter(Boolean)
+    .forEach(n=>relayObs.observe(n,{attributes:true,attributeFilter:['style','class']}));
+  setTimeout(()=>{lastRoot=rootNow();},0);
+  function clear(){
+    const hadFocus=bar.contains(document.activeElement);
+    sel=null;back=null;barPos=null;selLayer.innerHTML='';bar.hidden=true;
+    if(hadFocus){editLayer.dataset.returning='1';editLayer.focus({preventScroll:true});delete editLayer.dataset.returning;}
+  }
+  // (the "Where it's used" panel keeps its open/closed state between selections)
+  window._ceditClear=clear;
+  window._ceditSync=()=>{if(sel){paintBar();}};
+
+  // Hover: outline the element under the pointer, and a label next to the
+  // pointer says what a click would pick (or that it would deselect).
+  const tag=document.createElement('div');tag.className='cedit-tag';tag.setAttribute('aria-hidden','true');tag.innerHTML='<span class="cedit-tag-sw"></span><span class="cedit-tag-txt"></span>';document.body.appendChild(tag);
+  let hoverEl=null,raf=0,tagTimer=0;
+  function hideHover(){hoverEl=null;hoverBox.style.display='none';tag.classList.remove('show');clearTimeout(tagTimer);}
+  const deselects=picks=>sel&&picks[0]&&picks[0].role==='Background'&&(picks[0].token==='canvas-bg'||picks[0].token==='wallpaper');
+  function moveTag(x,y){
+    const w=tag.offsetWidth||120,h=24;
+    tag.style.left=Math.min(x+14,innerWidth-w-8)+'px';tag.style.top=(y+20+h>innerHeight-8?y-h-10:y+20)+'px';
+  }
+  function updateTag(x,y){
+    const {picks}=pickAt(x,y),sw=tag.firstChild,txt=tag.lastChild;
+    if(!picks.length){tag.classList.remove('show');return;}
+    if(deselects(picks)){sw.textContent='';sw.style.background='';txt.textContent='Click to deselect';}
+    else{sw.textContent=' ';sw.style.background=valueOf(picks[0].token);txt.textContent=COLOR[picks[0].token].label;}
+    tag.classList.add('show');moveTag(x,y);
+  }
+  editLayer.addEventListener('pointermove',e=>{
+    if(e.pointerType!=='mouse'||editLayer.classList.contains('panning'))return;
+    const cx=e.clientX,cy=e.clientY;
+    if(!e.buttons&&onScrollbar(cx,cy)){editLayer.classList.add('pass');hideHover();return;}
+    if(tag.classList.contains('show'))moveTag(cx,cy);
+    clearTimeout(tagTimer);tagTimer=setTimeout(()=>updateTag(cx,cy),60);
+    if(raf)return;raf=requestAnimationFrame(()=>{raf=0;
+      const el=under(cx,cy);
+      if(el===hoverEl)return;hoverEl=el;
+      const target=el&&report.contains(el)?el:stage;
+      const r=target.getBoundingClientRect(),sr=stage.getBoundingClientRect();
+      const x=Math.max(r.left,sr.left),y=Math.max(r.top,sr.top);
+      Object.assign(hoverBox.style,{display:'block',left:x+'px',top:y+'px',width:(Math.min(r.right,sr.right)-x)+'px',height:(Math.min(r.bottom,sr.bottom)-y)+'px'});
+    });
+  });
+  editLayer.addEventListener('pointerleave',hideHover);
+  // Scrollbars: over one, the layer steps aside so it can be dragged; it comes back once the pointer leaves it.
+  function scrollerAt(x,y){
+    for(let p=under(x,y);p&&p!==document.body;p=p.parentElement){
+      const cs=getComputedStyle(p);
+      if((/(auto|scroll)/.test(cs.overflowY)&&p.scrollHeight>p.clientHeight)||(/(auto|scroll)/.test(cs.overflowX)&&p.scrollWidth>p.clientWidth))return p;
+    }
+    return null;
+  }
+  function onScrollbar(x,y){
+    const p=scrollerAt(x,y);if(!p||!stage.contains(p))return false;
+    const r=p.getBoundingClientRect(),z=r.width/(p.offsetWidth||r.width||1),cs=getComputedStyle(p);
+    const bl=parseFloat(cs.borderLeftWidth),br=parseFloat(cs.borderRightWidth),bt=parseFloat(cs.borderTopWidth),bb=parseFloat(cs.borderBottomWidth);
+    // classic scrollbars take a gutter; overlay ones (macOS) don't, so allow 10px at the edge
+    const v=Math.max((p.offsetWidth-p.clientWidth-bl-br)*z,10),h=Math.max((p.offsetHeight-p.clientHeight-bt-bb)*z,10);
+    const inV=p.scrollHeight>p.clientHeight&&/(auto|scroll)/.test(cs.overflowY)&&x>=r.right-br*z-v&&x<=r.right&&y>=r.top&&y<=r.bottom;
+    const inH=p.scrollWidth>p.clientWidth&&/(auto|scroll)/.test(cs.overflowX)&&y>=r.bottom-bb*z-h&&y<=r.bottom&&x>=r.left&&x<=r.right;
+    return inV||inH;
+  }
+  document.addEventListener('pointermove',e=>{
+    if(!editLayer.classList.contains('pass')||e.buttons)return;
+    if(!onScrollbar(e.clientX,e.clientY))editLayer.classList.remove('pass');
+  },true);
+  // Touch and pen: a drag scrolls the sheet underneath; a tap still picks.
+  let pan=null,noClickUntil=0;
+  editLayer.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse'){
+      // over a tree visual, a mouse drag pans it; a plain click still selects
+      const z=e.button===0&&window._zoomAt&&window._zoomAt(under(e.clientX,e.clientY));
+      if(z)z.drag(e,editLayer,()=>{noClickUntil=performance.now()+400;hideHover();});
+      return;
+    }
+    pan={id:e.pointerId,x:e.clientX,y:e.clientY,lx:e.clientX,ly:e.clientY,el:scrollerAt(e.clientX,e.clientY),moved:false};
+    try{editLayer.setPointerCapture(e.pointerId);}catch(err){}
+  });
+  editLayer.addEventListener('pointermove',e=>{
+    if(!pan||e.pointerId!==pan.id)return;
+    if(!pan.moved&&Math.hypot(e.clientX-pan.x,e.clientY-pan.y)>8)pan.moved=true;
+    if(pan.moved&&pan.el){const r=pan.el.getBoundingClientRect(),z=r.width/(pan.el.offsetWidth||1)||1;pan.el.scrollBy((pan.lx-e.clientX)/z,(pan.ly-e.clientY)/z);}
+    pan.lx=e.clientX;pan.ly=e.clientY;
+  });
+  const endPan=e=>{if(!pan||e.pointerId!==pan.id)return;if(pan.moved)noClickUntil=performance.now()+400;pan=null;};
+  editLayer.addEventListener('pointerup',endPan);editLayer.addEventListener('pointercancel',endPan);
+  // Did the click land on actual letters? (then Text wins; otherwise the surface does)
+  function onGlyph(x,y){
+    editLayer.style.pointerEvents='none';
+    let hit=false;
+    try{
+      const r=document.caretRangeFromPoint?document.caretRangeFromPoint(x,y):null;
+      if(r&&r.startContainer.nodeType===3){
+        const n=r.startContainer,len=n.textContent.length;
+        for(const o of [r.startOffset-1,r.startOffset]){
+          if(o<0||o>=len)continue;const g=document.createRange();g.setStart(n,o);g.setEnd(n,o+1);
+          const b=g.getBoundingClientRect();if(x>=b.left-1&&x<=b.right+1&&y>=b.top-1&&y<=b.bottom+1){hit=true;break;}
+        }
+      }
+    }finally{editLayer.style.pointerEvents='';}
+    return hit;
+  }
+  // What a click here would pick, most likely first.
+  function pickAt(x,y){
+    const el=under(x,y);let picks=colorsAt(el,x,y);const note=picks.note;
+    if(picks.length&&!picks[0].hit&&!onGlyph(x,y)&&!(el instanceof SVGTextElement)){ // off the letters: surface before text
+      const txt=picks.filter(p=>p.role==='Text');picks=picks.filter(p=>p.role!=='Text').concat(txt);
+    }
+    picks.note=note;
+    return{el,picks};
+  }
+  editLayer.addEventListener('click',e=>{
+    if(performance.now()<noClickUntil)return; // that was a touch scroll
+    const {el,picks}=pickAt(e.clientX,e.clientY);
+    if(!picks.length){clear();return;}
+    // Empty canvas while something is selected = deselect (click it again to pick Canvas background / Wallpaper)
+    if(deselects(picks)){clear();updateTag(e.clientX,e.clientY);return;}
+    back=null;
+    select(picks[0].token,el,picks,e.clientX,e.clientY);
+    bar.focus({preventScroll:true}); // keyboard and screen readers land in the editor
+    tag.classList.remove('show');clearTimeout(tagTimer);
+  });
+  // Scrolling still works over the layer: forward the wheel to the nearest scroller underneath.
+  editLayer.addEventListener('wheel',e=>{
+    const z=window._zoomAt&&window._zoomAt(under(e.clientX,e.clientY));
+    if(z){z.wheel(e);hideHover();return;}
+    const p=scrollerAt(e.clientX,e.clientY);if(!p)return;
+    p.scrollBy(e.deltaX,e.deltaY);e.preventDefault();hideHover();
+  },{passive:false});
+  // However the sheet scrolls (wheel, scrollbar, touch), the outlines follow; the editor stays put.
+  let scrollRaf=0;
+  stage.addEventListener('scroll',()=>{hideHover();if(sel&&!scrollRaf)scrollRaf=requestAnimationFrame(()=>{scrollRaf=0;redrawBoxes();});},true);
+  // Drag the editor by its grip or name area.
+  (function(){
+    let d=null;
+    const start=e=>{
+      if(e.button!==0||e.target.closest('button,input,label'))return;
+      const r=bar.getBoundingClientRect();d={id:e.pointerId,dx:e.clientX-r.left,dy:e.clientY-r.top};
+      bar.classList.add('dragging');e.currentTarget.setPointerCapture(e.pointerId);e.preventDefault();
+    };
+    const move=e=>{if(!d||e.pointerId!==d.id)return;barPos={x:e.clientX-d.dx,y:e.clientY-d.dy};placeBar();};
+    const end=e=>{if(!d||e.pointerId!==d.id)return;d=null;bar.classList.remove('dragging');};
+    [document.getElementById('cebGrip'),bar.querySelector('.ceb-info')].forEach(h=>{
+      h.addEventListener('pointerdown',start);h.addEventListener('pointermove',move);h.addEventListener('pointerup',end);h.addEventListener('pointercancel',end);
+    });
+  })();
+
+  // Editing a color
+  function apply(v,commit){
+    if(!sel)return;
+    put(T.theme,COLOR[sel.token].path,v);
+    applyTheme();paintBar();
+    if(commit){pushUndo();syncPanel();}
+  }
+  document.getElementById('cebPick').addEventListener('input',e=>apply(keepHexStyle(valueOf(sel.token),e.target.value),false));
+  document.getElementById('cebPick').addEventListener('change',()=>{pushUndo();syncPanel();});
+  const hexErr=on=>{const hx=document.getElementById('cebHex');hx.closest('.ceb-hex').classList.toggle('invalid',on);on?hx.setAttribute('aria-invalid','true'):hx.removeAttribute('aria-invalid');document.getElementById('cebErr').hidden=!on;};
+  document.getElementById('cebHex').addEventListener('change',e=>{
+    if(!sel)return;
+    const n=parseTypedHex(e.target.value);
+    if(n){hexErr(false);apply(keepHexStyle(valueOf(sel.token),n,false),true);}
+    else if(e.target.value.trim()===''){hexErr(false);e.target.value=valueOf(sel.token).toUpperCase();}
+    else hexErr(true);
+  });
+  document.getElementById('cebHex').addEventListener('input',()=>hexErr(false));
+  document.getElementById('cebHex').addEventListener('blur',e=>{if(sel&&!parseTypedHex(e.target.value))setTimeout(()=>{if(document.activeElement!==e.target&&sel){hexErr(false);e.target.value=valueOf(sel.token).toUpperCase();}},2500);});
+  // ↑/↓ in the hex box nudge OKLCH lightness (Shift = bigger steps); one undo step per burst.
+  let nudgeTimer=0;
+  document.getElementById('cebHex').addEventListener('keydown',e=>{
+    if(e.key==='Enter'){if(parseTypedHex(e.target.value))e.target.blur();else hexErr(true);return;}
+    if((e.key==='ArrowUp'||e.key==='ArrowDown')&&sel){
+      e.preventDefault();
+      const cur=valueOf(sel.token),hx=cur.slice(0,7);if(!/^#[0-9a-f]{6}$/i.test(hx))return;
+      const [L,C,H]=hexToOklch(hx),step=(e.shiftKey?0.05:0.01)*(e.key==='ArrowUp'?1:-1);
+      apply(keepHexStyle(cur,oklchToHex(Math.max(0,Math.min(1,L+step)),C,H)),false);
+      e.target.value=valueOf(sel.token).toUpperCase();
+      clearTimeout(nudgeTimer);nudgeTimer=setTimeout(()=>{pushUndo();syncPanel();},450);
+    }
+  });
+  // Copy / paste a color between properties, and pick one from the screen.
+  document.getElementById('cebCopy').addEventListener('click',()=>{
+    if(!sel)return;const v=valueOf(sel.token).toUpperCase();
+    (navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>showToast(`${v} copied`,2000),()=>showToast('Couldn’t copy the color',3000));
+  });
+  document.getElementById('cebPaste').addEventListener('click',async()=>{
+    if(!sel)return;
+    try{const n=parseTypedHex(((await navigator.clipboard.readText())||'').trim());
+      if(n)apply(keepHexStyle(valueOf(sel.token),n,false),true);else showToast('There’s no color on the clipboard',3000);}
+    catch(err){showToast('Couldn’t read the clipboard. Paste into the hex box instead.',4000);}
+  });
+  const dropper=document.getElementById('cebDropper');
+  if(!('EyeDropper' in window))dropper.hidden=true;
+  dropper.addEventListener('click',async()=>{
+    if(!sel)return;
+    try{const r=await new EyeDropper().open();if(r&&r.sRGBHex)apply(keepHexStyle(valueOf(sel.token),r.sRGBHex.toUpperCase(),false),true);}catch(err){/* cancelled */}
+  });
+  document.getElementById('cebReset').addEventListener('click',()=>{if(sel)apply(savedOf(sel.token),true);});
+  document.getElementById('cebClose').addEventListener('click',clear);
+  document.getElementById('cebAlso').addEventListener('click',e=>{
+    const b=e.target.closest('.ceb-chip');if(!b||!sel)return;
+    sel.token=b.dataset.token;drawSelection();paintBar();if(whereOpen)renderWhere();placeBar();
+  });
+  // Rebuild the Properties pane without collapsing what the user had open.
+  function syncPanel(){
+    const open=new Set([...document.querySelectorAll('.tabpanel .cgroup.open')].map(g=>g.closest('.tabpanel').id+'|'+g.querySelector('.cg-name').textContent));
+    const tp=document.querySelector('.tabpanel.on'),top=tp?tp.scrollTop:0;
+    buildAll();
+    document.querySelectorAll('.tabpanel .cgroup').forEach(g=>{
+      if(open.has(g.closest('.tabpanel').id+'|'+g.querySelector('.cg-name').textContent)&&!g.classList.contains('open')){g.classList.add('open');g.querySelector('.cghead').setAttribute('aria-expanded','true');}
+    });
+    if(tp)tp.scrollTop=top;
+  }
+  function openProp(tab,section){
+    if(window._openPropTab)window._openPropTab(tab);
+    const tp=document.getElementById('tp-'+tab);
+    const g=section&&[...tp.querySelectorAll('.cgroup')].find(x=>x.querySelector('.cg-name').textContent===section);
+    const target=g||tp;
+    if(g&&!g.classList.contains('open')){g.classList.add('open');g.querySelector('.cghead').setAttribute('aria-expanded','true');}
+    target.scrollIntoView({block:'nearest'});target.classList.remove('cg-flash');void target.offsetWidth;target.classList.add('cg-flash');
+  }
+  document.getElementById('cebShow').addEventListener('click',()=>{if(sel)openProp(COLOR[sel.token].tab,COLOR[sel.token].section);});
+  document.getElementById('cebNote').addEventListener('click',e=>{const b=e.target.closest('[data-open]');if(b){const [tab,section]=b.dataset.open.split('|');openProp(tab,section);}});
+  document.getElementById('cebContrast').addEventListener('click',e=>{
+    const b=e.target.closest('.ceb-fix');if(!b||!sel)return;
+    const name=COLOR[sel.token].label,fix=b.dataset.fix;
+    apply(keepHexStyle(valueOf(sel.token),fix),true);
+    showToast(`${name} set to ${fix}`,5000,{label:'Undo',run:undoAction});
+  });
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&sel&&!document.querySelector('.modal-bg.show')){clear();}});
+  // A click on an empty spot anywhere else deselects; clicks on controls (pane fields, tabs, buttons…) keep it.
+  const INTERACTIVE='button,input,select,textarea,label,a,[role=button],[role=tab],[role=menuitem],[role=menuitemradio],[role=treeitem],[tabindex],.cghead,.swblock,.menu,.fx-tooltip';
+  document.addEventListener('pointerdown',e=>{
+    if(!sel)return;const t=e.target;
+    if(bar.contains(t)||editLayer.contains(t)||(t.closest&&t.closest(INTERACTIVE)))return;
+    clear();
+  },true);
+  new ResizeObserver(()=>{if(sel){drawSelection();placeBar();}}).observe(stage);
+  addEventListener('resize',()=>{if(sel){drawSelection();placeBar();}});
+
+  // Editing / Viewing switch
+  const modeBtn=document.getElementById('modeBtn'),modeMenu=document.getElementById('modeMenu');
+  function setMode(m){
+    mode=m;document.body.classList.toggle('mode-edit',m==='edit');
+    document.getElementById('modeLabel').textContent=m==='edit'?'Editing':'Viewing';
+    document.getElementById('modeIc').innerHTML=icon(m==='edit'?'edit16':'eye16');
+    modeMenu.querySelectorAll('.mode-opt').forEach(o=>{const on=o.dataset.mode===m;o.classList.toggle('active',on);o.setAttribute('aria-checked',on?'true':'false');});
+    if(m!=='edit'){clear();hideHover();editLayer.classList.remove('pass');}
+  }
+  modeBtn.addEventListener('click',e=>{e.stopPropagation();modeMenu.classList.toggle('open');modeBtn.setAttribute('aria-expanded',modeMenu.classList.contains('open'));if(modeMenu.classList.contains('open'))clampDropdown(modeBtn,modeMenu);});
+  modeMenu.addEventListener('click',e=>{const o=e.target.closest('.mode-opt');if(!o)return;setMode(o.dataset.mode);modeMenu.classList.remove('open');modeBtn.setAttribute('aria-expanded','false');});
+  document.addEventListener('click',e=>{if(!modeMenu.contains(e.target)&&!modeBtn.contains(e.target)){modeMenu.classList.remove('open');modeBtn.setAttribute('aria-expanded','false');}});
+  setMode('edit');
+
+  // One-time tip: shown in Editing mode once nothing else is in the way (the tour,
+  // dialogs); gone for good after "Got it" or the first canvas selection.
+  const tip=document.getElementById('ceditTip'),TIP_KEY='fx.canvasTipSeen';
+  const tipSeen=()=>{try{return localStorage.getItem(TIP_KEY)==='1';}catch(e){return true;}};
+  const doneTip=()=>{tip.hidden=true;try{localStorage.setItem(TIP_KEY,'1');}catch(e){}};
+  function maybeTip(){if(tipSeen()||mode!=='edit'||document.querySelector('.modal-bg.show')||document.body.classList.contains('is-creating'))return;tip.hidden=false;}
+  document.getElementById('ceditTipClose').addEventListener('click',doneTip);
+  editLayer.addEventListener('click',()=>{if(!tip.hidden&&sel)doneTip();});
+  const intro=document.getElementById('introModal');
+  if(intro)new MutationObserver(()=>{if(!intro.classList.contains('show'))setTimeout(maybeTip,600);}).observe(intro,{attributes:true,attributeFilter:['class']});
+  setTimeout(maybeTip,1500);
+  const _setMode=setMode;setMode=m=>{_setMode(m);if(m!=='edit')tip.hidden=true;else maybeTip();};
+})();
+
+/* ── Keyboard support for menus and dialogs ──
+   Menus: opening moves focus in (search box, else the selected/first item);
+   ↑/↓ (and ←/→ in the theme gallery), Home/End move; Escape closes and
+   returns focus to the button that opened it; Tab closes.
+   Dialogs: opening moves focus to the first control, Tab stays inside,
+   closing returns focus to where it was. (The tour handles its own.) */
+(function(){
+  const ITEMS='.menu-item:not([disabled]),.ftd-card';
+  const items=m=>[...m.querySelectorAll(ITEMS)].filter(e=>e.getClientRects().length);
+  const openedFrom=new WeakMap();
+  const mo=new MutationObserver(recs=>recs.forEach(r=>{
+    const m=r.target,open=m.classList.contains('open');
+    if(open&&!openedFrom.has(m)){
+      openedFrom.set(m,document.activeElement);
+      setTimeout(()=>{const s=m.querySelector('input:not([type=hidden])');const its=items(m);const t=s||its.find(i=>i.classList.contains('active'))||its[0];if(t)t.focus();},0);
+    }else if(!open&&openedFrom.has(m)){
+      const o=openedFrom.get(m);openedFrom.delete(m);
+      if((m.contains(document.activeElement)||document.activeElement===document.body)&&o&&o.focus)o.focus();
+    }
+  }));
+  document.querySelectorAll('.menu').forEach(m=>mo.observe(m,{attributes:true,attributeFilter:['class']}));
+  document.addEventListener('keydown',e=>{
+    const m=e.target.closest&&e.target.closest('.menu.open');if(!m)return;
+    const its=items(m),i=its.indexOf(document.activeElement),grid=m.id==='ftbThemeDrop',search=m.querySelector('input:not([type=hidden])');
+    const go=k=>{if(its[k]){its[k].focus();e.preventDefault();}};
+    if(e.key==='ArrowDown'||(grid&&e.key==='ArrowRight'&&i>=0))go(i<0?0:Math.min(its.length-1,i+1));
+    else if(e.key==='ArrowUp'||(grid&&e.key==='ArrowLeft'&&i>=0)){if(i<=0&&search){search.focus();e.preventDefault();}else go(Math.max(0,i-1));}
+    else if(e.key==='Home'&&i>=0)go(0);
+    else if(e.key==='End'&&i>=0)go(its.length-1);
+    else if(e.key==='Escape'){m.classList.remove('open');e.preventDefault();e.stopPropagation();}
+    else if(e.key==='Tab')m.classList.remove('open');
+  },true);
+
+  const dialogFrom=new WeakMap();
+  const focusables=d=>[...d.querySelectorAll('button,input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(x=>!x.disabled&&x.getClientRects().length);
+  const dmo=new MutationObserver(recs=>recs.forEach(r=>{
+    const d=r.target,open=d.classList.contains('show');
+    if(open&&!dialogFrom.has(d)){
+      dialogFrom.set(d,document.activeElement);
+      setTimeout(()=>{const f=focusables(d);const t=f.find(x=>x.matches('input,textarea'))||f[0];if(t)t.focus();},0);
+    }else if(!open&&dialogFrom.has(d)){
+      const o=dialogFrom.get(d);dialogFrom.delete(d);
+      if(o&&o.focus&&o.isConnected)setTimeout(()=>{if(!document.querySelector('.modal-bg.show'))o.focus();},0);
+    }
+  }));
+  document.querySelectorAll('.modal-bg:not(#introModal)').forEach(d=>dmo.observe(d,{attributes:true,attributeFilter:['class']}));
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Tab')return;
+    const d=document.querySelector('.modal-bg.show:not(#introModal)');if(!d)return;
+    const f=focusables(d);if(!f.length)return;
+    const i=f.indexOf(document.activeElement);
+    if(e.shiftKey&&(i<=0)){e.preventDefault();f[f.length-1].focus();}
+    else if(!e.shiftKey&&(i===f.length-1||i<0)){e.preventDefault();f[0].focus();}
+  });
+
+  // Canvas editing is pointer-based; keyboard users get told where the keyboard route is.
+  const layer=document.getElementById('ceditLayer'),hint=document.getElementById('ceditKbdHint');
+  if(layer&&hint){
+    // not when focus is only coming back from the color editor
+    layer.addEventListener('focus',()=>{if(layer.matches(':focus-visible')&&!layer.dataset.returning)hint.hidden=false;});
+    layer.addEventListener('blur',()=>{hint.hidden=true;});
+    layer.addEventListener('pointerdown',()=>{hint.hidden=true;});
+  }
 })();
 
 /* ── Studio tour (FRE Dialog) ──
@@ -4497,7 +5413,7 @@ function showPage(idx){
         ${row('sheetPT','PowerTable','open',true)}${row('layoutGantt','Gantt','leaf')}${row('layoutCalendar','Calendar','leaf')}
       </div>`},
     {over:'Properties',title:'Edit colors, page, visuals, and font',
-     body:'Each tab in the Properties pane groups related settings. Hover a section to see where it appears; sections the current layout doesn’t use are dimmed. Reset a section, a whole tab, or everything with Reset all.',
+     body:'In Editing mode, select any color on the canvas to change it right there. Or use the Properties tabs: hover a section to see where it appears, and reset a section, a tab, or everything. Switch to Viewing to try tooltips.',
      media:()=>`<div class="im-frame im-props">
         <h4>Properties</h4>
         <div class="im-tabs"><b>Color</b><span>Page</span><span>Visuals</span><span>Font</span></div>
@@ -5232,8 +6148,8 @@ function hashToTheme(h){try{const b=h.replace('#t=','');return JSON.parse(decode
     // Same validation/repair as Import JSON — a hand-edited or truncated
     // link must not leave an incomplete theme to crash the app or export.
     let r=null;
-    try{r=obj&&normalizeThemeJson(obj);}catch(e){showToast('Share link couldn’t be loaded: '+e.message,4500);}
-    if(!obj&&!r)showToast('Share link couldn’t be loaded: it is not a valid theme link',4500);
+    try{r=obj&&normalizeThemeJson(obj);}catch(e){showToast('Couldn’t load the shared theme. '+e.message,4500);}
+    if(!obj&&!r)showToast('Couldn’t load the shared theme. The link isn’t valid.',4500);
     if(r){
       T=r.theme;buildAll();applyTheme();requestAnimationFrame(fit);
       const repaired=themeRepairSummary(r);
@@ -5276,6 +6192,7 @@ $('#exportShareUrl').addEventListener('click',()=>{
     // dark backdrop instead of failing against a background it never
     // actually appears on.
     // `set` writes a suggested fix back to the colour being checked.
+    const label=h=>{const t=tc((h||'#000000').slice(0,7));return t.length===4?'#'+[...t.slice(1)].map(ch=>ch+ch).join(''):t;}; // the black/white the preview puts on a fill
     const setText=v=>{typo.color=v;},setPrim=i=>v=>{c.primaryColors[i]=v;},setAccent=v=>{c.structuralColors.accent=v;},setSem=k=>v=>{c.semantic[k]=v;};
     const pairs=[
       {name:'Text on canvas',fg:textCol,bg:canvasBg,size:'normal',set:setText},
@@ -5285,6 +6202,13 @@ $('#exportShareUrl').addEventListener('click',()=>{
       ...c.primaryColors.map((col,i)=>({name:`Primary ${i+1} on element background`,fg:col,bg:elBg,size:'large',set:setPrim(i)})),
       {name:'Accent on canvas',fg:c.structuralColors.accent,bg:canvasBg,size:'large',set:setAccent},
       {name:'Accent on element background',fg:c.structuralColors.accent,bg:elBg,size:'large',set:setAccent},
+      {name:'Text on Subtle Fill',fg:textCol,bg:c.structuralColors.background,size:'normal',set:setText},
+      {name:'Text on Background',fg:textCol,bg:c.structuralColors.subtleFill,size:'normal',set:setText},
+      {name:'Text on header background',fg:textCol,bg:e.header.backgroundColor||elBg,size:'normal',set:setText},
+      // Labels on colored fills (pills, buttons) are picked black or white automatically,
+      // so the fix adjusts the fill itself.
+      ...c.primaryColors.map((col,i)=>({name:`Labels on Primary ${i+1}`,fg:label(col),bg:col,size:'normal',fixBg:true,set:setPrim(i)})),
+      {name:'Labels on Accent',fg:label(c.structuralColors.accent),bg:c.structuralColors.accent,size:'normal',fixBg:true,set:setAccent},
       {name:'Positive on canvas',fg:c.semantic.positive,bg:canvasBg,size:'large',set:setSem('positive')},
       {name:'Negative on canvas',fg:c.semantic.negative,bg:canvasBg,size:'large',set:setSem('negative')},
       {name:'Neutral on canvas',fg:c.semantic.neutral,bg:canvasBg,size:'large',set:setSem('neutral')},
@@ -5297,7 +6221,7 @@ $('#exportShareUrl').addEventListener('click',()=>{
       const ok=ratio>=threshold;
       const largePassed=!ok&&ratio>=3&&pair.size==='normal';
       if(ok||(ratio>=3&&pair.size==='large'))pass++;else fail++;
-      const fix=ok?null:suggestFix(pair.fg,pair.bg,threshold);
+      const fix=ok?null:pair.fixBg?suggestFix(pair.bg,pair.fg,threshold):suggestFix(pair.fg,pair.bg,threshold);
       return{...pair,ratio,ok,largePassed,fix};
     });
     lastRows=rows;
@@ -5344,13 +6268,14 @@ $('#exportShareUrl').addEventListener('click',()=>{
     }
     return null;
   }
+  window._suggestFix=suggestFix;
   let lastRows=[];
   list.addEventListener('click',e=>{
     const b=e.target.closest('.wcag-fix');if(!b)return;
     const r=lastRows[+b.dataset.row];if(!r||!r.fix)return;
-    r.set(keepHexStyle(r.fg,r.fix));
+    r.set(keepHexStyle(r.fixBg?r.bg:r.fg,r.fix));
     applyTheme();buildAll();pushUndo();wcagRun();
-    showToast(`${r.name.replace(/ on .*/,'')} changed to ${r.fix}. Press Ctrl+Z to undo.`);
+    showToast(`${r.fixBg?r.name.replace(/^.* on /,''):r.name.replace(/ on .*/,'')} set to ${r.fix}`,5000,{label:'Undo',run:undoAction});
   });
 
   btn.addEventListener('click',()=>{
