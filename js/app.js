@@ -960,7 +960,7 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
   if(!headRow||!body)return;
 
   const COLS=['','Task Name','Phone Number','Currency','Number Slider','Rating','Checkbox','Percent','Percent Complete','Single Select','Multi Select','Check List','Image','Button'];
-  headRow.innerHTML=COLS.map(c=>`<th>${c}</th>`).join('');
+  headRow.innerHTML=COLS.map((c,i)=>`<th>${i?c:'<input type="checkbox" class="pt-cb" data-all aria-label="Select all rows">'}</th>`).join('');
 
   const TASKS=['Gantt Product Engineering','Requirements Gathering','Project Plan','Walkthrough & Ideation','Design Phase Kick off','Business case study','Systems architecture','Ux Brainstorm','UI Implementation','Feedbacks & Review','Dev handoff','Development Kickoff','Environment Setup','Internal Audit','Back-end Development','Front-end Development','Development Review','Quality Assurance Kickoff','Kick off meeting','Test Plan','Defect Manage','Test Deliverable','Regression Testing','Release Notes','Deployment Prep','Go-live Checklist','Post-launch Review'];
   const PHASES=['Product Engineering','Design Phase','Development Phase','Quality Assurance'];
@@ -976,7 +976,6 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
     const l=LOGOS[ri%LOGOS.length];
     return `<span class="pt-logo" style="background:${l.bg}">${l.t}</span>`;
   }
-  const IC_CHECK='<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>';
   const FLAG='🇮🇳';
 
   // Tag pill: full-opacity fill of the category's primary colour, text
@@ -1001,8 +1000,10 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
   function bar(pct){
     return `<span class="pt-bar"><span class="pt-bar-fill" style="width:${pct}%"></span></span>${pct}%`;
   }
-  function check(on){
-    return `<span class="pt-check ${on?'on':'off'}">${on?IC_CHECK:''}</span>`;
+  // Checkbox field value: a real, toggleable Fabric checkbox (same
+  // .pt-cb as row selection), independent of whether the row is selected.
+  function check(on,task){
+    return `<input type="checkbox" class="pt-cb pt-field-cb"${on?' checked':''} aria-label="Checkbox, ${task}">`;
   }
 
   TASKS.forEach((task,ri)=>{
@@ -1019,14 +1020,15 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
     const of1=1+(ri%4),of2=of1+(ri%3)+1;
     const price=(39.99+ri*5.15).toFixed(2);
     const tr=document.createElement('tr');
+    tr.setAttribute('aria-selected','false');
     tr.innerHTML=`
-      <td><span class="pt-rowcheck"></span></td>
+      <td class="pt-selcell"><input type="checkbox" class="pt-cb pt-row-cb" aria-label="Select ${task}"></td>
       <td>${task}</td>
       <td>${FLAG} +91 ${90000+((ri*1234)%10000)} ${10000+((ri*4321)%90000)}</td>
       <td>$${price}</td>
       <td>${slider(num)}</td>
       <td>${stars(rating)}</td>
-      <td>${check(checked)}</td>
+      <td>${check(checked,task)}</td>
       <td>${pct1}%</td>
       <td>${slider(pct2,'%')}</td>
       <td>${pill(phase,pIdx1)}</td>
@@ -1036,6 +1038,30 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
       <td><button class="pt-btn">Click here</button></td>
     `;
     body.appendChild(tr);
+  });
+
+  // Row selection: the row checkbox (or a click anywhere else on the
+  // row) toggles it; the header checkbox selects or clears every row
+  // and shows Fluent's "mixed" state when only some are selected.
+  // Clicks on the row's own controls (field checkbox, button) don't
+  // select the row.
+  const all=headRow.querySelector('.pt-cb[data-all]');
+  function setRow(tr,on){
+    tr.classList.toggle('is-selected',on);
+    tr.setAttribute('aria-selected',on);
+    tr.querySelector('.pt-row-cb').checked=on;
+  }
+  function syncAll(){
+    const n=body.rows.length,k=body.querySelectorAll('tr.is-selected').length;
+    all.checked=n>0&&k===n;
+    all.indeterminate=k>0&&k<n;
+  }
+  all.addEventListener('change',()=>{[...body.rows].forEach(tr=>setRow(tr,all.checked));syncAll();});
+  body.addEventListener('click',e=>{
+    const tr=e.target.closest('tr');
+    if(!tr||e.target.closest('.pt-field-cb,.pt-btn'))return;
+    setRow(tr,e.target.matches('.pt-row-cb')?e.target.checked:!tr.classList.contains('is-selected'));
+    syncAll();
   });
 })();
 
@@ -1222,14 +1248,19 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
     let mo='';
     for(let i=0;i<MONTHS_N;i++)mo+=`<div class="pt-gantt-month" style="left:${L(i+1)}px;width:${MONTH_W}px">${MONTHS[i%12]}</div>`;
     return `<div class="pt-gantt-row head">
-      <div class="pt-gantt-info"><div class="chk"></div><div class="name">Task Name</div><div class="sel">Single Select</div><div class="cur">Currency</div></div>
+      <div class="pt-gantt-info"><div class="chk"><input type="checkbox" class="pt-cb" data-all aria-label="Select all rows"></div><div class="name">Task Name</div><div class="sel">Single Select</div><div class="cur">Currency</div></div>
       <div class="pt-gantt-timeline" style="width:${MONTH_W*MONTHS_N}px">${year}${q}${mo}</div>
     </div>`;
   }
   // bar: {type:'task'|'summary', start, end, progress} | null ; milestoneAt: month number | null
   // Milestones sit a clear 0.3-month gap before their bar starts so
   // the diamond never touches the bar edge.
+  // Selected rows, by body-row index — kept outside render() so the
+  // selection survives _ptGanttFill() re-rendering on resize.
+  const selected=new Set();
+  let rowIdx=0;
   function ganttRow(name,phase,currency,bar,milestoneAt){
+    const i=rowIdx++, on=selected.has(i);
     let tl='';
     if(bar){
       const left=L(bar.start), width=W(bar.start,bar.end);
@@ -1246,9 +1277,9 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
     if(milestoneAt!=null){
       tl+=`<div class="pt-gantt-milestone" style="left:${(parseFloat(L(milestoneAt))-6).toFixed(1)}px"></div>`;
     }
-    return `<div class="pt-gantt-row">
+    return `<div class="pt-gantt-row${on?' is-selected':''}" data-row="${i}" aria-selected="${on}">
       <div class="pt-gantt-info">
-        <div class="chk"><input type="checkbox"></div>
+        <div class="chk"><input type="checkbox" class="pt-cb"${on?' checked':''} aria-label="Select ${name}"></div>
         <div class="name">${name}</div>
         <div class="sel">${pill(phase)}</div>
         <div class="cur">${currency}</div>
@@ -1272,6 +1303,7 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
   }
 
   function render(){
+  rowIdx=0;
   const bodyRowsHtml=[
     ganttRow('Gantt Product Engineering','Product Engineering','$39.99',{type:'summary',start:4,end:9.5}),
     ganttRow('Requirements Gathering','Product Engineering','$72.25',{type:'task',start:4.3,end:6.3,progress:0.55},4.0),
@@ -1317,7 +1349,36 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
     const tl=rows[1].querySelector('.pt-gantt-timeline');
     if(tl){tl.style.overflow='visible';tl.insertAdjacentHTML('beforeend',depArrow());}
   }
+  syncAll();
   }
+  // Header checkbox mirrors the body: checked when every row is
+  // selected, indeterminate (Fluent "mixed") when only some are.
+  function syncAll(){
+    const all=root.querySelector('.pt-cb[data-all]'),n=root.querySelectorAll('.pt-gantt-row[data-row]').length;
+    if(!all)return;
+    all.checked=n>0&&selected.size===n;
+    all.indeterminate=selected.size>0&&selected.size<n;
+  }
+  function setRow(row,on){
+    const i=+row.dataset.row;
+    on?selected.add(i):selected.delete(i);
+    row.classList.toggle('is-selected',on);
+    row.setAttribute('aria-selected',on);
+    row.querySelector('.pt-cb').checked=on;
+  }
+  // Clicking a row (or its checkbox) toggles that row; the header
+  // checkbox selects or clears every row.
+  root.addEventListener('click',e=>{
+    if(e.target.matches('.pt-cb[data-all]')){
+      const on=e.target.checked;
+      root.querySelectorAll('.pt-gantt-row[data-row]').forEach(r=>setRow(r,on));
+      syncAll();return;
+    }
+    const row=e.target.closest('.pt-gantt-row[data-row]');
+    if(!row)return;
+    setRow(row,e.target.matches('.pt-cb')?e.target.checked:!selected.has(+row.dataset.row));
+    syncAll();
+  });
   render();
   window._ptGanttFill=function(){
     const wrap=root.parentElement;if(!wrap||!wrap.clientWidth)return;

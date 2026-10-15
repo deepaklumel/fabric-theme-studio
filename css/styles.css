@@ -1000,10 +1000,15 @@ table.pt td:last-child{border-right:none}
 table.pt tbody tr:nth-child(odd) td{background:var(--struct-subtle)}
 table.pt tbody tr:nth-child(even) td{background:var(--canvas-bg)}
 table.pt tbody tr:hover td{filter:brightness(.97)}
-.pt-rowcheck{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--out1);display:inline-block;box-sizing:border-box}
-.pt-check{width:15px;height:15px;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
-.pt-check.on{background:var(--struct-accent);color:var(--struct-accent-text)}
-.pt-check.off{border:1.5px solid var(--out1)}
+/* Selected row: an Accent border drawn inside the row's cells (inset
+   shadows, so it sits on top of the 1px gridlines without shifting
+   the layout). Row checkboxes and the Checkbox field use .pt-cb. */
+table.pt th:first-child,table.pt td.pt-selcell{width:16px;padding-right:8px}
+table.pt th .pt-cb,table.pt td .pt-cb{vertical-align:middle}
+table.pt tbody tr{cursor:pointer}
+table.pt tbody tr.is-selected td{box-shadow:inset 0 1px var(--struct-accent),inset 0 -1px var(--struct-accent)}
+table.pt tbody tr.is-selected td:first-child{box-shadow:inset 1px 0 var(--struct-accent),inset 0 1px var(--struct-accent),inset 0 -1px var(--struct-accent)}
+table.pt tbody tr.is-selected td:last-child{box-shadow:inset -1px 0 var(--struct-accent),inset 0 1px var(--struct-accent),inset 0 -1px var(--struct-accent)}
 .pt-stars{display:inline-flex;gap:1px}
 .pt-star{fill:var(--struct-accent);stroke:none}
 .pt-star.empty{fill:none;stroke:var(--struct-accent);stroke-width:1.3}
@@ -1081,6 +1086,27 @@ table.pt tbody tr:hover td{filter:brightness(.97)}
 .pt-gantt-info{flex:0 0 505px;display:flex;align-items:stretch;position:sticky;left:0;z-index:2;background:var(--canvas-bg);border-right:1px solid var(--out1)}
 .pt-gantt-row.head .pt-gantt-info{background:var(--struct-bg);z-index:4}
 .pt-gantt-info .chk{flex:0 0 40px;display:flex;align-items:center;justify-content:center;align-self:stretch;border-right:1px solid var(--out2)}
+/* Row states: hover uses Subtle Fill; a selected row uses Outline 2.
+   The sticky info rail paints its own background, so it follows the
+   row's state too. */
+.pt-gantt-row[data-row]{cursor:pointer}
+.pt-gantt-row[data-row]:hover,.pt-gantt-row[data-row]:hover .pt-gantt-info{background:var(--struct-bg)}
+.pt-gantt-row.is-selected,.pt-gantt-row.is-selected .pt-gantt-info,
+.pt-gantt-row.is-selected:hover,.pt-gantt-row.is-selected:hover .pt-gantt-info{background:var(--out2)}
+/* Shared by the PowerTable Table and Gantt layouts.
+   Fluent 2 checkbox (medium): 16px box, 2px corners, 1px border in the
+   accessible stroke (#616161 on the default theme, derived from Icon so
+   it follows dark themes), filled with Accent and a 12px checkmark when
+   checked, and an inner 8px square when mixed. */
+.pt-cb{appearance:none;-webkit-appearance:none;position:relative;flex:none;display:inline-grid;width:16px;height:16px;margin:0;box-sizing:border-box;border:1px solid color-mix(in srgb,var(--struct-icon) 72%,var(--canvas-bg));border-radius:2px;background:transparent;cursor:pointer;place-items:center}
+.pt-cb:hover{border-color:color-mix(in srgb,var(--struct-icon) 77%,var(--canvas-bg))}
+.pt-cb:active{border-color:color-mix(in srgb,var(--struct-icon) 82%,var(--canvas-bg))}
+.pt-cb:checked{background:var(--struct-accent);border-color:var(--struct-accent)}
+.pt-cb:checked:hover{background:color-mix(in srgb,var(--struct-accent) 88%,#000);border-color:color-mix(in srgb,var(--struct-accent) 88%,#000)}
+.pt-cb:checked::after{content:"";width:12px;height:12px;background:var(--struct-accent-text);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M9.76 3.2c.3.29.32.76.04 1.06l-4.25 4.5a.75.75 0 0 1-1.08.02L2.22 6.53a.75.75 0 0 1 1.06-1.06l1.7 1.7L8.7 3.24a.75.75 0 0 1 1.06-.04'/%3E%3C/svg%3E") center/12px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M9.76 3.2c.3.29.32.76.04 1.06l-4.25 4.5a.75.75 0 0 1-1.08.02L2.22 6.53a.75.75 0 0 1 1.06-1.06l1.7 1.7L8.7 3.24a.75.75 0 0 1 1.06-.04'/%3E%3C/svg%3E") center/12px no-repeat}
+.pt-cb:indeterminate{border-color:var(--struct-accent)}
+.pt-cb:indeterminate::after{content:"";width:8px;height:8px;border-radius:2px;background:var(--struct-accent)}
+.pt-cb:focus-visible{outline:2px solid var(--text-color);outline-offset:1px}
 .pt-gantt-info .name{flex:0 0 200px;padding:0 12px;font-size:13px;font-weight:400;color:var(--text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;align-self:stretch;display:flex;align-items:center;border-right:1px solid var(--out2)}
 /* Fixed width sized to comfortably fit the longest pill label
    ("Development Phase") without wrapping/clipping — a too-narrow
