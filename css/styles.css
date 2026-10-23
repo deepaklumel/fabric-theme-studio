@@ -902,6 +902,11 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
 .rrail{display:flex;flex-direction:column;gap:var(--vgap)}
 .rmain{display:flex;flex-direction:column;gap:var(--vgap);min-width:0}
 .rcharts{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);flex:none}
+/* Template 5: two rows of two charts that share the page height */
+.rcharts.mix-grid{grid-template-rows:1fr 1fr;flex:1;min-height:0}
+.mix-grid .visual{overflow:hidden}
+/* Data labels sit over neighbouring bars and lines; a halo in the element background keeps them readable */
+.mix-dl{paint-order:stroke;stroke:var(--el-bg);stroke-width:3px;stroke-linejoin:round;font-weight:600}
 .visual{background:var(--el-bg);border:var(--el-border-w) solid var(--el-border-color);border-radius:var(--el-radius);box-shadow:var(--el-shadow);padding:var(--el-pad-t) var(--el-pad-r) var(--el-pad-b) var(--el-pad-l);min-width:0;min-height:0}
 .visual.flex-fill{flex:1;min-height:0;display:flex;flex-direction:column}
 .visual.flex-fill svg{flex:1;min-height:0;height:100%;display:block}

@@ -1875,7 +1875,7 @@ function clampDropdown(btn,drop){
 })();
 
 /* ── Intelligence "Template" switcher ──
-   The control for changing which of the four Intelligence report pages
+   The control for changing which of the five Intelligence report pages
    is shown. The canvas page buttons (#pbtns) do the same in Viewing
    mode and stay in step with it. */
 (function(){
@@ -1886,7 +1886,7 @@ function clampDropdown(btn,drop){
   const drop=document.getElementById('intelLayoutDrop');
   if(!pick||!btn||!drop)return;
 
-  const LABELS={0:'Template 1',1:'Template 2',2:'Template 3',3:'Template 4',6:'Decomposition tree'};
+  const LABELS={0:'Template 1',1:'Template 2',2:'Template 3',3:'Template 4',7:'Template 5',6:'Decomposition tree'};
   window._intelShowLayoutPicker=function(show){
     pick.style.display=show?'block':'none';
   };
@@ -2140,7 +2140,7 @@ function clampDropdown(btn,drop){
   if(!app||!btn||!tree)return;
   const SHEETS=[
     {id:'intelligence',label:'Intelligence',ic:'sheetIntel',leaves:['tplDashboard','tplBars','tplScatter','tplTrend'].map((ic,i)=>({key:String(i),label:'Template '+(i+1),ic}))
-      .concat({key:'6',label:'Decomposition tree',ic:'decompTree'})},
+      .concat({key:'7',label:'Template 5',ic:'tplMix'},{key:'6',label:'Decomposition tree',ic:'decompTree'})},
     {id:'planning',label:'Planning',ic:'sheetPlan',leaves:[
       {key:'matrix',label:'Hierarchy',ic:'layoutHierarchy'},{key:'table',label:'Table',ic:'layoutTable'},{key:'tree',label:'Tree',ic:'layoutTree'}]},
     {id:'powertable',label:'PowerTable',ic:'sheetPT',leaves:[
@@ -4382,19 +4382,20 @@ const PAGE_META=[
   {title:'Planning & Forecast',sub:'FY25 · writeback, actuals vs plan vs forecast'},
   {title:'Planning',sub:'Profit, Sales, Year, Category, Sub-Category'},
   {title:'PowerTable',sub:'Task tracker · Table'},
-  {title:'Profit Drivers',sub:'FY25 · net profit decomposition · updated 06 Jul'}
+  {title:'Profit Drivers',sub:'FY25 · net profit decomposition · updated 06 Jul'},
+  {title:'Sales Mix',sub:'FY25 · West region · channel, category &amp; month'}
 ];
-PAGES.push('pg4','pg5','pg6');
+PAGES.push('pg4','pg5','pg6','pg7');
 const DECOMP_PAGE=6;
 function showPage(idx){
   PAGES.forEach((id,i)=>{
     const el=document.getElementById(id);
     if(el)el.style.display=i===idx?'flex':'none';
   });
-  document.querySelectorAll('#pbtns .dbtn').forEach((b,i)=>{
-    b.classList.toggle('primary',i===idx);
+  document.querySelectorAll('#pbtns .dbtn').forEach(b=>{
+    b.classList.toggle('primary',parseInt(b.dataset.pg)===idx);
   });
-  // The page buttons stand for Templates 1–4; the decomposition tree page has its own view.
+  // The page buttons stand for Templates 1–5; the decomposition tree page has its own view.
   const pb=document.getElementById('pbtns');if(pb)pb.classList.toggle('pb-off',idx===DECOMP_PAGE);
   if(idx===DECOMP_PAGE&&window._dtRelayout)setTimeout(()=>window._dtRelayout(true),0);
   const m=PAGE_META[idx];
@@ -4989,7 +4990,7 @@ document.querySelectorAll('#pbtns .dbtn').forEach(b=>b.addEventListener('click',
   let whereOpen=false;
   const VIEWS=[
     ['intelligence','0','Intelligence','Template 1','#pg0'],['intelligence','1','Intelligence','Template 2','#pg1'],
-    ['intelligence','2','Intelligence','Template 3','#pg2'],['intelligence','3','Intelligence','Template 4','#pg3'],['intelligence','6','Intelligence','Decomposition tree','#pg6'],
+    ['intelligence','2','Intelligence','Template 3','#pg2'],['intelligence','3','Intelligence','Template 4','#pg3'],['intelligence','7','Intelligence','Template 5','#pg7'],['intelligence','6','Intelligence','Decomposition tree','#pg6'],
     ['planning','matrix','Planning','Hierarchy','#planMatrixView'],['planning','table','Planning','Table','#planTableView'],['planning','tree','Planning','Tree','#planTreeView'],
     ['powertable','table','PowerTable','Table','#ptTableView'],['powertable','gantt','PowerTable','Gantt','#ptGanttView'],['powertable','ganttres','PowerTable','Gantt resources','#ptGanttResView'],
     ['powertable','calendar','PowerTable','Calendar','#ptCalendarView'],['powertable','kanban','PowerTable','Kanban','#ptKanbanView']
@@ -6052,6 +6053,200 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
   window.VIZ.p3matrix={page:'pg3',get data(){return data;},set data(d){data=d;},render};
 })();
 
+/* ── P7 (Template 5): Sales mix ──
+   Four category charts on one West-region dataset. Series take Primary
+   1, 2, 3… in order, as in the product. No gridlines: a baseline, y-axis
+   labels in thousands and values on the marks, as in Inforiver charts. */
+const MIX_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const mixK=v=>v>=1000?(v/1000).toFixed(1)+'m':v.toFixed(1)+'k';
+const mixTick=v=>v===0?'0':v>=1000?+(v/1000).toFixed(2)+'m':v+'k';
+// A round axis step that gives about n intervals up to max.
+function mixStep(max,n){const raw=max/n,mag=Math.pow(10,Math.floor(Math.log10(raw)));return[1,2,2.5,5,10].map(m=>m*mag).find(s=>s>=raw);}
+// Baseline, y-axis labels and month numbers; returns the y scale.
+function mixAxes(svg,f,max,xs){
+  const step=mixStep(max,5),top=Math.ceil(max/step)*step,base=f.H-f.pB;
+  const y=v=>base-(v/top)*(base-f.pT);
+  for(let g=0;g<=top+step/2;g+=step)axLabel(svg,f.pL-6,y(g)+3,mixTick(g),'end');
+  axisLine(svg,f.pL,base,f.W-f.pR,base);
+  xs.forEach((x,i)=>axLabel(svg,x,base+14,String(i+1)));
+  return y;
+}
+const MIX_FRAME={W:520,H:230,pL:38,pR:6,pT:14,pB:20};
+
+/* Stacked area: sales by channel. Layers stack bottom-up in Primary order;
+   a thin element-background line separates them. */
+(function(){
+  const svg=mkSVG('p7area');if(!svg)return;
+  const f=MIX_FRAME,base=f.H-f.pB;
+  let data={series:[
+    {lbl:'Direct', data:[231.5,96.0,207.5,218.9,186.0,203.4,217.4,229.4,301.9,259.4,288.9,370.7]},
+    {lbl:'Partner',data:[163.3,66.3,143.4,151.4,132.3,147.0,159.5,166.2,226.9,207.0,225.7,291.6]},
+    {lbl:'Online', data:[115.5,48.1,107.5,118.7,107.8,124.9,140.5,155.0,218.4,211.2,239.7,333.9]},
+    {lbl:'Retail', data:[97.0,39.3,82.0,88.4,76.7,89.6,103.4,110.6,141.7,150.3,167.4,220.3]}
+  ]};
+  function render(){
+    svg.innerHTML='';
+    const leg=document.getElementById('p7areaLeg');if(leg)leg.innerHTML='';
+    const{series}=data,n=series[0].data.length;
+    const x=i=>f.pL+8+i*((f.W-f.pR-f.pL-16)/(n-1));
+    const cum=[];series.forEach((s,k)=>cum.push(s.data.map((v,i)=>v+(k?cum[k-1][i]:0))));
+    const y=mixAxes(svg,f,Math.max(...cum[cum.length-1]),series[0].data.map((_,i)=>x(i)));
+    const pts=arr=>arr.map((v,i)=>x(i).toFixed(1)+','+y(v).toFixed(1));
+    series.forEach((s,k)=>{
+      const lower=k?pts(cum[k-1]).reverse():[x(n-1).toFixed(1)+','+base,x(0).toFixed(1)+','+base];
+      const col=`var(--p${k+1})`,tot=s.data.reduce((a,b)=>a+b,0),all=cum[cum.length-1].reduce((a,b)=>a+b,0);
+      const a=svgEl(svg,'polygon',{points:pts(cum[k]).concat(lower).join(' '),style:`fill:${col}`});
+      addChartTip(a,s.lbl,[{color:col,label:'FY25',value:mixK(tot)},{label:'Share',value:(tot/all*100).toFixed(1)+'%'}]);
+    });
+    cum.slice(0,-1).forEach(c=>svgEl(svg,'polyline',{points:pts(c).join(' '),style:'stroke:var(--el-bg);stroke-width:1.2;fill:none;stroke-linejoin:round'}));
+    series.forEach((s,k)=>s.data.forEach((v,i)=>{
+      const c=svgEl(svg,'circle',{cx:x(i),cy:y(cum[k][i]),r:5,style:`fill:var(--p${k+1});opacity:0`});
+      addChartTip(c,MIX_MONTHS[i],[{color:`var(--p${k+1})`,label:s.lbl,value:mixK(v)}]);
+    }));
+    mkLegH('p7areaLeg',series.map((s,k)=>[s.lbl,`var(--p${k+1})`]));
+  }
+  render();
+  window.VIZ.p7area={page:'pg7',get data(){return data;},set data(d){data=d;},render};
+})();
+
+/* Stacked column: the same three categories as the grouped column and the
+   treemap, stacked per month with the month total on top. */
+const MIX_CATS=[
+  {lbl:'Bikes',     data:[87.6,71.1,211.1,162.4,162.2,183.4,197.4,206.3,309.9,231.0,319.9,416.9]},
+  {lbl:'Components',data:[100.3,78.3,252.4,162.6,178.7,202.4,221.0,233.6,345.4,251.5,350.3,449.3]},
+  {lbl:'Clothing',  data:[419.4,100.3,78.3,252.4,162.6,178.7,202.4,221.0,233.6,345.4,251.5,350.3]}
+];
+(function(){
+  const svg=mkSVG('p7stack');if(!svg)return;
+  const f=MIX_FRAME,base=f.H-f.pB;
+  let data={series:MIX_CATS.map(s=>({lbl:s.lbl,data:s.data.slice()}))};
+  function render(){
+    svg.innerHTML='';
+    const leg=document.getElementById('p7stackLeg');if(leg)leg.innerHTML='';
+    const{series}=data,n=series[0].data.length,gw=(f.W-f.pL-f.pR)/n,bw=gw*0.62;
+    const cx=i=>f.pL+(i+0.5)*gw;
+    const tots=series[0].data.map((_,i)=>series.reduce((a,s)=>a+s.data[i],0));
+    const y=mixAxes(svg,f,Math.max(...tots)*1.08,tots.map((_,i)=>cx(i)));
+    tots.forEach((t,i)=>{
+      let run=0;
+      series.forEach((s,k)=>{
+        const v=s.data[i],top=y(run+v),bot=y(run)-(k?1:0),col=`var(--p${k+1})`; // 1px gap between segments
+        const r=svgEl(svg,'rect',{x:cx(i)-bw/2,y:top,width:bw,height:Math.max(0,bot-top),style:`fill:${col}`});
+        addChartTip(r,MIX_MONTHS[i],[{color:col,label:s.lbl,value:mixK(v)},{label:'Month total',value:mixK(t)}]);
+        run+=v;
+      });
+      const lbl=svgEl(svg,'text',{x:cx(i),y:y(t)-4,'text-anchor':'middle',class:'axis-label'});
+      lbl.textContent=t>=1000?(t/1000).toFixed(1)+'m':Math.round(t)+'k';
+    });
+    mkLegH('p7stackLeg',series.map((s,k)=>[s.lbl,`var(--p${k+1})`]));
+  }
+  render();
+  window.VIZ.p7stack={page:'pg7',get data(){return data;},set data(d){data=d;},render};
+})();
+
+/* Grouped column with lines (matches the reference screenshot): three
+   category bars per month, three measures as lines on the same axis, a
+   dashed average of the first category, and its first, lowest, highest and
+   last values labelled. */
+(function(){
+  const svg=mkSVG('p7group');if(!svg)return;
+  const f=MIX_FRAME,base=f.H-f.pB;
+  let data={
+    bars:MIX_CATS.map(s=>({lbl:s.lbl,data:s.data.slice()})),
+    lines:[
+      {lbl:'Pipeline', data:[175,123,449,55,212,236,277,316,394,249,345,363]},
+      {lbl:'Marketing',data:[63,61,71,69,72,73,72,75,90,80,90,100]},
+      {lbl:'Freight',  data:[54,55,57,57,57,57,57,57,58.5,57,58,58]}
+    ]
+  };
+  function render(){
+    svg.innerHTML='';
+    const leg=document.getElementById('p7groupLeg');if(leg)leg.innerHTML='';
+    const{bars,lines}=data,n=bars[0].data.length,gw=(f.W-f.pL-f.pR)/n,inner=gw*0.74,bw=inner/bars.length;
+    const cx=i=>f.pL+(i+0.5)*gw;
+    const y=mixAxes(svg,f,Math.max(...bars.concat(lines).flatMap(s=>s.data)),bars[0].data.map((_,i)=>cx(i)));
+    bars[0].data.forEach((_,i)=>bars.forEach((s,k)=>{
+      const v=s.data[i],col=`var(--p${k+1})`;
+      const r=svgEl(svg,'rect',{x:cx(i)-inner/2+k*bw,y:y(v),width:bw,height:base-y(v),style:`fill:${col}`});
+      addChartTip(r,MIX_MONTHS[i],bars.map((b,j)=>({color:`var(--p${j+1})`,label:b.lbl,value:mixK(b.data[i])})));
+    }));
+    const first=bars[0].data,avg=first.reduce((a,b)=>a+b,0)/n;
+    const al=svgEl(svg,'line',{x1:f.pL,y1:y(avg),x2:f.W-f.pR,y2:y(avg),style:'stroke:var(--out1);stroke-width:1;stroke-dasharray:5 3'});
+    addChartTip(al,'Average',[{color:'var(--p1)',label:bars[0].lbl,value:mixK(avg)}]);
+    lines.forEach((s,k)=>{
+      const col=`var(--p${bars.length+k+1})`;
+      svgEl(svg,'polyline',{points:s.data.map((v,i)=>cx(i).toFixed(1)+','+y(v).toFixed(1)).join(' '),style:`stroke:${col};stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;fill:none`});
+      s.data.forEach((v,i)=>{const c=svgEl(svg,'circle',{cx:cx(i),cy:y(v),r:5,style:`fill:${col};opacity:0`});addChartTip(c,MIX_MONTHS[i],[{color:col,label:s.lbl,value:mixK(v)}]);});
+    });
+    const lo=first.indexOf(Math.min(...first)),hi=first.indexOf(Math.max(...first));
+    [...new Set([0,lo,hi,n-1])].forEach(i=>{
+      const t=svgEl(svg,'text',{x:cx(i)-inner/2+bw/2,y:y(first[i])-4,'text-anchor':'middle',class:'axis-label mix-dl'});
+      t.textContent=mixK(first[i]);
+    });
+    mkLegH('p7groupLeg',bars.map((s,k)=>[s.lbl,`var(--p${k+1})`]).concat(lines.map((s,k)=>[s.lbl,`var(--p${bars.length+k+1})`,true])));
+  }
+  render();
+  window.VIZ.p7group={page:'pg7',get data(){return data;},set data(d){data=d;},render};
+})();
+
+/* Treemap (styled after the reference screenshot): categories, then
+   months inside each category in calendar order. Colored by category, one
+   Primary each: eight categories show the theme's whole palette and never
+   need more. The first three keep their colors from the other charts here.
+   Tile labels are black or white for contrast, the same as other labels on
+   primary colors, and are left off tiles too small to hold them. */
+(function(){
+  const svg=mkSVG('p7tree');if(!svg)return;
+  const W=520,H=200,GAP=0.5; // GAP on each side: 1px between tiles, as between stacked-column segments; H matches the card once the two-row legend is in
+  const more=[
+    {lbl:'Accessories',data:[52.4,41.8,96.3,88.1,84.6,92.7,101.2,108.5,142.3,118.6,151.4,186.2]},
+    {lbl:'Services',   data:[38.1,30.6,64.2,59.8,57.3,63.5,68.9,72.4,95.1,80.7,99.8,121.5]},
+    {lbl:'Parts',      data:[27.5,22.9,45.8,41.2,40.6,44.3,47.9,51.6,66.4,56.2,70.3,84.7]},
+    {lbl:'Bundles',    data:[16.8,13.4,29.7,26.1,25.3,28.8,31.2,33.5,43.6,36.9,45.1,55.8]},
+    {lbl:'Other',      data:[9.8,7.2,15.6,14.1,13.3,15.2,16.4,17.8,22.9,19.4,23.7,28.6]}
+  ],cats=MIX_CATS.concat(more);
+  let data={
+    cats:cats.map(s=>s.lbl),
+    months:cats[0].data.map((_,i)=>cats.map(s=>s.data[i]))
+  };
+  const worst=(row,side)=>{const s=row.reduce((a,r)=>a+r.a,0),mx=Math.max(...row.map(r=>r.a)),mn=Math.min(...row.map(r=>r.a));return Math.max(side*side*mx/(s*s),s*s/(side*side*mn));};
+  // Squarified layout that keeps the items in the order given.
+  function squarify(items,x,y,w,h){
+    const total=items.reduce((a,it)=>a+it.v,0),out=[];
+    let rest=items.filter(it=>it.v>0).map(it=>({it,a:it.v/total*w*h}));
+    while(rest.length){
+      const side=Math.min(w,h);let row=[rest[0]],best=worst(row,side);
+      while(row.length<rest.length){const cand=row.concat(rest[row.length]),wv=worst(cand,side);if(wv>best)break;row=cand;best=wv;}
+      const ra=row.reduce((a,r)=>a+r.a,0);
+      if(w>=h){const cw=ra/h;let cy=y;row.forEach(r=>{const rh=r.a/cw;out.push({it:r.it,x,y:cy,w:cw,h:rh});cy+=rh;});x+=cw;w-=cw;}
+      else{const rh=ra/w;let cx=x;row.forEach(r=>{const rw=r.a/rh;out.push({it:r.it,x:cx,y,w:rw,h:rh});cx+=rw;});y+=rh;h-=rh;}
+      rest=rest.slice(row.length);
+    }
+    return out;
+  }
+  function render(){
+    svg.innerHTML='';
+    const leg=document.getElementById('p7treeLeg');if(leg)leg.innerHTML='';
+    const cats=data.cats.slice(0,8),{months}=data; // one Primary per category, at most 8
+    const cItems=cats.map((lbl,c)=>({c,v:months.reduce((a,vals)=>a+vals[c],0)}));
+    squarify(cItems,0,0,W,H).forEach(cr=>{
+      const{c}=cr.it,p=c+1,col=`var(--p${p})`,cTot=cr.it.v;
+      const kids=months.map((vals,m)=>({m,v:vals[c]}));
+      squarify(kids,cr.x,cr.y,cr.w,cr.h).forEach(r=>{
+        const{m,v}=r.it,w=r.w-2*GAP,h=r.h-2*GAP;if(w<=0||h<=0)return;
+        const t=svgEl(svg,'rect',{x:r.x+GAP,y:r.y+GAP,width:w,height:h,style:`fill:${col}`});
+        addChartTip(t,`${cats[c]} · ${MIX_MONTHS[m]}`,[{color:col,label:cats[c],value:mixK(v)},{label:'Share of category',value:(v/cTot*100).toFixed(1)+'%'}]);
+        if(w<32||h<24)return;
+        const lbl=svgEl(svg,'text',{x:r.x+r.w/2,y:r.y+r.h/2-2,'text-anchor':'middle',class:'axis-label',style:`fill:var(--p${p}-text);pointer-events:none`}); // clicks and hover reach the tile
+        lbl.innerHTML=`<tspan x="${r.x+r.w/2}">${m+1}</tspan><tspan x="${r.x+r.w/2}" dy="1.2em">${mixK(v)}</tspan>`;
+      });
+    });
+    mkLegH('p7treeLeg',cats.map((l,c)=>[l,`var(--p${c+1})`]));
+  }
+  render();
+  window.VIZ.p7tree={page:'pg7',get data(){return data;},set data(d){data=d;},render};
+})();
+
 /* ── KPI cards (pg0, pg2, pg3) — previously plain hardcoded HTML text
    with no JS behind them at all; now data-driven and registered in
    window.VIZ like the charts above, so a future randomizer can update
@@ -6155,6 +6350,10 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
         if(n.children)walk(n.children);
       });})(d);
     },
+    p7area(d){d.series.forEach(s=>{s.data=s.data.map(v=>+jitterNum(v,0.15).toFixed(1));});},
+    p7stack(d){d.series.forEach(s=>{s.data=s.data.map(v=>+jitterNum(v,0.15).toFixed(1));});},
+    p7group(d){d.bars.concat(d.lines).forEach(s=>{s.data=s.data.map(v=>+jitterNum(v,0.15).toFixed(1));});},
+    p7tree(d){d.months=d.months.map(vals=>vals.map(v=>+jitterNum(v,0.15).toFixed(1)));},
     p3combo(d){
       d.ac=d.ac.map(v=>v===null?null:+clamp(jitterNum(v,0.1),d.yMin+2,d.yMax-2).toFixed(1));
       d.plan=d.plan.map(v=>+clamp(jitterNum(v,0.1),d.yMin+2,d.yMax-2).toFixed(1));
@@ -6181,7 +6380,7 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
   };
 
   function activePageId(){
-    for(const id of['pg0','pg1','pg2','pg3']){
+    for(const id of['pg0','pg1','pg2','pg3','pg7']){
       const el=document.getElementById(id);
       if(el&&el.style.display!=='none')return id;
     }
