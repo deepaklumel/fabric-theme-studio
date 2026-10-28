@@ -612,6 +612,21 @@ body:not(.mode-edit) .cedit-hover,body:not(.mode-edit) .cedit-tag{display:none!i
 .swblock.dragging{opacity:.35}
 .swcards-dragging .swblock:hover .rst{opacity:0}
 
+/* Series / Measures: ten chips to a row, the selected one edited below */
+.cgbody>.chips,.cgbody>.chip-edit,.cgbody>.chip-foot{grid-column:1/-1}
+.cgbody>.chip-intro{margin:0 0 8px}
+.chips{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin-bottom:12px}
+.chip{aspect-ratio:1;min-width:0;padding:0;border:1px solid var(--fx-stroke1);border-radius:var(--fx-r);cursor:pointer;touch-action:none}
+.chip:hover{border-color:var(--fx-stroke1-hover)}
+.chip:focus-visible{outline:2px solid var(--fx-focus2);outline-offset:1px}
+.chip[aria-pressed="true"]{box-shadow:0 0 0 2px var(--fx-bg1),0 0 0 4px var(--fx-fg1)}
+.chip.dragging{opacity:.35}
+.chip-edit{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;align-items:end}
+.chip-edit .field{margin-bottom:0!important}
+.chip-acts{display:flex;gap:4px;padding-bottom:4px}
+.chip-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:16px 0 8px}
+.chip-foot .field-hint{margin:0}
+
 /* Shadow editor — same controls and order as the product's Shadow panel */
 .shd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 8px}
 .shd-span{grid-column:1/-1}

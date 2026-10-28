@@ -22,31 +22,85 @@ function cr2(fg,bg){const a=lum(fg),b=lum(bg),hi=Math.max(a,b),lo=Math.min(a,b);
 function tc(hex){return lum(hex)<0.45?'#fff':'#111';}
 function norm(v){v=(v||'').trim();if(!v.startsWith('#'))v='#'+v;return /^#[0-9a-fA-F]{6}$/.test(v)?v.toUpperCase():null;}
 
-const DEFAULTS={"label":"Classic Theme","themeType":3,"theme":{"colors":{"primaryColors":["#1F77B4","#FF7F0E","#DEB841","#9467BD","#8C564B","#9FADC6","#7F7F7F","#17BECF"],"structuralColors":{"outline1":"#A6A6A6","outline2":"#E6E6E6","background":"#F5F5F5","icon":"#333333","accent":"#117865","subtleFill":"#FFFFFF"},"semantic":{"positive":"#82BA00","negative":"#FF000A","neutral":"#B3B3B3"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#DDDDDD","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#F5F5F5","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#DDDDDD","side":"all","width":1,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#ffffff","borderColor":"#DDDDDD","iconColor":"#333333"},"tooltip":{"backgroundColor":"#ffffff","color":"#333333"}},"typography":{"autoFontColor":false,"color":"#333333","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}};
-const CLASSIC_THEME={"label":"Fabric Theme","themeType":2,"theme":{"colors":{"primaryColors":["#637CEF","#E3008C","#2AA0A4","#9373C0","#13A10E","#3A96DD","#CA5010","#57811B"],"structuralColors":{"outline1":"#ADADAD","outline2":"#E0E0E0","background":"#F5F5F5","icon":"#242424","accent":"#117865","subtleFill":"#FFFFFF"},"semantic":{"positive":"#107C10","negative":"#C50F1F","neutral":"#D2D0CE"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#EDEBE9","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":1,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#ffffff","borderColor":"#D1D1D1","iconColor":"#616161"},"tooltip":{"backgroundColor":"#ffffff","color":"#242424"}},"typography":{"autoFontColor":false,"color":"#242424","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}};
-const MINIMAL_THEME={"label":"Minimal Theme","themeType":9,"theme":{"colors":{"primaryColors":["#262626","#82BDEB","#186282","#299D8F","#E9C46A","#F4A261","#E76F51","#94ADCF"],"structuralColors":{"outline1":"#ADADAD","outline2":"#E0E0E0","background":"#F5F5F5","icon":"#242424","accent":"#117865","subtleFill":"#FFFFFF"},"semantic":{"positive":"#8EB900","negative":"#FF000A","neutral":"#7F7F7F"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#F5F5F5","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":1,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#ffffff","borderColor":"#D1D1D1","iconColor":"#242424"},"tooltip":{"backgroundColor":"#ffffff","color":"#242424"}},"typography":{"autoFontColor":false,"color":"#242424","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}};
+const DEFAULTS={"label":"Classic Theme","themeType":3,"theme":{"colors":{"primaryColors":["#1F77B4","#FF7F0E","#DEB841","#9467BD","#8C564B","#9FADC6","#7F7F7F","#17BECF"],"structuralColors":{"outline1":"#A6A6A6","outline2":"#E6E6E6","background":"#F5F5F5","icon":"#333333","accent":"#117865","subtleFill":"#FFFFFF"},"semantic":{"positive":"#82BA00","negative":"#FF000A","neutral":"#B3B3B3"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#DDDDDD","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#ffffff","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#DDDDDD","side":"all","width":1,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#ffffff","borderColor":"#DDDDDD","iconColor":"#808080"},"tooltip":{"backgroundColor":"#ffffff","color":"#333333"}},"typography":{"autoFontColor":false,"color":"#333333","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}};
+const CLASSIC_THEME={"label":"Fabric Theme","themeType":2,"theme":{"colors":{"primaryColors":["#637CEF","#E3008C","#2AA0A4","#9373C0","#13A10E","#3A96DD","#CA5010","#62802B"],"structuralColors":{"outline1":"#ADADAD","outline2":"#E0E0E0","background":"#F5F5F5","icon":"#242424","accent":"#117865","subtleFill":"#FFFFFF"},"semantic":{"positive":"#107C10","negative":"#C50F1F","neutral":"#D2D0CE"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#EDEBE9","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":1,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#ffffff","borderColor":"#D1D1D1","iconColor":"#616161"},"tooltip":{"backgroundColor":"#ffffff","color":"#242424"}},"typography":{"autoFontColor":false,"color":"#242424","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}};
+const MINIMAL_THEME={"label":"Minimal Theme","themeType":9,"theme":{"colors":{"primaryColors":["#262626","#82BDEB","#186282","#299D8F","#E9C46A","#F4A261","#E76F51","#94ADCF"],"structuralColors":{"outline1":"#ADADAD","outline2":"#E0E0E0","background":"#F5F5F5","icon":"#242424","accent":"#117865","subtleFill":"#FFFFFF"},"semantic":{"positive":"#8EB900","negative":"#FF000A","neutral":"#7F7F7F"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#999999","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#FFFFFF","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#ffffff","borderColor":"#999999","iconColor":"#808080"},"tooltip":{"backgroundColor":"","color":""}},"typography":{"autoFontColor":false,"color":"#242424","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}};
 // themeType: every built-in theme has its own number; anything a user
 // creates, saves or imports is custom and always exports as 99. Not read
 // by the product — kept consistent for the studio's own bookkeeping.
 const CUSTOM_THEME_TYPE=99;
+// Series and Measures (theme.colors.chart): every theme has at least ten of each.
+const CHART_LIST_MIN=10;
+const CHART_LISTS=[['series','Series'],['measures','Measures']];
+// CSS variables for the colours the preview charts can use: s1…s10, m1…m10.
+const CHART_TOKENS=pre=>Array.from({length:CHART_LIST_MIN},(_,i)=>pre+(i+1));
+// The product's own Series and Measures for its built-in themes (Theme.constants.ts
+// in the product). LIGHT and DARK are also what it falls back to for any other
+// theme, picked by canvas brightness, and every theme's defaultColors is the
+// Measures list followed by the Series list of that palette.
+const PRODUCT_CHART_COLORS={
+  DEFAULT:{series:["#176382","#2A9D8F","#E9C46A","#F4A261","#E76F51","#CCD1D9","#94ADCF","#3D4856","#E1CEB5","#A36C00","#3E8CAB","#57C5B7","#C6A24D","#DD7523","#FA9E87","#ADBCD4","#648EC8","#6B7D95","#B19671","#D1A041","#2BBBF5","#2BDECA","#F7DB97","#EDBB93","#FFC0B0","#8296B5","#A6CCFF","#B4C2D4","#877051","#F5BB4A","#0087BE","#0CCEB6","#F7C856","#B05805","#FF7B5A","#A2C2F6","#81B4F9","#49586C","#988B79","#E6D2AC","#86DCFF","#89EADE","#F1BE31","#F9903C","#CE6E55","#66A0FF","#4B91DB","#95AECD","#FBE7CD","#FFDC97"],
+    measures:["#1F77B4","#FFA34F","#4EC0C3","#9EDAE5","#7F7F7F","#C7C7C7","#8C564B","#C49C94","#9467BD","#C5B0D5","#E377C2","#F7B6D2","#9381FF","#B8B8FF","#FF9896","#5F77A0","#9FADC6","#C577B2","#B7BC5C","#858A38","#B090DF","#E58E6C","#EEB6A0","#DEB841","#EDD897","#3885B3","#92C1DD","#D9A6CC","#FFC814","#FFE180"]},
+  LIGHT:{series:["#176382","#2A9D8F","#E9C46A","#F4A261","#E76F51","#CCD1D9","#94ADCF","#3D4856","#E1CEB5","#A36C00","#3E8CAB","#57C5B7","#C6A24D","#DD7523","#FA9E87","#ADBCD4","#648EC8","#6B7D95","#B19671","#D1A041"],
+    measures:["#1F77B4","#FF7F0E","#9467BD","#E377C2","#FFA34F","#4EC0C3","#9EDAE5","#7F7F7F","#C7C7C7","#8C564B","#C49C94","#9467BD","#C5B0D5","#E377C2","#F7B6D2","#9381FF","#B8B8FF","#FF9896","#5F77A0","#9FADC6"]},
+  DARK:{series:["#E7E7E7","#797979","#A3A3A3","#6C6C6C","#999999","#888888","#ACACAC","#DADADA","#C2C2C2","#666666","#919191","#CDCDCD","#B7B7B7","#818181","#737373"],
+    measures:["#ffffff","#118DFF","#999999","#DFDFDF","#BFBFBF","#808080","#666666","#CFD4D8","#ACB4BC","#97A1AC","#7E8A98","#636E78","#ADADC9","#7F7D9C","#696880","#B6BECE","#919DB6","#7685A3","#D1C2D6","#B69DBE","#9777A2","#D4CAC4","#BAAAA1","#9E887B","#D7C1C1","#C19F9F","#A67373","#C1D7D0","#9BBFB3","#73A695"]},
+  MIDNIGHT:{series:["#864374","#B07AA1","#F6D958","#4EC0C3","#F985C1","#E3E5F0","#747BB2","#A36C00","#5E7880","#FFC0B3","#B7E6FF","#F39FD1","#890C66","#F5E49B","#7AF7FA","#C49BB0","#BDBDBD","#B3B9E5","#D79107","#A3C1CA","#F5CAC1","#7EC6EC","#FF84DF","#ED3CBC","#CEB853","#52F7FB","#AD6389","#99999B","#6472E4","#EDA924","#6D9BAA","#EB9D8C","#48AEE4","#FFC1EF","#F29DDD","#E7DBA9","#A4F8FB","#D6B1C4","#CCCCCD","#B1B8F1","#F6D491","#B6CDD4","#E8C5BD","#A3D7F1","#C886B7","#D747AE","#FFD00D","#00F6FF","#DB73A8","#868686","#394BDC","#DEB35E","#55AFCA","#FFA894","#00AAFF"],
+    measures:["#E3E5F0","#4EC0C3","#747BB2","#E3D0DE","#B07AA1","#FDE2E4","#F985C1","#FFF1E6","#F6D958","#C5DEDD","#6ECFCB","#BBD0FF","#8093F1","#B8B8FF","#9381FF","#FFE180","#FFBA49","#FF8F2E","#BED4EF","#62A0EA","#D7DAA4","#A8AE47","#DDCFF1","#B090DF","#F1BCB1","#E5806C","#EDD897","#DEB841","#D9A6CC","#64A7CE"]},
+  IBCS:{series:["#4B4B4B","#999999","#747474","#E4E4E4","#BFBFBF","#848484","#ABABAB","#5D5D5D","#9E9D9D","#3F3F3F","#D9D9D9","#898E94","#818181","#707070","#676A6F"],
+    measures:["#262626","#DFDFDF","#BFBFBF","#808080","#666666","#CFD4D8","#ACB4BC","#97A1AC","#7E8A98","#636E78","#ADADC9","#7F7D9C","#696880","#D4D1EB","#A29BD4","#B6BECE","#919DB6","#7685A3","#D1C2D6","#B69DBE","#9777A2","#D4CAC4","#BAAAA1","#9E887B","#D7C1C1","#C19F9F","#A67373","#C1D7D0","#9BBFB3","#73A695"]},
+  COLOR_BLIND_LIGHT:{series:["#3D9EB9","#FFCC00","#A633D6","#FF6F00","#EAA8EB","#FF69B4","#87DCE2","#5C5CFF","#2CEBF8","#B87C47","#FF7E79","#27AACF","#E7BD18","#C370E6","#EB873B","#E2B1E3","#FE8DC6","#98D4D8","#7D7DF3","#99F9FF","#CD915D","#F79A96","#17B9E6","#D5B63D","#AE52D5","#DD9A66","#D6B9D6","#FF9FCF","#9DD2D5","#8C8CF0","#11D0DC","#C29A76","#F3AAA7","#61CEED","#CEB242","#E097FF","#ECA975","#DBC7DC","#FEAFD7","#92CBCF","#9E9EF1","#00838B","#CEAD91","#F3B8B6","#85DDF5","#D7B83B","#6A2C84","#F4BD93","#E7D7E7","#FFC4E1","#77C7CC","#B8B8F5","#00F0FF","#D6BFAB","#F5CDCB"],
+    measures:["#333333","#FFA34F","#4EC0C3","#79486D","#A66995","#F763B0","#F6B1CF","#DEAD03","#F8CE7C","#474747","#949494","#1860DC","#85AAFF","#42D3FF","#FF968F","#E55934","#A93313","#A3CC4C","#98B9AB","#437F97","#4DA2FF","#D214F0","#851098","#C9A7EC","#858A38","#58FB46","#9B7DF2","#C4C4C4","#DDDDDD","#C6CAED"]},
+  COLOR_BLIND_DARK:{series:["#8B4513","#D2691E","#FFD699","#FFA500","#FFFF00","#00FFFF","#46C8FF","#0033CC","#FF00FF","#E9459D","#FFC0CB","#AB4A04","#D58145","#F2BE5E","#FBE3BF","#F8F88F","#00D0D0","#09B0F8","#3063FB","#FF95FF","#EA86BC","#FDE9EC","#D95F08","#DD9F73","#F8BA5C","#FAD48F","#F9F998","#02AEAE","#05A3E7","#7C9AF3","#B965B9","#F1B8D7","#F47C91","#EF7B27","#E4BC9F","#FBAE3B","#B8872F","#C4C45A","#019090","#0389C2","#5275DD","#E25BE2","#BF87A5","#BD6C7A","#F18E48","#AE6E41","#FBA11A","#FBEBCE","#B9B900","#007D7D","#037AAE","#ABBEF8","#F7BFF7","#BC6393","#DA5A70"],
+    measures:["#E3E5F0","#FFA34F","#4EC0C3","#FBF9FB","#A66995","#F6B1CF","#F763B0","#FEF1C3","#F8897C","#ECECEC","#949494","#85AAFF","#1860DC","#8FD7FF","#4281FF","#9EDAE5","#851098","#E55934","#A93313","#A3CC4C","#98B9AB","#437F97","#4DA2FF","#D214F0","#C9A7EC","#858A38","#58FB46","#9B7DF2","#707070","#BBBBBB"]}
+};
+// Studio themeType → the product theme it matches.
+const PRODUCT_THEME={3:'DEFAULT',10:'LIGHT',1:'DARK',4:'MIDNIGHT',5:'IBCS',6:'COLOR_BLIND_LIGHT',7:'COLOR_BLIND_DARK'};
+// Series and Measures for studio themes the product doesn't have, as the
+// Themes Figma file documents them (Category colors = Series): Fabric and
+// Horizon were designed there; Vivid, Terrain, Sorbet and Neon's lists were
+// generated from their primaries and then documented. Keyed by studio themeType.
+const DESIGN_CHART_COLORS={
+  2:{series:["#117865","#637CEF","#E3008C","#2AA0A4","#9373C0","#13A10E","#3A96DD","#CA5010","#57811B","#B146C2","#0A5C50","#3C51B4","#AD006A","#026467","#674C8C","#0E7A0B","#2C72A8","#9A3D0C","#405F14","#863593","#1F937E","#4F6BED","#EA38A6","#038387","#8764B8","#11910D","#3487C7","#D06228","#689920","#BA58C9","#033F38","#2C3C85","#7F004E","#02494C","#4C3867","#0B5A08","#20547C","#712D09","#23330B","#63276D","#0C695A","#4760D5","#CC007E","#037679","#795AA6","#3DB838","#65ADE5","#B6480E","#90BE4C","#9F3FAF"],
+    measures:["#4A89BA","#DC5E62","#009B51","#B55FC1","#B27C00","#0099BC","#AD4589","#A97652","#546FD2","#7A7574","#003B6A","#9F282B","#00723B","#671174","#835B00","#00748F","#5A003B","#6C4123","#001E89","#5D5958","#004E8C","#D13438","#00B85F","#881798","#D39300","#008AA9","#98246F","#8E562E","#3050C6","#8A8584"]},
+  8:{series:["#4FB8D1","#6C9FD6","#8C78D9","#3F7FB8","#5F95CC","#4FAFC8","#A862CB","#514FC4","#48C0C8","#6AA6D9","#B974D6","#8E7AD8","#A95FCF","#7A79DC","#7E6ED6","#A88BE6","#5AB8C4","#6F6BD6","#9A86E3","#B968D1","#6763CF","#588FC1","#5E5BCB","#9F7FE0","#6BC7D6","#C07AD9","#7C82E0","#5EC2C9","#4F8FC2","#9D5BC8","#41A6C8","#86A4DF","#8147D1","#CA83D8","#66AACC","#7269D3","#BF8EE1","#78CFD9","#5468C9","#7A53D5","#42A2BD","#769ED6","#7A36BF","#B76DD5","#4395CB","#9286DF","#60BECD","#545ED4","#994FC4","#859DD5"],
+    measures:["#5DB1F2","#7D72F9","#2AE5FF","#E686FC","#A3D7F6","#B7A9FF","#4FA4E4","#6E64E8","#3BDDF2","#D676EC","#4197D6","#5F56D7","#4CD5E6","#C666DC","#338AC8","#5048C6","#5DCDDA","#B656CC","#257DBA","#413AB5","#2FC6DA","#A844C1","#256EA2","#3A359C","#28B1C3","#933DA9","#245F89","#343082","#2796A5","#7E388F"]},
+  // Vivid
+  11:{series:["#93A200","#DC80E5","#0B48CF","#009F8E","#DA8500","#CF2981","#7541DA","#009F69","#DD5900","#009DBA","#7B8900","#C167CA","#3D7DFF","#43D2BF","#FFB83D","#FF64B2","#A276FF","#41D399","#FF8D3C","#3FD0EF","#ABBB34","#F799FF","#002CB4","#008676","#BF6C00","#B30069","#5F22BF","#008752","#C13E00","#0084A1","#657100","#A74EB0","#5194FF","#5FE9D6","#FFC24A","#FF7BC8","#B88DFF","#5DEAAF","#FFA456","#5CE7FF","#C1D24F","#FFAFFF"],
+    measures:["#2563EB","#7BA5F8","#14B8A6","#A0E8DB","#F59E0B","#FFCC8F","#EC4899","#FFA6CE","#8B5CF6","#BCA9FF","#10B981","#9FE9C5","#F97316","#FFC197","#06B6D4","#9DE5F7","#93A200","#CCD891","#DC80E5","#F9C1FE","#0B48CF","#638CDC","#009F8E","#8FD0C4","#DA8500","#FEC993","#CF2981","#EE8DB5","#7541DA","#A490EA"]},
+  // Terrain
+  13:{series:["#7289C9","#C885B2","#12323F","#008477","#CFAA50","#D98947","#CB5639","#729865","#564363","#9B4E5F","#5B71AF","#AE6D99","#3C5C6A","#4AB6A8","#F8D379","#FFBC7A","#FF8869","#A3CB95","#847092","#D07D8E","#8AA2E4","#E39ECC","#173744","#006D60","#B59134","#BE702C","#B03D1F","#5B804E","#412E4C","#813749","#455A96","#955681","#4F707E","#62CDBE","#FFDA80","#FFC281","#FF9F7F","#B9E1AB","#9A85A8","#E792A3","#9FB8FB","#FAB4E2"],
+    measures:["#264653","#63777F","#2A9D8F","#95CEC5","#E9C46A","#EBD5A3","#F4A261","#FFCCA6","#E76F51","#FFBBA7","#8AB17D","#C8E0C0","#6D597A","#9E92A7","#B56576","#DCA8B1","#7289C9","#B3C3EC","#C885B2","#F3C8E4","#12323F","#4E6169","#008477","#7EB4AB","#CFAA50","#F2DCA9","#D98947","#FFD3AC","#CB5639","#ECA18E"]},
+  // Sorbet
+  14:{series:["#C98DC6","#55CBD4","#6389DC","#DC8F9F","#75C1AB","#E4B865","#9B8EDA","#76B9D9","#E49A71","#AACE74","#AF75AC","#35B1BA","#92BCFF","#FFBECE","#9DEAD3","#FDD07D","#CDC1FF","#9EE2FF","#FFC39A","#C2E78C","#E3A6E0","#72E5EE","#4C70C1","#C17787","#5BA892","#CA9F4B","#8376C0","#5DA0BF","#C98159","#91B45B","#965D94","#0098A1","#A8D2FF","#FFC4D4","#A3F1DA","#FFD783","#D8CBFF","#A4E9FF","#FFC9A0","#C8EE92","#FBBCF7","#79ECF5"],
+    measures:["#7AA2F7","#BDD8FF","#F7A8B8","#FAC9D2","#8EDBC4","#B7E3D4","#FFD27F","#EED4A5","#B4A7F5","#D7D0FF","#8FD3F4","#B7DEF2","#FFB38A","#FBCCB4","#C3E88D","#CAE1AC","#C98DC6","#EFC9ED","#55CBD4","#A6E5E9","#6389DC","#AAC4F8","#DC8F9F","#FAC9D1","#75C1AB","#B7E3D5","#E4B865","#F5DBAB","#9B8EDA","#D3CDFD"]},
+  // Neon
+  15:{series:["#00DFFF","#90BFFF","#6740E3","#00B799","#E24072","#E4A71F","#1890E1","#8ACB00","#E3711B","#CD5FDE","#00C5E4","#78A6E4","#9277FF","#42ECCB","#FF77A2","#FFDB63","#5AC3FF","#BCFF58","#FFA459","#FF93FF","#46FAFF","#A9D9FF","#5624CB","#009D81","#C51F5B","#CA8E00","#0077C6","#72B100","#C75700","#B245C3","#00ABCA","#608DC9","#A78EFF","#62FFE2","#FF8EB8","#FFDC64","#72DAFF","#BDFF58","#FFBB71","#FFAAFF","#50FFFF","#BAEBFF"],
+    measures:["#7C5CFF","#52459D","#00D1B2","#3A8E7C","#FF5C8A","#A1475E","#FFC145","#B18E50","#3DA9FC","#3A719F","#A3E635","#7DA44C","#FF8A3D","#A6653E","#E879F9","#985CA2","#00DFFF","#459DAF","#90BFFF","#6C87AB","#6740E3","#574BA3","#00B799","#2C7665","#E24072","#8A334A","#E4A71F","#987637","#1890E1","#225A86"]}
+};
+const CHART_LIST_MAX=60; // the product's limit per list
+const NEW_THEME_CHART_COLORS=20; // Series and Measures each, for a theme built from its primaries
 const PRESETS=[
   {...DEFAULTS,builtIn:true},
   {...CLASSIC_THEME,builtIn:true},
   {...MINIMAL_THEME,builtIn:true},
-  {...{"label":"Midnight","themeType":4,"theme":{"colors":{"primaryColors":["#E3E5F0","#747BB2","#B07BA1","#F6D959","#4DC0C2","#F885C1","#E2D0DE","#B7E5FF"],"structuralColors":{"outline1":"#AAAAAA","outline2":"#8A8A8A","background":"#484A59","accent":"#2AAC94","icon":"#E3E5F0","subtleFill":"#2D2F3E"},"semantic":{"positive":"#ECA633","negative":"#F64747","neutral":"#6C7A8A"}},"page":{"canvas":{"background":{"type":"color","color":"#2D2F3E","imageUrl":""},"border":{"color":"#55566B","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#2D2F3E","imageUrl":""}},"elements":{"background":{"type":"color","color":"#2D2F3E","imageUrl":""},"border":{"color":"#55566B","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#2D2F3E","borderColor":"#55566B","iconColor":"#ffffff"},"tooltip":{"backgroundColor":"#2D2F3E","color":"#ffffff"}},"typography":{"autoFontColor":false,"color":"#E3E5F0","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
-  ,{...{"label":"Color Blind Light","themeType":6,"theme":{"colors":{"primaryColors":["#333333","#A6A6A6","#87DAF0","#17506C","#FFA34F","#804C17","#09A4A9","#F763B0"],"structuralColors":{"outline1":"#D0D0D0","outline2":"#E6E6E6","background":"#F7F7F7","accent":"#117865","icon":"#333333","subtleFill":"#FFFFFF"},"semantic":{"positive":"#0F8DFF","negative":"#FF000A","neutral":"#7F7F7F"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#999999","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#FFFFFF","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#999999","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#999999","iconColor":"#808080"},"tooltip":{"backgroundColor":"","color":""}},"typography":{"autoFontColor":false,"color":"#333333","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
-  ,{...{"label":"Color Blind Dark","themeType":7,"theme":{"colors":{"primaryColors":["#ffffff","#999999","#87DAF0","#4A87DC","#FFA34F","#9520FE","#09A4A9","#A66995"],"structuralColors":{"outline1":"#D0D0D0","outline2":"#666666","background":"#4D4D4D","accent":"#2AAC94","icon":"#FFFFFF","subtleFill":"#121212"},"semantic":{"positive":"#118DFF","negative":"#F64747","neutral":"#CCCCCC"}},"page":{"canvas":{"background":{"type":"color","color":"#333333","imageUrl":""},"border":{"color":"#5F5F5F","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#333333","imageUrl":""}},"elements":{"background":{"type":"color","color":"#121212","imageUrl":""},"border":{"color":"#5F5F5F","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#121212","borderColor":"#5F5F5F","iconColor":"#ffffff"},"tooltip":{"backgroundColor":"","color":""}},"typography":{"autoFontColor":false,"color":"#FFFFFF","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
-  ,{...{"label":"IBCS · Light","themeType":5,"theme":{"colors":{"primaryColors":["#262626","#BFBFBF","#464646","#737373","#999999","#E4E4E4","#ABABAB","#848484"],"structuralColors":{"outline1":"#D0D0D0","outline2":"#E6E6E6","background":"#F7F7F7","accent":"#262626","icon":"#333333","subtleFill":"#FFFFFF"},"semantic":{"positive":"#8EB900","negative":"#FF000A","neutral":"#7F7F7F"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#999999","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#FFFFFF","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#999999","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#999999","iconColor":"#808080"},"tooltip":{"backgroundColor":"","color":""}},"typography":{"autoFontColor":false,"color":"#333333","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
-  ,{...{"label":"Dark Theme","themeType":1,"theme":{"colors":{"primaryColors":["#ffffff","#A6A6A6","#BFBFBF","#666666","#DDDDDD","#999999","#ACACAC","#6C6C6C"],"structuralColors":{"outline1":"#A6A6A6","outline2":"#666666","background":"#4D4D4D","icon":"#FFFFFF","accent":"#2AAC94","subtleFill":"#2A2A2A"},"semantic":{"positive":"#7BCA01","negative":"#F64747","neutral":"#CCCCCC"}},"page":{"canvas":{"background":{"type":"color","color":"#1E1E1E","imageUrl":""},"border":{"color":"#616161","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#121212","imageUrl":""}},"elements":{"background":{"type":"color","color":"#2A2A2A","imageUrl":""},"border":{"color":"#616161","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#2A2A2A","borderColor":"#616161","iconColor":"#ffffff"},"tooltip":{"backgroundColor":"#2A2A2A","color":"#616161"}},"typography":{"autoFontColor":false,"color":"#FFFFFF","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
-  ,{...{"label":"Light Theme","themeType":10,"theme":{"colors":{"primaryColors":["#02B8AB","#37464B","#FD625E","#F1C80E","#606B6D","#A1CFDE","#FF9666","#A7699A"],"structuralColors":{"outline1":"#ADADAD","outline2":"#E0E0E0","background":"#F5F5F5","accent":"#117865","icon":"#242424","subtleFill":"#FFFFFF"},"semantic":{"positive":"#16BC10","negative":"#F14151","neutral":"#B3B3B3"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#EEF0F0","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#D1D1D1","iconColor":"#616161"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#242424"}},"typography":{"autoFontColor":false,"color":"#242424","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
-  ,{...{"label":"Horizon","themeType":8,"theme":{"colors":{"primaryColors":["#7D72F9","#2AE5FF","#5DB1F2","#E686FC","#A3D7F6","#B7A9FF","#AEE4F2","#EDF3FF"],"structuralColors":{"outline1":"#ADADAD","outline2":"#E0E0E0","background":"#F5F5F5","accent":"#117865","icon":"#242424","subtleFill":"#FFFFFF"},"semantic":{"positive":"#00C48C","negative":"#FF5B5C","neutral":"#B8C2CC"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#EEF0F0","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#D1D1D1","iconColor":"#616161"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#242424"}},"typography":{"autoFontColor":false,"color":"#242424","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
-  // Beta: newer palettes, listed in their own section of the theme picker.
-  ,{...{"label":"Vivid","themeType":11,"theme":{"colors":{"primaryColors":["#2563EB","#14B8A6","#F59E0B","#EC4899","#8B5CF6","#10B981","#F97316","#06B6D4"],"structuralColors":{"outline1":"#9CA3AF","outline2":"#E5E7EB","background":"#F9FAFB","accent":"#2563EB","icon":"#4B5563","subtleFill":"#FFFFFF"},"semantic":{"positive":"#16A34A","negative":"#DC2626","neutral":"#6B7280"}},"page":{"canvas":{"background":{"type":"color","color":"#F8FAFC","imageUrl":""},"border":{"color":"#E5E7EB","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#F8FAFC","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#E5E7EB","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#E5E7EB","iconColor":"#4B5563"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#111827"}},"typography":{"autoFontColor":false,"color":"#111827","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true,beta:true}
-  ,{...{"label":"Coastal","themeType":12,"theme":{"colors":{"primaryColors":["#0F766E","#14B8A6","#5EEAD4","#CCFBF1","#FED7AA","#FB923C","#EA580C","#9A3412"],"structuralColors":{"outline1":"#9CA3AF","outline2":"#E5E7EB","background":"#F9FAFB","accent":"#0F766E","icon":"#4B5563","subtleFill":"#FFFFFF"},"semantic":{"positive":"#0F766E","negative":"#C2410C","neutral":"#6B7280"}},"page":{"canvas":{"background":{"type":"color","color":"#F8FAFC","imageUrl":""},"border":{"color":"#E5E7EB","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#F8FAFC","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#E5E7EB","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#E5E7EB","iconColor":"#4B5563"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#111827"}},"typography":{"autoFontColor":false,"color":"#111827","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true,beta:true}
-  ,{...{"label":"Terrain","themeType":13,"theme":{"colors":{"primaryColors":["#264653","#2A9D8F","#E9C46A","#F4A261","#E76F51","#8AB17D","#6D597A","#B56576"],"structuralColors":{"outline1":"#A8A29E","outline2":"#ECE7E1","background":"#F7F4F0","accent":"#2A9D8F","icon":"#57534E","subtleFill":"#FFFFFF"},"semantic":{"positive":"#2A9D8F","negative":"#C8553D","neutral":"#7A7570"}},"page":{"canvas":{"background":{"type":"color","color":"#FBF9F6","imageUrl":""},"border":{"color":"#E7E1DA","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#FBF9F6","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#E7E1DA","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#E7E1DA","iconColor":"#57534E"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#1F2A30"}},"typography":{"autoFontColor":false,"color":"#1F2A30","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true,beta:true}
-  ,{...{"label":"Sorbet","themeType":14,"theme":{"colors":{"primaryColors":["#7AA2F7","#F7A8B8","#8EDBC4","#FFD27F","#B4A7F5","#8FD3F4","#FFB38A","#C3E88D"],"structuralColors":{"outline1":"#B7BCCB","outline2":"#ECEEF4","background":"#F7F8FC","accent":"#7AA2F7","icon":"#5B6178","subtleFill":"#FFFFFF"},"semantic":{"positive":"#2F9E6E","negative":"#E0607E","neutral":"#8A8FA3"}},"page":{"canvas":{"background":{"type":"color","color":"#FAFBFF","imageUrl":""},"border":{"color":"#E9ECF5","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#FAFBFF","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#E9ECF5","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#E9ECF5","iconColor":"#5B6178"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#2A2F45"}},"typography":{"autoFontColor":false,"color":"#2A2F45","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true,beta:true}
-  ,{...{"label":"Neon","themeType":15,"theme":{"colors":{"primaryColors":["#7C5CFF","#00D1B2","#FF5C8A","#FFC145","#3DA9FC","#A3E635","#FF8A3D","#E879F9"],"structuralColors":{"outline1":"#475569","outline2":"#1E293B","background":"#172033","accent":"#7C5CFF","icon":"#CBD5E1","subtleFill":"#111A2E"},"semantic":{"positive":"#34D399","negative":"#FB7185","neutral":"#94A3B8"}},"page":{"canvas":{"background":{"type":"color","color":"#0B1120","imageUrl":""},"border":{"color":"#1E293B","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#0B1120","imageUrl":""}},"elements":{"background":{"type":"color","color":"#111A2E","imageUrl":""},"border":{"color":"#1E293B","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#0000003f","blur":8,"isEnabled":false,"placement":"outer","side":"bottom","width":0,"opacity":100,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#111A2E","borderColor":"#1E293B","iconColor":"#CBD5E1"},"tooltip":{"backgroundColor":"#111A2E","color":"#E2E8F0"}},"typography":{"autoFontColor":false,"color":"#E2E8F0","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true,beta:true}
+  {...{"label":"Midnight","themeType":4,"theme":{"colors":{"primaryColors":["#E3E5F0","#747BB2","#B07BA1","#F6D959","#4DC0C2","#F885C1","#E2D0DE","#B7E5FF"],"structuralColors":{"outline1":"#AAAAAA","outline2":"#8A8A8A","background":"#484A59","accent":"#2AAC94","icon":"#E3E5F0","subtleFill":"#2D2F3E"},"semantic":{"positive":"#ECA633","negative":"#F64747","neutral":"#6C7A8A"}},"page":{"canvas":{"background":{"type":"color","color":"#2D2F3E","imageUrl":""},"border":{"color":"#55566B","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#2D2F3E","imageUrl":""}},"elements":{"background":{"type":"color","color":"#2D2F3E","imageUrl":""},"border":{"color":"#55566B","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#2D2F3E","borderColor":"#55566B","iconColor":"#ffffff"},"tooltip":{"backgroundColor":"#2D2F3E","color":"#ffffff"}},"typography":{"autoFontColor":false,"color":"#E3E5F0","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
+  ,{...{"label":"Color Blind Light","themeType":6,"theme":{"colors":{"primaryColors":["#333333","#A6A6A6","#87DAF0","#17506C","#FFA34F","#804C17","#09A4A9","#F763B0"],"structuralColors":{"outline1":"#D0D0D0","outline2":"#E6E6E6","background":"#F7F7F7","accent":"#117865","icon":"#333333","subtleFill":"#FFFFFF"},"semantic":{"positive":"#0F8DFF","negative":"#FF000A","neutral":"#7F7F7F"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#999999","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#FFFFFF","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#999999","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#999999","iconColor":"#808080"},"tooltip":{"backgroundColor":"","color":""}},"typography":{"autoFontColor":false,"color":"#333333","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
+  ,{...{"label":"Color Blind Dark","themeType":7,"theme":{"colors":{"primaryColors":["#ffffff","#999999","#87DAF0","#4A87DC","#FFA34F","#9520FE","#09A4A9","#A66995"],"structuralColors":{"outline1":"#D0D0D0","outline2":"#666666","background":"#4D4D4D","accent":"#2AAC94","icon":"#FFFFFF","subtleFill":"#121212"},"semantic":{"positive":"#118DFF","negative":"#F64747","neutral":"#CCCCCC"}},"page":{"canvas":{"background":{"type":"color","color":"#333333","imageUrl":""},"border":{"color":"#5F5F5F","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#333333","imageUrl":""}},"elements":{"background":{"type":"color","color":"#121212","imageUrl":""},"border":{"color":"#5F5F5F","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#121212","borderColor":"#5F5F5F","iconColor":"#ffffff"},"tooltip":{"backgroundColor":"","color":""}},"typography":{"autoFontColor":false,"color":"#FFFFFF","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
+  ,{...{"label":"IBCS · Light","themeType":5,"theme":{"colors":{"primaryColors":["#262626","#BFBFBF","#464646","#737373","#999999","#E4E4E4","#ABABAB","#848484"],"structuralColors":{"outline1":"#D0D0D0","outline2":"#E6E6E6","background":"#F7F7F7","accent":"#262626","icon":"#333333","subtleFill":"#FFFFFF"},"semantic":{"positive":"#8EB900","negative":"#FF000A","neutral":"#7F7F7F"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#999999","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#FFFFFF","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#999999","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#999999","iconColor":"#808080"},"tooltip":{"backgroundColor":"","color":""}},"typography":{"autoFontColor":false,"color":"#333333","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
+  ,{...{"label":"Dark Theme","themeType":1,"theme":{"colors":{"primaryColors":["#ffffff","#A6A6A6","#BFBFBF","#666666","#DDDDDD","#999999","#ACACAC","#6C6C6C"],"structuralColors":{"outline1":"#A6A6A6","outline2":"#666666","background":"#4D4D4D","icon":"#FFFFFF","accent":"#2AAC94","subtleFill":"#2A2A2A"},"semantic":{"positive":"#7BCA01","negative":"#F64747","neutral":"#CCCCCC"}},"page":{"canvas":{"background":{"type":"color","color":"#1E1E1E","imageUrl":""},"border":{"color":"#616161","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#121212","imageUrl":""}},"elements":{"background":{"type":"color","color":"#2A2A2A","imageUrl":""},"border":{"color":"#616161","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#2A2A2A","borderColor":"#616161","iconColor":"#ffffff"},"tooltip":{"backgroundColor":"#2A2A2A","color":"#616161"}},"typography":{"autoFontColor":false,"color":"#FFFFFF","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
+  ,{...{"label":"Light Theme","themeType":10,"theme":{"colors":{"primaryColors":["#02B8AB","#37464B","#FD625E","#F1C80E","#606B6D","#A1CFDE","#FF9666","#A7699A"],"structuralColors":{"outline1":"#ADADAD","outline2":"#E0E0E0","background":"#F5F5F5","accent":"#117865","icon":"#242424","subtleFill":"#FFFFFF"},"semantic":{"positive":"#16BC10","negative":"#F14151","neutral":"#B3B3B3"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#dddddd","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#ffffff","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#d1d1d1","iconColor":"#808080"},"tooltip":{"backgroundColor":"#ffffff","color":"#333333"}},"typography":{"autoFontColor":false,"color":"#242424","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
+  ,{...{"label":"Horizon","themeType":8,"theme":{"colors":{"primaryColors":["#7D72F9","#2AE5FF","#5DB1F2","#E686FC","#A3D7F6","#B7A9FF","#AEE4F2","#EDF3FF"],"structuralColors":{"outline1":"#ADADAD","outline2":"#E0E0E0","background":"#F5F5F5","accent":"#117865","icon":"#242424","subtleFill":"#FFFFFF"},"semantic":{"positive":"#00C48C","negative":"#FF5B5C","neutral":"#B8C2CC"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#EEF0F0","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#D1D1D1","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#D1D1D1","iconColor":"#616161"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#242424"}},"typography":{"autoFontColor":false,"color":"#242424","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
+  ,{...{"label":"Vivid","themeType":11,"theme":{"colors":{"primaryColors":["#2563EB","#14B8A6","#F59E0B","#EC4899","#8B5CF6","#10B981","#F97316","#06B6D4"],"structuralColors":{"outline1":"#9CA3AF","outline2":"#E5E7EB","background":"#F9FAFB","accent":"#2563EB","icon":"#4B5563","subtleFill":"#FFFFFF"},"semantic":{"positive":"#16A34A","negative":"#DC2626","neutral":"#6B7280"}},"page":{"canvas":{"background":{"type":"color","color":"#F8FAFC","imageUrl":""},"border":{"color":"#E5E7EB","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#F8FAFC","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#E5E7EB","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#E5E7EB","iconColor":"#4B5563"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#111827"}},"typography":{"autoFontColor":false,"color":"#111827","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
+  ,{...{"label":"Terrain","themeType":13,"theme":{"colors":{"primaryColors":["#264653","#2A9D8F","#E9C46A","#F4A261","#E76F51","#8AB17D","#6D597A","#B56576"],"structuralColors":{"outline1":"#A8A29E","outline2":"#ECE7E1","background":"#F7F4F0","accent":"#2A9D8F","icon":"#57534E","subtleFill":"#FFFFFF"},"semantic":{"positive":"#2A9D8F","negative":"#C8553D","neutral":"#7A7570"}},"page":{"canvas":{"background":{"type":"color","color":"#FBF9F6","imageUrl":""},"border":{"color":"#E7E1DA","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#FBF9F6","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#E7E1DA","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#E7E1DA","iconColor":"#57534E"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#1F2A30"}},"typography":{"autoFontColor":false,"color":"#1F2A30","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
+  ,{...{"label":"Sorbet","themeType":14,"theme":{"colors":{"primaryColors":["#7AA2F7","#F7A8B8","#8EDBC4","#FFD27F","#B4A7F5","#8FD3F4","#FFB38A","#C3E88D"],"structuralColors":{"outline1":"#B7BCCB","outline2":"#ECEEF4","background":"#F7F8FC","accent":"#7AA2F7","icon":"#5B6178","subtleFill":"#FFFFFF"},"semantic":{"positive":"#2F9E6E","negative":"#E0607E","neutral":"#8A8FA3"}},"page":{"canvas":{"background":{"type":"color","color":"#FAFBFF","imageUrl":""},"border":{"color":"#E9ECF5","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#FAFBFF","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#E9ECF5","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#E9ECF5","iconColor":"#5B6178"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#2A2F45"}},"typography":{"autoFontColor":false,"color":"#2A2F45","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
+  ,{...{"label":"Neon","themeType":15,"theme":{"colors":{"primaryColors":["#7C5CFF","#00D1B2","#FF5C8A","#FFC145","#3DA9FC","#A3E635","#FF8A3D","#E879F9"],"structuralColors":{"outline1":"#475569","outline2":"#1E293B","background":"#172033","accent":"#7C5CFF","icon":"#CBD5E1","subtleFill":"#111A2E"},"semantic":{"positive":"#34D399","negative":"#FB7185","neutral":"#94A3B8"}},"page":{"canvas":{"background":{"type":"color","color":"#0B1120","imageUrl":""},"border":{"color":"#1E293B","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#0B1120","imageUrl":""}},"elements":{"background":{"type":"color","color":"#111A2E","imageUrl":""},"border":{"color":"#1E293B","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#111A2E","borderColor":"#1E293B","iconColor":"#CBD5E1"},"tooltip":{"backgroundColor":"#111A2E","color":"#E2E8F0"}},"typography":{"autoFontColor":false,"color":"#E2E8F0","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
 ];
+// Built-in themes take the product's Series and Measures, or the design file's.
+PRESETS.forEach(p=>{
+  const k=PRODUCT_THEME[p.themeType],src=k?PRODUCT_CHART_COLORS[k]:DESIGN_CHART_COLORS[p.themeType];
+  if(src)p.theme.colors.chart=JSON.parse(JSON.stringify(src));
+});
 let T=JSON.parse(JSON.stringify(PRESETS[0]));
 // THEME_ORIGIN: snapshot of the theme at time of load/switch
 // All per-swatch, per-group and global resets restore to this.
@@ -250,6 +304,8 @@ function applyTheme(){
   const c=T.theme.colors,p=T.theme.page,e=T.theme.elements,ty=T.theme.typography;
   c.primaryColors.forEach((v,i)=>{root.style.setProperty('--p'+(i+1),v);root.style.setProperty('--p'+(i+1)+'-text',tc(v));});
   root.style.setProperty('--p1-text',tc(c.primaryColors[0]));
+  // Series → --s1…, Measures → --m1… (charts use the first ten at most).
+  [['s',c.chart.series],['m',c.chart.measures]].forEach(([pre,list])=>list.forEach((v,i)=>{root.style.setProperty(`--${pre}${i+1}`,v);root.style.setProperty(`--${pre}${i+1}-text`,tc(v));}));
   const sc=c.structuralColors;
   root.style.setProperty('--out1',sc.outline1);root.style.setProperty('--out2',sc.outline2);
   root.style.setProperty('--struct-bg',sc.background);root.style.setProperty('--struct-icon',sc.icon);
@@ -363,7 +419,7 @@ function addChartTip(el,title,rows){
 /* ── Accordion sections (Fabric UI kit Accordion · Medium · chevron after):
    section icon, title, optional count badge / swatch preview, reset
    revealed on hover or focus, chevron on the right. ── */
-const SECTION_ICONS={'Primary':'secPalette','Structural':'secLayer','Semantic':'secStatus',
+const SECTION_ICONS={'Primary':'secPalette','Series':'tplBars','Measures':'tplTrend','Structural':'secLayer','Semantic':'secStatus',
   'Canvas background':'secFill','Background':'secFill','Wallpaper':'secImage','Canvas border':'secBorder','Border':'secBorder',
   'Corner radius':'secCorner','Shadow':'secShadow','Padding':'secPadding','Header':'secHeader','Tooltip':'secTooltip'};
 const sectionIcon=name=>SECTION_ICONS[name]?`<span class="cg-icon">${icon(SECTION_ICONS[name])}</span>`:'';
@@ -433,8 +489,9 @@ function sideCommitDragReorder(dragEl){
   const toIdx=finalItems.indexOf(dragEl);
   const fromIdx=parseInt(dragEl.dataset.reorderIndex,10);
   if(isNaN(fromIdx)||isNaN(toIdx)||fromIdx===toIdx)return;
-  const arr=T.theme.colors.primaryColors;
+  const k=dragEl.dataset.list,arr=k?T.theme.colors.chart[k]:T.theme.colors.primaryColors;
   if(fromIdx<0||fromIdx>=arr.length||toIdx<0||toIdx>=arr.length)return;
+  if(k)chartSel[k]=toIdx;
   const[movedVal]=arr.splice(fromIdx,1);
   arr.splice(toIdx,0,movedVal);
   // Deliberately do NOT reorder THEME_ORIGIN's array to match — it must
@@ -530,6 +587,58 @@ function mkSwblock(parent,label,def,getCurrent,setter,opts={}){
 
 let refreshers=[];
 
+/* ── Series / Measures: a list of any length ──
+   Compact chips, ten to a row (the shape of Classic's Series: ten base
+   colours, then rounds of variations). Click a chip to edit it below the
+   grid; drag to reorder; add or remove down to CHART_LIST_MIN. Edits to
+   length rebuild the section, like a primary reorder. */
+const chartSel={series:0,measures:0};
+function buildChartList(host,k,name,open){
+  const c=T.theme.colors,list=c.chart[k],orig=(THEME_ORIGIN.theme.colors.chart||{})[k]||[];
+  const commit=()=>{applyTheme();pushUndo();buildColors();};
+  chartSel[k]=Math.min(chartSel[k],list.length-1);
+  buildColorGroup(host,name,list,(body,resets)=>{
+    const intro=document.createElement('div');intro.className='field-hint chip-intro';
+    intro.textContent=k==='series'?'Categories use Primary 1–8 first, then these colors in order: the 9th category takes Series 1.':'Each measure takes the next color in order.';
+    body.appendChild(intro);
+    const grid=document.createElement('div');grid.className='chips';
+    grid.setAttribute('role','group');grid.setAttribute('aria-label',name+' colors');
+    const chips=list.map((v,i)=>{
+      const b=document.createElement('button');b.type='button';b.className='chip swblock-reorderable';
+      b.dataset.reorderIndex=String(i);b.dataset.list=k;b.style.background=v;
+      b.setAttribute('aria-label',`${name} ${i+1}, ${v}`);
+      attachTip(b,()=>list[i],null,`chart.${k}[${i}]`);
+      attachSideSwatchDrag(b);
+      b.addEventListener('click',()=>{chartSel[k]=i;select();});
+      grid.appendChild(b);return b;
+    });
+    body.appendChild(grid);
+    const edit=document.createElement('div');edit.className='chip-edit';body.appendChild(edit);
+    function select(){
+      const i=chartSel[k];
+      chips.forEach((b,j)=>b.setAttribute('aria-pressed',j===i?'true':'false'));
+      edit.innerHTML='';
+      const acts=document.createElement('div');acts.className='chip-acts';
+      acts.innerHTML=`<button type="button" class="btn btn-subtle btn-sm" data-act="reset">${icon('reset16')}Reset</button>
+        <button type="button" class="btn btn-subtle btn-sm" data-act="remove"${list.length>CHART_LIST_MIN?'':' disabled'}>${icon('delete')}Remove</button>`;
+      const rst=acts.querySelector('[data-act=reset]'),canReset=()=>{rst.disabled=!(i<orig.length&&list[i]!==orig[i]);};
+      mkColorRow(edit,`${name} ${i+1}`,()=>list[i],v=>{list[i]=v;chips[i].style.background=v;chips[i].setAttribute('aria-label',`${name} ${i+1}, ${v}`);canReset();});
+      canReset();
+      rst.addEventListener('click',()=>{list[i]=orig[i];commit();});
+      acts.querySelector('[data-act=remove]').addEventListener('click',()=>{list.splice(i,1);chartSel[k]=Math.min(i,list.length-1);commit();});
+      edit.appendChild(acts);
+    }
+    select();
+    const foot=document.createElement('div');foot.className='chip-foot';
+    foot.innerHTML=`<span class="field-hint">${list.length} colors · ${CHART_LIST_MIN} to ${CHART_LIST_MAX}</span><button type="button" class="btn btn-default btn-sm"${list.length<CHART_LIST_MAX?'':' disabled'}>${icon('add')}Add color</button>`;
+    foot.querySelector('button').addEventListener('click',()=>{
+      list.push(...moreChartColors(list,1,themeIsDark(T),chartAvoid(c,k)));chartSel[k]=list.length-1;commit();
+    });
+    body.appendChild(foot);
+    resets.push(()=>{if(orig.length>=CHART_LIST_MIN){c.chart[k]=orig.slice();chartSel[k]=0;commit();}});
+  },open);
+}
+
 function buildColors(){
   const host=$('#tp-colors');
   // Rebuilding wipes and recreates every accordion section from
@@ -553,6 +662,8 @@ function buildColors(){
       const ctrl=mkSwblock(grid,'Color '+(i+1),THEME_ORIGIN.theme.colors.primaryColors[i],()=>c.primaryColors[i],v=>{c.primaryColors[i]=v;},{reorderIndex:i,key:`primaryColors[${i}]`});
       resets.push(ctrl.reset);refreshers.push({tab:'colors',fn:ctrl.refresh});});
     body.appendChild(grid);},openNames.has('Primary'));
+
+  CHART_LISTS.forEach(([k,name])=>buildChartList(host,k,name,openNames.has(name)));
 
   buildColorGroup(host,'Structural',Object.values(c.structuralColors),(body,resets)=>{
     const grid=document.createElement('div');grid.className='swcards';
@@ -2336,20 +2447,18 @@ function clampDropdown(btn,drop){
 
     function renderCards(q){
       container.innerHTML='';
-      // Built-in, then Beta (built-in themes still being tried out)
+      // Built-in
       const filtered=PRESETS.filter(p=>!q||p.label.toLowerCase().includes(q));
-      [['Built-in',filtered.filter(p=>!p.beta)],['Beta',filtered.filter(p=>p.beta)]].forEach(([title,list])=>{
-        if(!list.length)return;
-        if(container.childElementCount){const div=document.createElement('div');div.className='ftd-divider';container.appendChild(div);}
-        const sh=document.createElement('div');sh.className='ftd-section';sh.textContent=title;container.appendChild(sh);
+      if(filtered.length){
+        const sh=document.createElement('div');sh.className='ftd-section';sh.textContent='Built-in';container.appendChild(sh);
         const grid=document.createElement('div');grid.className='ftd-grid';
-        list.forEach(p=>{
+        filtered.forEach(p=>{
           const colors=(p.theme&&p.theme.colors&&p.theme.colors.primaryColors)||[];
           const bg=(p.theme&&p.theme.page&&p.theme.page.canvas&&p.theme.page.canvas.background&&p.theme.page.canvas.background.color)||'#fff';
           grid.appendChild(makeCard(colors,bg,p.label,T.label===p.label,()=>loadPreset(p),null));
         });
         container.appendChild(grid);
-      });
+      }
       // Saved
       const lib=libLoad();
       const filteredLib=lib.filter(item=>!q||(item.label||'').toLowerCase().includes(q));
@@ -2469,11 +2578,14 @@ function normalizeThemeJson(json){
   const clone=v=>JSON.parse(JSON.stringify(v));
   const isColorDefault=d=>typeof d==='string'&&d.startsWith('#');
 
+  // Series and Measures keep their own length; ensureChartColors() below
+  // builds or tops them up from this theme's colours, not Classic's.
+  const ownLength=path=>/^theme\.colors\.chart\./.test(path);
   function mergeColorList(def,inc,path){
-    if(!Array.isArray(inc)){invalid.push(path);return clone(def);}
+    if(!Array.isArray(inc)){invalid.push(path);return ownLength(path)?[]:clone(def);}
     const out=[];
     inc.forEach((v,i)=>{const c=normColorValue(v,false);if(c){out.push(c);used++;}else invalid.push(`${path}[${i}]`);});
-    for(let i=out.length;i<def.length;i++){out.push(def[i]);filled.push(`${path}[${i}]`);}
+    if(!ownLength(path))for(let i=out.length;i<def.length;i++){out.push(def[i]);filled.push(`${path}[${i}]`);}
     return out;
   }
   // Every leaf path under a default value (a whole missing group counts
@@ -2510,6 +2622,14 @@ function normalizeThemeJson(json){
 
   const theme=merge(DEFAULTS.theme,obj.theme,'theme');
   if(!used)throw new Error('No recognisable theme settings found');
+  // A missing Series or Measures list is built from this theme's primaries
+  // rather than copied from Classic.
+  const incC=obj.theme.colors;
+  if(isObj(incC)){
+    CHART_LISTS.forEach(([k])=>{if(!isObj(incC.chart)||!Array.isArray(incC.chart[k]))theme.colors.chart[k]=[];});
+    for(let i=filled.length-1;i>=0;i--)if(filled[i].startsWith('theme.colors.chart'))filled.splice(i,1);
+  }
+  filled.push(...ensureChartColors({theme}));
   const clean={};
   for(const k of Object.keys(obj)){
     if(k==='_meta')continue;
@@ -2660,7 +2780,7 @@ function themeFromPrimaries(primaries,tone,name,seedHue){
   const textCol=dark?'#E8E8E8':'#242424';
   const iconCol=dark?'#B0B0B0':'#616161';
   return{label:name,themeType:CUSTOM_THEME_TYPE,theme:{
-    colors:{primaryColors:primaries,structuralColors:struct,semantic},
+    colors:{primaryColors:primaries,structuralColors:struct,semantic,chart:chartColorsFromPrimaries(primaries,dark)},
     page:{canvas:{background:{type:'color',color:canvasBg,imageUrl:''},
       border:{color:borderCol,side:'all',width:0,isEnabled:false},
       cornerRadius:{isCustomCornerRadius:false,isEnabled:true,radiusTopLeft:0,radiusTopRight:0,radiusBottomLeft:0,radiusBottomRight:0},
@@ -2712,36 +2832,107 @@ function ensureChartLForTone(hex,dark){
   const newL=clamp(L+RULES.chartL_dark_boost,CHART_L_MIN+0.08,CHART_L_MAX+0.10);
   return oklchToHex(newL,C,H);
 }
+/* `need` more colours that extend `seed` (6-digit hexes): each at the hue
+   farthest from every hue already in the set, at the set's average
+   lightness and chroma. */
+function extendPalette(seed,need,dark){
+  const oklchs=seed.map(hexToOklch);
+  const hues=oklchs.map(o=>o[2]);
+  const avgL=oklchs.reduce((s,o)=>s+o[0],0)/oklchs.length;
+  const avgC=oklchs.reduce((s,o)=>s+o[1],0)/oklchs.length;
+  const achro=isAchromatic(avgC);
+  const baseL=dark?clamp(avgL+RULES.chartL_dark_boost,CHART_L_MIN+0.08,CHART_L_MAX+0.10):clamp(avgL,CHART_L_MIN,CHART_L_MAX);
+  const pC=achro?0.01:clamp(avgC,RULES.primC_min,RULES.primC_cap);
+  const out=[];
+  for(let k=0;k<need;k++){
+    let bestH=0,bestScore=-1;
+    for(let cand=0;cand<360;cand+=2){
+      let minD=999;
+      for(const h of hues){const d=perceptualDist(cand,h);if(d<minD)minD=d;}
+      if(minD>bestScore){bestScore=minD;bestH=cand;}
+    }
+    hues.push(bestH);
+    const lOff=L_OFFSETS[(seed.length+k)%L_OFFSETS.length];
+    const lo=achro?0.15:0.38,hi=achro?0.92:0.82;
+    out.push(oklchToHex(clamp(baseL+lOff,lo,hi),pC,achro?0:bestH));
+  }
+  return out;
+}
 function generateThemeFromPalette(hexList,tone,name){
   const dark=tone==='dark';
   const existing=(hexList||[]).map(norm).filter(Boolean).slice(0,8);
   if(!existing.length)return null;
   let primaries=existing.map(h=>ensureChartLForTone(h,dark));
-  if(existing.length<8){
-    const oklchs=existing.map(hexToOklch);
-    const hues=oklchs.map(o=>o[2]);
-    const avgL=oklchs.reduce((s,o)=>s+o[0],0)/oklchs.length;
-    const avgC=oklchs.reduce((s,o)=>s+o[1],0)/oklchs.length;
-    const achro=isAchromatic(avgC);
-    const baseL=dark?clamp(avgL+RULES.chartL_dark_boost,CHART_L_MIN+0.08,CHART_L_MAX+0.10):clamp(avgL,CHART_L_MIN,CHART_L_MAX);
-    const pC=achro?0.01:clamp(avgC,RULES.primC_min,RULES.primC_cap);
-    const need=8-existing.length;
-    for(let k=0;k<need;k++){
-      let bestH=0,bestScore=-1;
-      for(let cand=0;cand<360;cand+=2){
-        let minD=999;
-        for(const h of hues){const d=perceptualDist(cand,h);if(d<minD)minD=d;}
-        if(minD>bestScore){bestScore=minD;bestH=cand;}
-      }
-      hues.push(bestH);
-      const lOff=L_OFFSETS[(existing.length+k)%L_OFFSETS.length];
-      const lo=achro?0.15:0.38,hi=achro?0.92:0.82;
-      primaries.push(oklchToHex(clamp(baseL+lOff,lo,hi),pC,achro?0:bestH));
-    }
-  }
+  if(existing.length<8)primaries.push(...extendPalette(existing,8-existing.length,dark));
   const seedHue=hexToOklch(existing[0])[2];
   return themeFromPrimaries(primaries,tone,name,seedHue);
 }
+
+/* ── Series and measure colours (theme.colors.chart) ──
+   When categories split a chart (stack segments, one legend item per field
+   value) they take Primary 1–8 first, then Series 1, 2, 3…; when measures
+   do (one bar or line per measure) they take Measures 1, 2, 3…. The lists
+   vary in length by theme; every theme has at least CHART_LIST_MIN of each.
+   A theme without its own lists (a new theme, or an import without them)
+   gets NEW_THEME_CHART_COLORS of each, built from its primaries: Series
+   opens with new hues and goes on with rounds of darker and lighter
+   versions, never repeating a primary; Measures is strong and soft pairs. CHART_LIST_MIN and
+   CHART_LISTS are defined with the themes, at the top. */
+const SERIES_ROUND_L=[-0.08,+0.08,-0.16,+0.15];
+// Nudges lightness until the colour isn't already in the list.
+function uniqueIn(list,hex){
+  let [L,C,H]=hexToOklch(hex),out=hex,k=0;
+  while(list.includes(out)&&k<20){k++;out=oklchToHex(clamp(L+(k%2?1:-1)*Math.ceil(k/2)*0.02,0.05,0.97),C,H);}
+  return out;
+}
+// `count` caps each list; the built-in themes keep the full lists they were given.
+function chartColorsFromPrimaries(primaries,dark,count=NEW_THEME_CHART_COLORS){
+  const base=primaries.map(h=>norm((h||'').slice(0,7))).filter(Boolean).slice(0,CHART_LIST_MIN);
+  if(!base.length)base.push('#117865');
+  if(base.length<CHART_LIST_MIN)base.push(...extendPalette(base,CHART_LIST_MIN-base.length,dark));
+  const lo=dark?0.45:0.30,hi=dark?0.93:0.88;
+  const shade=(h,dL,cK=1)=>{const [L,C,H]=hexToOklch(h);return oklchToHex(clamp(L+dL,lo,hi),C*cK,H);};
+  // Categories 1–8 already have Primary 1–8, so Series starts after them.
+  const prim=base.slice(0,8),series=[];
+  base.slice(8).concat(...SERIES_ROUND_L.map(dL=>base.map(h=>shade(h,dL)))).forEach(h=>series.push(uniqueIn(prim.concat(series),h)));
+  const measures=[];
+  base.concat(base.slice(0,5).map(h=>shade(h,-0.08))).forEach(h=>{
+    measures.push(uniqueIn(measures,h));
+    measures.push(uniqueIn(measures,shade(h,dark?-0.18:0.18,0.6)));
+  });
+  return{series:series.slice(0,count),measures:measures.slice(0,count)};
+}
+// `need` more colours for a list, continuing it with new hues. `avoid` are
+// colours already in use beside it (Series: the primaries).
+function moreChartColors(list,need,dark,avoid=[]){
+  const seen=avoid.concat(list).map(h=>h.slice(0,7).toUpperCase()),out=[];
+  extendPalette(seen,need,dark).forEach(h=>out.push(uniqueIn(seen.concat(out),h)));
+  return out;
+}
+const chartAvoid=(c,k)=>k==='series'?c.primaryColors.slice(0,8):[];
+const themeIsDark=t=>lum(((t.theme.page&&t.theme.page.canvas.background.color)||'#FFFFFF').slice(0,7))<0.18;
+/* Gives a theme its Series and Measures if it has none, and tops up a list
+   shorter than CHART_LIST_MIN. Returns the JSON paths it filled. */
+function ensureChartColors(t,count){
+  const c=t.theme.colors,dark=themeIsDark(t),filled=[];
+  const isObj=o=>!!o&&typeof o==='object'&&!Array.isArray(o);
+  if(!isObj(c.chart))c.chart={};
+  let gen=null;
+  CHART_LISTS.forEach(([k])=>{
+    const list=c.chart[k];
+    if(!Array.isArray(list)||!list.length){
+      gen=gen||chartColorsFromPrimaries(c.primaryColors,dark,count);
+      c.chart[k]=gen[k];filled.push('theme.colors.chart.'+k);
+    }else if(list.length<CHART_LIST_MIN){
+      const from=list.length;
+      list.push(...moreChartColors(list,CHART_LIST_MIN-from,dark,chartAvoid(c,k)));
+      for(let i=from;i<CHART_LIST_MIN;i++)filled.push(`theme.colors.chart.${k}[${i}]`);
+    }
+  });
+  return filled;
+}
+// Built-in themes the product doesn't have get theirs from their primaries.
+PRESETS.forEach(t=>ensureChartColors(t,Infinity));
 
 /* ══════════════════════════════════════════════════════════
    IMAGE PALETTE EXTRACTION — 100% client-side, no upload.
@@ -3597,6 +3788,8 @@ function generate(){
   // Restore any manually touched swatches
   const c=base.theme.colors;
   for(let i=0;i<8;i++){if(ntmTouched['primaries_'+i])c.primaryColors[i]=ntmTouched['primaries_'+i];}
+  // Generated Series and Measures follow primaries the person changed.
+  if(ntmMode!=='json'&&ntmMode!=='twin'&&Object.keys(ntmTouched).some(k=>k.startsWith('primaries_')))c.chart=chartColorsFromPrimaries(c.primaryColors,ntmTone==='dark');
   if(ntmTouched.posit) c.semantic.positive=ntmTouched.posit;
   if(ntmTouched.negat) c.semantic.negative=ntmTouched.negat;
   if(ntmTouched.neutr) c.semantic.neutral=ntmTouched.neutr;
@@ -4343,7 +4536,22 @@ function showToast(msg,duration=3200,action){
 }
 
 /* ── Export ── */
+/* defaultColors as the product works it out: the Measures then the Series of
+   the matching product theme's palette, or for any other theme its Light or
+   Dark palette by canvas brightness (Theme.service.ts getTheme). Not shown in
+   the studio; an imported value is replaced on export. */
+function productDefaultColors(t){
+  let k=PRODUCT_THEME[t.themeType];
+  if(!k){
+    const bg=t.theme.page.canvas.background,col=bg.type==='color'?bg.color:t.theme.elements.background.color;
+    k=lum((col||'#FFFFFF').slice(0,7))>0.2?'LIGHT':'DARK';
+  }
+  const pc=PRODUCT_CHART_COLORS[k];
+  return[...pc.measures,...pc.series];
+}
 $('#exportBtn').addEventListener('click',()=>{
+  const theme=JSON.parse(JSON.stringify(T.theme));
+  theme.colors.defaultColors=productDefaultColors(T);
   const exportObj={
     _meta:{
       createdAt:new Date().toISOString().slice(0,10),
@@ -4352,7 +4560,7 @@ $('#exportBtn').addEventListener('click',()=>{
     },
     label:T.label,
     themeType:T.themeType,
-    theme:T.theme
+    theme
   };
   $('#exportArea').value=JSON.stringify(exportObj,null,2);
   $('#exportModal').classList.add('show');
@@ -4643,6 +4851,7 @@ document.querySelectorAll('#pbtns .dbtn').forEach(b=>b.addEventListener('click',
     const toDark=tone==='dark';
     const tw=JSON.parse(JSON.stringify(src)),c=tw.theme.colors;
     c.primaryColors=c.primaryColors.map(h=>readable(h,toDark));
+    CHART_LISTS.forEach(([k])=>{c.chart[k]=c.chart[k].map(h=>readable(h,toDark));});
     const g=themeFromPrimaries(c.primaryColors,tone,name,hexToOklch((c.primaryColors[0]||'#117865').slice(0,7))[2]).theme;
     Object.keys(c.structuralColors).forEach(k=>{if(k in g.colors.structuralColors)c.structuralColors[k]=g.colors.structuralColors[k];});
     Object.keys(c.semantic).forEach(k=>{if(k in g.colors.semantic)c.semantic[k]=g.colors.semantic[k];});
@@ -4677,6 +4886,8 @@ document.querySelectorAll('#pbtns .dbtn').forEach(b=>b.addEventListener('click',
   // [tab, section] → {sheets, tokens (CSS vars the preview uses), note?}
   const SHEET_USE={
     'colors|Primary':{sheets:[I,P,T_],tokens:['p1','p2','p3','p4','p5','p6','p7','p8'],note:'Intelligence uses all eight, PowerTable 1–4, Planning Primary 1.'},
+    'colors|Series':{sheets:[I],tokens:CHART_TOKENS('s'),note:'Charts split by category use Primary 1–8 first, then Series from the 9th category on.'},
+    'colors|Measures':{sheets:[I],tokens:CHART_TOKENS('m'),note:'Charts split by measure, such as AC, Plan and Prior year lines.'},
     'colors|Structural':{sheets:[I,P,T_],tokens:['out1','out2','struct-bg','struct-icon','struct-accent','struct-subtle'],note:'Accent isn’t used on Planning sheets.'},
     'colors|Semantic':{sheets:[I,P],tokens:['pos','neg','neu'],note:'Neutral is used on Intelligence only.'},
     'page|Canvas background':{sheets:[I,P,T_],tokens:['@report']},
@@ -4716,6 +4927,10 @@ document.querySelectorAll('#pbtns .dbtn').forEach(b=>b.addEventListener('click',
     document.querySelectorAll('#tp-colors .swblock').forEach(sw=>{
       const l=(sw.querySelector('.lbl')||{}).textContent||'',m=/^Color (\d)$/.exec(l);
       sw.dataset.tokens=m?'p'+m[1]:(SWATCH_TOKEN[l]||'');
+    });
+    // Series / Measures chips: the first ten are what the preview can show.
+    document.querySelectorAll('#tp-colors .chip').forEach(ch=>{
+      const i=+ch.dataset.reorderIndex+1;ch.dataset.tokens=i<=CHART_LIST_MIN?(ch.dataset.list==='series'?'s':'m')+i:'';
     });
   }
   window._setSheetContext=s=>{sheet=s;refreshUsage();};
@@ -4825,6 +5040,10 @@ document.querySelectorAll('#pbtns .dbtn').forEach(b=>b.addEventListener('click',
   const COLOR={};
   const def=(tok,label,path,tab,section)=>{COLOR[tok]={label,path,tab,section};};
   for(let i=1;i<=8;i++)def('p'+i,'Primary '+i,['colors','primaryColors',i-1],'colors','Primary');
+  for(let i=1;i<=CHART_LIST_MIN;i++){
+    def('s'+i,'Series '+i,['colors','chart','series',i-1],'colors','Series');
+    def('m'+i,'Measures '+i,['colors','chart','measures',i-1],'colors','Measures');
+  }
   def('out1','Outline 1',['colors','structuralColors','outline1'],'colors','Structural');
   def('out2','Outline 2',['colors','structuralColors','outline2'],'colors','Structural');
   def('struct-bg','Subtle Fill',['colors','structuralColors','background'],'colors','Structural');
@@ -4934,7 +5153,7 @@ document.querySelectorAll('#pbtns .dbtn').forEach(b=>b.addEventListener('click',
     const also=sel.picks.filter(p=>p.token!==t);
     document.getElementById('cebAlso').innerHTML=also.length?`<div class="ceb-also-lbl">Other colors at this spot</div><div class="ceb-chips">`+also.map(p=>`<button type="button" class="ceb-chip" data-token="${p.token}" data-tip="Edit ${COLOR[p.token].label} instead"><span class="ceb-chip-sw" style="background:${valueOf(p.token)}"></span><span class="ceb-chip-role">${ROLE_NAME[p.role]}</span>${COLOR[p.token].label}</button>`).join('')+'</div>':'';
   }
-  const GRAPHIC=new Set(['p1','p2','p3','p4','p5','p6','p7','p8','pos','neg','neu','struct-accent','struct-icon']);
+  const GRAPHIC=new Set(['p1','p2','p3','p4','p5','p6','p7','p8',...CHART_TOKENS('s'),...CHART_TOKENS('m'),'pos','neg','neu','struct-accent','struct-icon']);
   function contrastOf(t,v){
     const hex=(v||'').slice(0,7);if(!/^#[0-9a-f]{6}$/i.test(hex))return null;
     const canvas=(T.theme.page.canvas.background.color||'#FFFFFF').slice(0,7),text=(T.theme.typography.color||'#242424').slice(0,7);
@@ -5599,6 +5818,8 @@ window.VIZ=window.VIZ||{};
 })();
 
 /* ── SVG helpers ── */
+// Category colours: Primary 1–8 first, then Series 1, 2, 3… (the 9th category takes Series 1).
+const catCol=(i,suffix='')=>i<8?`var(--p${i+1}${suffix})`:`var(--s${i-7}${suffix})`;
 function mkSVG(id){return document.getElementById(id);}
 function svgEl(svg,t,at){const NS='http://www.w3.org/2000/svg';const e=document.createElementNS(NS,t);for(const k in at)e.setAttribute(k,at[k]);svg.appendChild(e);return e;}
 function axisLine(svg,x1,y1,x2,y2){svgEl(svg,'line',{x1,y1,x2,y2,style:'stroke:var(--out1);stroke-width:1'});}
@@ -5614,9 +5835,9 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
   let data={
     yMin:15,yMax:65,
     series:[
-      {lbl:'AC',      col:'var(--p1)', data:[28,31,35,38,42,39,44,47,51,48,53,57]},
-      {lbl:'Plan',    col:'var(--p2)', data:[30,33,36,39,41,42,44,46,48,50,52,55],dash:'4 3'},
-      {lbl:'Prior Yr',col:'var(--p3)', data:[22,25,29,32,35,33,37,40,43,41,45,48],dash:'2 3'}
+      {lbl:'AC',      col:'var(--m1)', data:[28,31,35,38,42,39,44,47,51,48,53,57]},
+      {lbl:'Plan',    col:'var(--m2)', data:[30,33,36,39,41,42,44,46,48,50,52,55],dash:'4 3'},
+      {lbl:'Prior Yr',col:'var(--m3)', data:[22,25,29,32,35,33,37,40,43,41,45,48],dash:'2 3'}
     ]
   };
   function render(){
@@ -5653,7 +5874,8 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
   let data=[
     {lbl:'Bikes',      v:4.82},{lbl:'Clothing',v:2.31},{lbl:'Accessories',v:0.64},
     {lbl:'Components', v:1.44},{lbl:'Services', v:0.52},{lbl:'Parts',     v:0.38},
-    {lbl:'Bundles',    v:0.24},{lbl:'Other',    v:0.17}
+    {lbl:'Bundles',    v:0.24},{lbl:'Rentals',  v:0.21},{lbl:'Warranties',v:0.19},
+    {lbl:'Other',      v:0.17}
   ];
   function render(){
     svg.innerHTML='';
@@ -5668,10 +5890,10 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
       const ix1=cx+ri*Math.cos(a),iy1=cy+ri*Math.sin(a),ix2=cx+ri*Math.cos(a2),iy2=cy+ri*Math.sin(a2);
       const p=document.createElementNS(NS,'path');
       p.setAttribute('d',`M${ix1.toFixed(1)},${iy1.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)} A${ro},${ro} 0 ${lg} 1 ${x2.toFixed(1)},${y2.toFixed(1)} L${ix2.toFixed(1)},${iy2.toFixed(1)} A${ri},${ri} 0 ${lg} 0 ${ix1.toFixed(1)},${iy1.toFixed(1)} Z`);
-      p.setAttribute('style',`fill:var(--p${i+1});stroke:var(--canvas-bg);stroke-width:2`);
+      p.setAttribute('style',`fill:${catCol(i)};stroke:var(--canvas-bg);stroke-width:2`);
       svg.appendChild(p);
-      addChartTip(p,sl.lbl,[{color:`var(--p${i+1})`,label:'Revenue',value:'$'+sl.v.toFixed(2)+'M'},{label:'Share',value:(sl.v/tot*100).toFixed(1)+'%'}]);
-      if(leg){const it=document.createElement('span');it.className='item';it.innerHTML=`<span class="sw" style="background:var(--p${i+1})"></span>${sl.lbl}`;leg.appendChild(it);}
+      addChartTip(p,sl.lbl,[{color:`${catCol(i)}`,label:'Revenue',value:'$'+sl.v.toFixed(2)+'M'},{label:'Share',value:(sl.v/tot*100).toFixed(1)+'%'}]);
+      if(leg){const it=document.createElement('span');it.className='item';it.innerHTML=`<span class="sw" style="background:${catCol(i)}"></span>${sl.lbl}`;leg.appendChild(it);}
       a=a2;
     });
   }
@@ -5761,11 +5983,11 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
       const gx=pL+gi*groupW+3;
       row.forEach((v,bi)=>{
         const bx=gx+bi*bw;
-        svgEl(svg,'rect',{x:bx,y:y(v),width:Math.max(1,bw-1),height:base-y(v),fill:`var(--p${bi+1})`,rx:1});
+        svgEl(svg,'rect',{x:bx,y:y(v),width:Math.max(1,bw-1),height:base-y(v),fill:`${catCol(bi)}`,rx:1});
       });
       axLabel(svg,pL+gi*groupW+groupW/2,base+14,regions[gi]);
     });
-    mkLegH('p1barLeg',channels.map((c,i)=>[c,`var(--p${i+1})`]));
+    mkLegH('p1barLeg',channels.map((c,i)=>[c,`${catCol(i)}`]));
   }
   render();
   window.VIZ.p1bar={page:'pg1',get data(){return data;},set data(d){data=d;},render};
@@ -5793,13 +6015,13 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
     const grid=[];for(let g=step;g<volMax+step/2;g+=step)grid.push(g);
     grid.forEach(g=>{gridLine(svg,pL,y1(g),W-pR,y1(g));axLabel(svg,pL-4,y1(g)+3,g,'end');});
     axisLine(svg,pL,base,W-pR,base);
-    volData.forEach((v,i)=>{svgEl(svg,'rect',{x:cx(i)-bw/2,y:y1(v),width:bw,height:base-y1(v),fill:'var(--p1)',opacity:.8,rx:2});});
+    volData.forEach((v,i)=>{svgEl(svg,'rect',{x:cx(i)-bw/2,y:y1(v),width:bw,height:base-y1(v),fill:'var(--m1)',opacity:.8,rx:2});});
     const pts=avgData.map((v,i)=>cx(i).toFixed(1)+','+y2(v).toFixed(1)).join(' ');
-    svgEl(svg,'polyline',{points:pts,style:'stroke:var(--p3);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;fill:none'});
-    avgData.forEach((v,i)=>svgEl(svg,'circle',{cx:cx(i),cy:y2(v),r:3,style:'fill:var(--p3)'}));
+    svgEl(svg,'polyline',{points:pts,style:'stroke:var(--m2);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;fill:none'});
+    avgData.forEach((v,i)=>svgEl(svg,'circle',{cx:cx(i),cy:y2(v),r:3,style:'fill:var(--m2)'}));
     cats.forEach((c,i)=>axLabel(svg,cx(i),base+14,c));
     [20,40,60,80,100].forEach(g=>{axLabel(svg,W-pR+6,y2(g)+3,g,'start');});
-    mkLegH('p1comboLeg',[['Volume (M)','var(--p1)',false],['Avg deal size','var(--p3)',false]]);
+    mkLegH('p1comboLeg',[['Volume (M)','var(--m1)',false],['Avg deal size','var(--m2)',false]]);
   }
   render();
   window.VIZ.p1combo={page:'pg1',get data(){return data;},set data(d){data=d;},render};
@@ -5830,8 +6052,8 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
       qData[ri].forEach((v,qi)=>{
         const bx=pL+qi*((W-pL-pR)/4)+3;
         const yv=base-((v/yMax)*plot);
-        const br=el('rect',{x:bx,y:yv,width:bw,height:base-yv,fill:`var(--p${ri+1})`,opacity:.85,rx:2});
-        addChartTip(br,reg,[{color:`var(--p${ri+1})`,label:qs[qi],value:'$'+v+'M'}]);
+        const br=el('rect',{x:bx,y:yv,width:bw,height:base-yv,fill:`${catCol(ri)}`,opacity:.85,rx:2});
+        addChartTip(br,reg,[{color:`${catCol(ri)}`,label:qs[qi],value:'$'+v+'M'}]);
         const t=el('text',{x:bx+bw/2,y:base+14,'text-anchor':'middle',class:'axis-label'});t.textContent=qs[qi];
       });
       wrap.appendChild(svg);host.appendChild(wrap);
@@ -5866,10 +6088,10 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
     const xt=svgEl(svg,'text',{x:W/2,y:base+24,'text-anchor':'middle',class:'axis-label'});xt.textContent='Deal size ($k)';
     const yt=svgEl(svg,'text',{x:8,y:H/2,'text-anchor':'middle',class:'axis-label',transform:`rotate(-90,8,${H/2})`});yt.textContent='Win rate (%)';
     segs.forEach((s,i)=>{
-      const bc=svgEl(svg,'circle',{cx:px(s.x),cy:py(s.y),r:s.r,fill:`var(--p${i+1})`,stroke:`var(--p${i+1})`,strokeWidth:1.5});
-      addChartTip(bc,s.lbl,[{color:`var(--p${i+1})`,label:'Deal size',value:'$'+s.x+'k'},{label:'Win rate',value:s.y+'%'},{label:'Volume',value:'$'+s.r+'M'}]);
+      const bc=svgEl(svg,'circle',{cx:px(s.x),cy:py(s.y),r:s.r,fill:`${catCol(i)}`,stroke:`${catCol(i)}`,strokeWidth:1.5});
+      addChartTip(bc,s.lbl,[{color:`${catCol(i)}`,label:'Deal size',value:'$'+s.x+'k'},{label:'Win rate',value:s.y+'%'},{label:'Volume',value:'$'+s.r+'M'}]);
     });
-    mkLegH('p2scatLeg',segs.map((s,i)=>[s.lbl,`var(--p${i+1})`]));
+    mkLegH('p2scatLeg',segs.map((s,i)=>[s.lbl,`${catCol(i)}`]));
   }
   render();
   window.VIZ.p2scatter={page:'pg2',get data(){return data;},set data(d){data=d;},render};
@@ -5965,14 +6187,14 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
     const grid=[];for(let g=Math.ceil(yMin/step)*step;g<yMax;g+=step)grid.push(g);
     grid.forEach(g=>{gridLine(svg,pL,y(g),W-pR,y(g));axLabel(svg,pL-4,y(g)+3,g,'end');});
     axisLine(svg,pL,base,W-pR,base);
-    ac.forEach((v,i)=>{if(v===null)return;svgEl(svg,'rect',{x:x(i)-bw/2,y:y(v),width:bw,height:base-y(v),fill:'var(--p1)',opacity:.8,rx:2});});
-    [{data:plan,col:'var(--p2)',dash:'4 3'},{data:fc,col:'var(--p3)',dash:'2 3'}].forEach(s=>{
+    ac.forEach((v,i)=>{if(v===null)return;svgEl(svg,'rect',{x:x(i)-bw/2,y:y(v),width:bw,height:base-y(v),fill:'var(--m1)',opacity:.8,rx:2});});
+    [{data:plan,col:'var(--m2)',dash:'4 3'},{data:fc,col:'var(--m3)',dash:'2 3'}].forEach(s=>{
       const pts=s.data.map((v,i)=>v!==null?x(i).toFixed(1)+','+y(v).toFixed(1):null).filter(Boolean).join(' ');
       svgEl(svg,'polyline',{points:pts,style:`stroke:${s.col};stroke-width:2;fill:none;stroke-dasharray:${s.dash};stroke-linecap:round`});
       s.data.forEach((v,i)=>{if(v===null)return;svgEl(svg,'circle',{cx:x(i),cy:y(v),r:2.5,style:`fill:${s.col}`});});
     });
     cats.forEach((c,i)=>{if(i%2===0)axLabel(svg,x(i),base+14,c);});
-    mkLegH('p3comboLeg',[['AC (bars)','var(--p1)',false],['Plan','var(--p2)',true],['Forecast','var(--p3)',true]]);
+    mkLegH('p3comboLeg',[['AC (bars)','var(--m1)',false],['Plan','var(--m2)',true],['Forecast','var(--m3)',true]]);
   }
   render();
   window.VIZ.p3combo={page:'pg3',get data(){return data;},set data(d){data=d;},render};
@@ -6054,9 +6276,10 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
 })();
 
 /* ── P7 (Template 5): Sales mix ──
-   Four category charts on one West-region dataset. Series take Primary
-   1, 2, 3… in order, as in the product. No gridlines: a baseline, y-axis
-   labels in thousands and values on the marks, as in Inforiver charts. */
+   Four category charts on one West-region dataset. Categories take Primary
+   1–8, then Series 1, 2, 3…; extra measures take Measures 1, 2, 3…. No
+   gridlines: a baseline, y-axis labels in thousands and values on the marks,
+   as in Inforiver charts. */
 const MIX_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const mixK=v=>v>=1000?(v/1000).toFixed(1)+'m':v.toFixed(1)+'k';
 const mixTick=v=>v===0?'0':v>=1000?+(v/1000).toFixed(2)+'m':v+'k';
@@ -6073,7 +6296,7 @@ function mixAxes(svg,f,max,xs){
 }
 const MIX_FRAME={W:520,H:230,pL:38,pR:6,pT:14,pB:20};
 
-/* Stacked area: sales by channel. Layers stack bottom-up in Primary order;
+/* Stacked area: sales by channel. Layers stack bottom-up in Series order;
    a thin element-background line separates them. */
 (function(){
   const svg=mkSVG('p7area');if(!svg)return;
@@ -6094,16 +6317,16 @@ const MIX_FRAME={W:520,H:230,pL:38,pR:6,pT:14,pB:20};
     const pts=arr=>arr.map((v,i)=>x(i).toFixed(1)+','+y(v).toFixed(1));
     series.forEach((s,k)=>{
       const lower=k?pts(cum[k-1]).reverse():[x(n-1).toFixed(1)+','+base,x(0).toFixed(1)+','+base];
-      const col=`var(--p${k+1})`,tot=s.data.reduce((a,b)=>a+b,0),all=cum[cum.length-1].reduce((a,b)=>a+b,0);
+      const col=`${catCol(k)}`,tot=s.data.reduce((a,b)=>a+b,0),all=cum[cum.length-1].reduce((a,b)=>a+b,0);
       const a=svgEl(svg,'polygon',{points:pts(cum[k]).concat(lower).join(' '),style:`fill:${col}`});
       addChartTip(a,s.lbl,[{color:col,label:'FY25',value:mixK(tot)},{label:'Share',value:(tot/all*100).toFixed(1)+'%'}]);
     });
     cum.slice(0,-1).forEach(c=>svgEl(svg,'polyline',{points:pts(c).join(' '),style:'stroke:var(--el-bg);stroke-width:1.2;fill:none;stroke-linejoin:round'}));
     series.forEach((s,k)=>s.data.forEach((v,i)=>{
-      const c=svgEl(svg,'circle',{cx:x(i),cy:y(cum[k][i]),r:5,style:`fill:var(--p${k+1});opacity:0`});
-      addChartTip(c,MIX_MONTHS[i],[{color:`var(--p${k+1})`,label:s.lbl,value:mixK(v)}]);
+      const c=svgEl(svg,'circle',{cx:x(i),cy:y(cum[k][i]),r:5,style:`fill:${catCol(k)};opacity:0`});
+      addChartTip(c,MIX_MONTHS[i],[{color:`${catCol(k)}`,label:s.lbl,value:mixK(v)}]);
     }));
-    mkLegH('p7areaLeg',series.map((s,k)=>[s.lbl,`var(--p${k+1})`]));
+    mkLegH('p7areaLeg',series.map((s,k)=>[s.lbl,`${catCol(k)}`]));
   }
   render();
   window.VIZ.p7area={page:'pg7',get data(){return data;},set data(d){data=d;},render};
@@ -6130,7 +6353,7 @@ const MIX_CATS=[
     tots.forEach((t,i)=>{
       let run=0;
       series.forEach((s,k)=>{
-        const v=s.data[i],top=y(run+v),bot=y(run)-(k?1:0),col=`var(--p${k+1})`; // 1px gap between segments
+        const v=s.data[i],top=y(run+v),bot=y(run)-(k?1:0),col=`${catCol(k)}`; // 1px gap between segments
         const r=svgEl(svg,'rect',{x:cx(i)-bw/2,y:top,width:bw,height:Math.max(0,bot-top),style:`fill:${col}`});
         addChartTip(r,MIX_MONTHS[i],[{color:col,label:s.lbl,value:mixK(v)},{label:'Month total',value:mixK(t)}]);
         run+=v;
@@ -6138,7 +6361,7 @@ const MIX_CATS=[
       const lbl=svgEl(svg,'text',{x:cx(i),y:y(t)-4,'text-anchor':'middle',class:'axis-label'});
       lbl.textContent=t>=1000?(t/1000).toFixed(1)+'m':Math.round(t)+'k';
     });
-    mkLegH('p7stackLeg',series.map((s,k)=>[s.lbl,`var(--p${k+1})`]));
+    mkLegH('p7stackLeg',series.map((s,k)=>[s.lbl,`${catCol(k)}`]));
   }
   render();
   window.VIZ.p7stack={page:'pg7',get data(){return data;},set data(d){data=d;},render};
@@ -6166,15 +6389,15 @@ const MIX_CATS=[
     const cx=i=>f.pL+(i+0.5)*gw;
     const y=mixAxes(svg,f,Math.max(...bars.concat(lines).flatMap(s=>s.data)),bars[0].data.map((_,i)=>cx(i)));
     bars[0].data.forEach((_,i)=>bars.forEach((s,k)=>{
-      const v=s.data[i],col=`var(--p${k+1})`;
+      const v=s.data[i],col=`${catCol(k)}`;
       const r=svgEl(svg,'rect',{x:cx(i)-inner/2+k*bw,y:y(v),width:bw,height:base-y(v),style:`fill:${col}`});
-      addChartTip(r,MIX_MONTHS[i],bars.map((b,j)=>({color:`var(--p${j+1})`,label:b.lbl,value:mixK(b.data[i])})));
+      addChartTip(r,MIX_MONTHS[i],bars.map((b,j)=>({color:`${catCol(j)}`,label:b.lbl,value:mixK(b.data[i])})));
     }));
     const first=bars[0].data,avg=first.reduce((a,b)=>a+b,0)/n;
     const al=svgEl(svg,'line',{x1:f.pL,y1:y(avg),x2:f.W-f.pR,y2:y(avg),style:'stroke:var(--out1);stroke-width:1;stroke-dasharray:5 3'});
-    addChartTip(al,'Average',[{color:'var(--p1)',label:bars[0].lbl,value:mixK(avg)}]);
+    addChartTip(al,'Average',[{color:catCol(0),label:bars[0].lbl,value:mixK(avg)}]);
     lines.forEach((s,k)=>{
-      const col=`var(--p${bars.length+k+1})`;
+      const col=`var(--m${k+1})`;
       svgEl(svg,'polyline',{points:s.data.map((v,i)=>cx(i).toFixed(1)+','+y(v).toFixed(1)).join(' '),style:`stroke:${col};stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;fill:none`});
       s.data.forEach((v,i)=>{const c=svgEl(svg,'circle',{cx:cx(i),cy:y(v),r:5,style:`fill:${col};opacity:0`});addChartTip(c,MIX_MONTHS[i],[{color:col,label:s.lbl,value:mixK(v)}]);});
     });
@@ -6183,7 +6406,7 @@ const MIX_CATS=[
       const t=svgEl(svg,'text',{x:cx(i)-inner/2+bw/2,y:y(first[i])-4,'text-anchor':'middle',class:'axis-label mix-dl'});
       t.textContent=mixK(first[i]);
     });
-    mkLegH('p7groupLeg',bars.map((s,k)=>[s.lbl,`var(--p${k+1})`]).concat(lines.map((s,k)=>[s.lbl,`var(--p${bars.length+k+1})`,true])));
+    mkLegH('p7groupLeg',bars.map((s,k)=>[s.lbl,`${catCol(k)}`]).concat(lines.map((s,k)=>[s.lbl,`var(--m${k+1})`,true])));
   }
   render();
   window.VIZ.p7group={page:'pg7',get data(){return data;},set data(d){data=d;},render};
@@ -6191,10 +6414,9 @@ const MIX_CATS=[
 
 /* Treemap (styled after the reference screenshot): categories, then
    months inside each category in calendar order. Colored by category, one
-   Primary each: eight categories show the theme's whole palette and never
-   need more. The first three keep their colors from the other charts here.
+   Series color each. The first three keep their colors from the other charts here.
    Tile labels are black or white for contrast, the same as other labels on
-   primary colors, and are left off tiles too small to hold them. */
+   colored fills, and are left off tiles too small to hold them. */
 (function(){
   const svg=mkSVG('p7tree');if(!svg)return;
   const W=520,H=200,GAP=0.5; // GAP on each side: 1px between tiles, as between stacked-column segments; H matches the card once the two-row legend is in
@@ -6230,18 +6452,18 @@ const MIX_CATS=[
     const cats=data.cats.slice(0,8),{months}=data; // one Primary per category, at most 8
     const cItems=cats.map((lbl,c)=>({c,v:months.reduce((a,vals)=>a+vals[c],0)}));
     squarify(cItems,0,0,W,H).forEach(cr=>{
-      const{c}=cr.it,p=c+1,col=`var(--p${p})`,cTot=cr.it.v;
+      const{c}=cr.it,p=c+1,col=`${catCol(p-1)}`,cTot=cr.it.v;
       const kids=months.map((vals,m)=>({m,v:vals[c]}));
       squarify(kids,cr.x,cr.y,cr.w,cr.h).forEach(r=>{
         const{m,v}=r.it,w=r.w-2*GAP,h=r.h-2*GAP;if(w<=0||h<=0)return;
         const t=svgEl(svg,'rect',{x:r.x+GAP,y:r.y+GAP,width:w,height:h,style:`fill:${col}`});
         addChartTip(t,`${cats[c]} · ${MIX_MONTHS[m]}`,[{color:col,label:cats[c],value:mixK(v)},{label:'Share of category',value:(v/cTot*100).toFixed(1)+'%'}]);
         if(w<32||h<24)return;
-        const lbl=svgEl(svg,'text',{x:r.x+r.w/2,y:r.y+r.h/2-2,'text-anchor':'middle',class:'axis-label',style:`fill:var(--p${p}-text);pointer-events:none`}); // clicks and hover reach the tile
+        const lbl=svgEl(svg,'text',{x:r.x+r.w/2,y:r.y+r.h/2-2,'text-anchor':'middle',class:'axis-label',style:`fill:${catCol(p-1,'-text')};pointer-events:none`}); // clicks and hover reach the tile
         lbl.innerHTML=`<tspan x="${r.x+r.w/2}">${m+1}</tspan><tspan x="${r.x+r.w/2}" dy="1.2em">${mixK(v)}</tspan>`;
       });
     });
-    mkLegH('p7treeLeg',cats.map((l,c)=>[l,`var(--p${c+1})`]));
+    mkLegH('p7treeLeg',cats.map((l,c)=>[l,`${catCol(c)}`]));
   }
   render();
   window.VIZ.p7tree={page:'pg7',get data(){return data;},set data(d){data=d;},render};
@@ -6462,12 +6684,15 @@ $('#exportShareUrl').addEventListener('click',()=>{
     // `set` writes a suggested fix back to the colour being checked.
     const label=h=>{const t=tc((h||'#000000').slice(0,7));return t.length===4?'#'+[...t.slice(1)].map(ch=>ch+ch).join(''):t;}; // the black/white the preview puts on a fill
     const setText=v=>{typo.color=v;},setPrim=i=>v=>{c.primaryColors[i]=v;},setAccent=v=>{c.structuralColors.accent=v;},setSem=k=>v=>{c.semantic[k]=v;};
+    // Charts sit on visuals, so Series and Measures are checked against the element background.
+    const chartPairs=CHART_LISTS.flatMap(([k,nm])=>c.chart[k].map((col,i)=>({name:`${nm} ${i+1} on element background`,fg:col,bg:elBg,size:'large',set:v=>{c.chart[k][i]=v;}})));
     const pairs=[
       {name:'Text on canvas',fg:textCol,bg:canvasBg,size:'normal',set:setText},
       {name:'Text on element background',fg:textCol,bg:elBg,size:'normal',set:setText},
       {name:'Text on wallpaper',fg:textCol,bg:wallpaper,size:'normal',set:setText},
       ...c.primaryColors.map((col,i)=>({name:`Primary ${i+1} on canvas`,fg:col,bg:canvasBg,size:'large',set:setPrim(i)})),
       ...c.primaryColors.map((col,i)=>({name:`Primary ${i+1} on element background`,fg:col,bg:elBg,size:'large',set:setPrim(i)})),
+      ...chartPairs,
       {name:'Accent on canvas',fg:c.structuralColors.accent,bg:canvasBg,size:'large',set:setAccent},
       {name:'Accent on element background',fg:c.structuralColors.accent,bg:elBg,size:'large',set:setAccent},
       {name:'Text on Subtle Fill',fg:textCol,bg:c.structuralColors.background,size:'normal',set:setText},
@@ -6747,7 +6972,8 @@ document.getElementById('cbsimSelect').addEventListener('change',function(){
 const LIB_KEY='lumel_theme_lib';
 // Library themes are custom by definition — normalise entries saved by
 // older versions that inherited a preset's themeType (or builtIn flag).
-function libLoad(){try{return JSON.parse(localStorage.getItem(LIB_KEY)||'[]').map(x=>{const{builtIn,beta,...t}=x;return{...t,themeType:CUSTOM_THEME_TYPE};});}catch(e){return[];}}
+// Themes saved before Series and Measures existed get them on load.
+function libLoad(){try{return JSON.parse(localStorage.getItem(LIB_KEY)||'[]').map(x=>{const{builtIn,...t}=x;ensureChartColors(t);return{...t,themeType:CUSTOM_THEME_TYPE};});}catch(e){return[];}}
 function libSave(lib){try{localStorage.setItem(LIB_KEY,JSON.stringify(lib));}catch(e){}}
 
 /* ══════════════════════════════════════════════════════════
