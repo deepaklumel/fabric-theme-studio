@@ -1095,11 +1095,10 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
   }
   const FLAG='🇮🇳';
 
-  // Tag pill: full-opacity fill of the category's primary colour, text
-  // colour auto-inverts based on the primary's lightness (same --pN-text
-  // tokens the auto-contrast checkbox/button already use).
+  // Tag pill: the category's primary colour at 20% behind regular text,
+  // as in the Figma grid's tags.
   function pill(text,pIdx){
-    return `<span class="pt-pill" style="background:var(--p${pIdx});color:var(--p${pIdx}-text)">${text}</span>`;
+    return `<span class="pt-pill pt-tag"><span class="pt-tag-bg" style="background:var(--p${pIdx})"></span>${text}</span>`;
   }
   function stars(n){
     let out='<span class="pt-stars">';
@@ -1122,6 +1121,8 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
   function check(on,task){
     return `<input type="checkbox" class="pt-cb pt-field-cb"${on?' checked':''} aria-label="Checkbox, ${task}">`;
   }
+  // Shared with the Hierarchy layout so its cells render identically
+  window._ptCell={pill,stars,slider};
 
   TASKS.forEach((task,ri)=>{
     const phaseIdx=ri%PHASES.length,phase2Idx=(ri+1)%PHASES.length;
@@ -1180,6 +1181,226 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
     setRow(tr,e.target.matches('.pt-row-cb')?e.target.checked:!tr.classList.contains('is-selected'));
     syncAll();
   });
+})();
+
+/* ── PowerTable module — "Hierarchy layout" ──
+   Parent-child records drawn like PowerTable's HierarchyDisplayCell:
+   a 16px indent per level, a chevron on rows that have children, and
+   the direct-child count "(n)" after the label in the icon colour.
+   Every row is its own record, so parents carry their own values.
+   Stripes, gridlines, pills and row selection reuse the Table layout. */
+(function(){
+  const headRow=document.getElementById('ptHierHeadRow');
+  const body=document.getElementById('ptHierBody');
+  if(!headRow||!body||!window._ptCell)return;
+  const {pill,stars,slider}=window._ptCell;
+
+  const COLS=['','Task Name','Single Select','Currency','Percent Complete','Rating'];
+  headRow.innerHTML=COLS.map((c,i)=>`<th>${i?c:'<input type="checkbox" class="pt-cb" data-all aria-label="Select all rows">'}</th>`).join('');
+
+  // Status pills use the same --p1..--p4 order the Table layout uses for its categories
+  const STATUS=['Not Started','In Progress','Completed','On Hold'];
+  // R(name, status, cost, % complete, rating, children?, collapsed?)
+  const R=(name,st,cost,pct,rating,kids,closed)=>({name,st,cost,pct,rating,kids,open:!closed});
+  const TREE=[
+    R('Product Engineering',1,39.99,55,4,[
+      R('Requirements Gathering',2,72.25,100,5,[
+        R('Stakeholder Interviews',2,24.50,100,4),
+        R('Requirement Spec',2,31.75,100,5)
+      ]),
+      R('Project Plan',1,58.75,50,4),
+      R('Walkthrough & Ideation',1,45.00,50,3)
+    ]),
+    R('Design Phase',1,49.99,40,4,[
+      R('Business case study',2,67.50,100,4),
+      R('Systems architecture',1,55.00,55,3),
+      R('Ux Brainstorm',1,42.50,40,5,[
+        R('Wireframes',2,18.00,100,4),
+        R('Prototype Review',1,22.40,35,3)
+      ]),
+      R('UI Implementation',1,60.00,55,4),
+      R('Feedbacks & Review',0,63.00,0,3)
+    ]),
+    R('Development Phase',1,48.99,30,3,[
+      R('Environment Setup',2,62.75,100,4),
+      R('Back-end Development',1,53.25,55,4,[
+        R('API Layer',1,21.10,70,4),
+        R('Data Model',2,16.80,100,5),
+        R('Auth Service',3,15.35,20,2)
+      ]),
+      R('Front-end Development',1,44.40,50,3),
+      R('Development Review',0,69.99,0,3)
+    ]),
+    R('Quality Assurance',0,54.50,10,3,[
+      R('Test Plan',1,50.50,45,4),
+      R('Defect Manage',3,65.00,15,2,[
+        R('Triage Backlog',3,12.00,10,2),
+        R('Fix Verification',0,9.50,0,3)
+      ],true),
+      R('Test Deliverable',0,47.30,0,3)
+    ])
+  ];
+  const BYID=[];
+  (function index(nodes){nodes.forEach(n=>{n.id=BYID.length;n.sel=false;BYID.push(n);if(n.kids)index(n.kids);});})(TREE);
+  function visible(nodes,lvl,out){nodes.forEach(n=>{out.push([n,lvl]);if(n.kids&&n.open)visible(n.kids,lvl+1,out);});return out;}
+
+  function treeCell(n,lvl){
+    const chev=n.kids?`<button class="pt-tree-chev" aria-expanded="${n.open}" aria-label="${n.open?'Collapse':'Expand'} ${n.name}">${window.icon(n.open?'chevronDown12':'chevronRight12')}</button>`:'';
+    const count=n.kids?`<span class="pt-tree-count">(${n.kids.length})</span>`:'';
+    return `<td class="pt-tree-cell"><span class="pt-tree-in" style="padding-left:${lvl*16}px">${chev}<span class="pt-tree-label">${n.name}</span>${count}</span></td>`;
+  }
+  const all=headRow.querySelector('.pt-cb[data-all]');
+  function syncAll(){
+    const n=body.rows.length,k=body.querySelectorAll('tr.is-selected').length;
+    all.checked=n>0&&k===n;
+    all.indeterminate=k>0&&k<n;
+  }
+  function render(){
+    body.innerHTML=visible(TREE,0,[]).map(([n,lvl])=>`<tr data-id="${n.id}" aria-level="${lvl+1}" aria-selected="${n.sel}"${n.sel?' class="is-selected"':''}>
+      <td class="pt-selcell"><input type="checkbox" class="pt-cb pt-row-cb"${n.sel?' checked':''} aria-label="Select ${n.name}"></td>
+      ${treeCell(n,lvl)}
+      <td>${pill(STATUS[n.st],n.st+1)}</td>
+      <td>$${n.cost.toFixed(2)}</td>
+      <td>${slider(n.pct,'%')}</td>
+      <td>${stars(n.rating)}</td>
+    </tr>`).join('');
+    syncAll();
+  }
+  render();
+
+  // Same selection model as the Table layout; the chevron expands or
+  // collapses instead of selecting. Collapsed rows keep their selection.
+  all.addEventListener('change',()=>{
+    body.querySelectorAll('tr[data-id]').forEach(tr=>{BYID[tr.dataset.id].sel=all.checked;});
+    render();
+  });
+  body.addEventListener('click',e=>{
+    const tr=e.target.closest('tr[data-id]');
+    if(!tr)return;
+    const n=BYID[tr.dataset.id];
+    if(e.target.closest('.pt-tree-chev'))n.open=!n.open;
+    else n.sel=e.target.matches('.pt-row-cb')?e.target.checked:!n.sel;
+    render();
+    if(e.target.closest('.pt-tree-chev'))body.querySelector(`tr[data-id="${n.id}"] .pt-tree-chev`).focus();
+  });
+})();
+
+/* ── PowerTable module — "Crosstab layout" ──
+   Matches the Fabric Planning crosstab design: Region and Customer as
+   flat row fields, and a column hierarchy (Month > Category > Product >
+   Colour) where every header group has a chevron. An expanded group
+   ends with its own Total column; a collapsed one shrinks to a single
+   Total column. Only the bottom header row (field labels) takes the
+   header fill; the group rows above it and the body stay on the canvas,
+   with no stripes and no subtotal rows. Read-only cells are muted. */
+(function(){
+  const table=document.getElementById('ptCrosstab');
+  const head=document.getElementById('ptCtHead');
+  const body=document.getElementById('ptCtBody');
+  const range=document.getElementById('ptCtRange');
+  if(!table||!head||!body)return;
+
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const PRODUCTS=['WGT1','WGT2'];
+  const COLOURS=['Blue','Orange','Red'];
+  // Column widths from the Figma crosstab: values and totals 60, collapsed months 80
+  const DEPTH=4,W_VAL=60,W_MONTH=80,W_FIELD=120,W_SEL=36;
+  const NODES=[];
+  const group=(name,kids,open)=>{const n={name,kids,open,id:NODES.length};NODES.push(n);return n;};
+  // Only January starts expanded, as in the design
+  const COLS=MONTHS.map((m,mi)=>group(m,[group('Widget',PRODUCTS.map(p=>group(p,COLOURS.map(c=>({name:c,m:mi,p,c})),true)),true)],mi===0));
+
+  // [region, customer, January Blue/Orange/Red per product]; later months vary a little
+  const ROWS=[['North','John',[100,120,110]],['North','Mary',[80,95,90]],['North','Smith',[60,65,70]],['South','Kim',[90,100,95]],['South','Ravi',[70,75,80]]]
+    .map(r=>({region:r[0],customer:r[1],base:r[2],sel:false}));
+  const READONLY=new Set(['Smith|Red']);
+  const value=(r,leaf)=>Math.round(r.base[COLOURS.indexOf(leaf.c)]*(1+((leaf.m*3)%5)*0.04));
+  const leaves=n=>n.kids?n.kids.flatMap(leaves):[n];
+  const fmt=v=>v.toLocaleString('en-US');
+
+  function chev(n){
+    return `<button class="pt-tree-chev" data-node="${n.id}" aria-expanded="${n.open}" aria-label="${n.open?'Collapse':'Expand'} ${n.name}">${window.icon(n.open?'chevronDown20':'chevronRight20')}</button>`;
+  }
+  // Total column header: spans every header row below its group, so it
+  // takes the field-label fill only when it sits in the bottom row. Month
+  // totals stay on one line and truncate; category totals wrap to two.
+  function totalTh(n,lvl){
+    const rows=DEPTH-lvl-1;
+    const label=n.kids.every(k=>!k.kids)?'Total':`Total (${n.name})`;
+    const cls='pt-ct-tot'+(rows===1?' pt-ct-leaf':'')+(lvl>0&&rows>1?' pt-ct-wrap':'');
+    return `<th class="${cls}"${rows>1?` rowspan="${rows}"`:''} title="${label}"><span>${label}</span></th>`;
+  }
+  // Depth-first, left to right, so each header row's cells come out in order
+  function walk(n,lvl,hdr,cols){
+    if(!n.kids){
+      hdr[lvl].push(`<th class="pt-ct-leaf">${n.name}</th>`);
+      cols.push({leaf:n,w:W_VAL});
+      return 1;
+    }
+    const at=hdr[lvl].push('')-1;
+    let span=0;
+    if(n.open)n.kids.forEach(k=>{span+=walk(k,lvl+1,hdr,cols);});
+    hdr[lvl+1].push(totalTh(n,lvl));
+    cols.push({total:n,w:!n.open&&lvl===0?W_MONTH:W_VAL});
+    span++;
+    hdr[lvl][at]=`<th class="pt-ct-grp"${span>1?` colspan="${span}"`:''}><span class="pt-tree-in">${chev(n)}<span class="pt-tree-label">${n.name}</span></span></th>`;
+    return span;
+  }
+
+  function render(){
+    const hdr=Array.from({length:DEPTH},()=>[]),cols=[];
+    COLS.forEach(n=>walk(n,0,hdr,cols));
+    const blank=`<th class="pt-ct-blank" rowspan="${DEPTH-1}"></th>`;
+    hdr[0].unshift(blank+blank+blank);
+    hdr[DEPTH-1].unshift('<th class="pt-ct-sel"><input type="checkbox" class="pt-cb" data-all aria-label="Select all rows"></th><th class="pt-ct-leaf">Region</th><th class="pt-ct-leaf">Customer</th>');
+    const widths=[W_SEL,W_FIELD,W_FIELD,...cols.map(c=>c.w)];
+    table.style.width=widths.reduce((a,b)=>a+b,0)+'px';
+    table.querySelector('colgroup')?.remove();
+    table.insertAdjacentHTML('afterbegin',`<colgroup>${widths.map(w=>`<col style="width:${w}px">`).join('')}</colgroup>`);
+    head.innerHTML=hdr.map(r=>`<tr>${r.join('')}</tr>`).join('');
+    body.innerHTML=ROWS.map((r,ri)=>`<tr data-row="${ri}" aria-selected="${r.sel}"${r.sel?' class="is-selected"':''}>
+      <td class="pt-selcell"><input type="checkbox" class="pt-cb pt-row-cb"${r.sel?' checked':''} aria-label="Select ${r.customer}"></td>
+      <td>${r.region}</td><td>${r.customer}</td>
+      ${cols.map(c=>c.leaf
+        ?`<td${READONLY.has(r.customer+'|'+c.leaf.c)?' class="pt-ct-ro"':''}>${fmt(value(r,c.leaf))}</td>`
+        :`<td>${fmt(leaves(c.total).reduce((a,l)=>a+value(r,l),0))}</td>`).join('')}
+    </tr>`).join('');
+    const k=ROWS.filter(r=>r.sel).length,all=head.querySelector('.pt-cb[data-all]');
+    all.checked=k===ROWS.length;
+    all.indeterminate=k>0&&k<ROWS.length;
+  }
+  render();
+
+  head.addEventListener('click',e=>{
+    const b=e.target.closest('.pt-tree-chev');
+    if(!b)return;
+    const n=NODES[b.dataset.node];
+    n.open=!n.open;
+    render();
+    head.querySelector(`.pt-tree-chev[data-node="${n.id}"]`).focus();
+  });
+  head.addEventListener('change',e=>{
+    if(!e.target.matches('.pt-cb[data-all]'))return;
+    ROWS.forEach(r=>{r.sel=e.target.checked;});
+    render();
+  });
+  // Same row selection as the Table layout: the checkbox or a click on the row
+  body.addEventListener('click',e=>{
+    const tr=e.target.closest('tr[data-row]');
+    if(!tr)return;
+    const r=ROWS[tr.dataset.row];
+    r.sel=e.target.matches('.pt-row-cb')?e.target.checked:!r.sel;
+    render();
+  });
+
+  // Date range: steps a whole year at a time
+  let year=2026;
+  function step(d){
+    year+=d;
+    if(range)range.textContent=`01 Jan, ${year} - 31 Dec, ${year}`;
+  }
+  document.getElementById('ptCtPrev')?.addEventListener('click',()=>step(-1));
+  document.getElementById('ptCtNext')?.addEventListener('click',()=>step(1));
 })();
 
 /* ── PowerTable module — "Kanban layout" ──
@@ -1329,85 +1550,81 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
 })();
 
 /* ── PowerTable module — "Gantt layout" ──
-   Info columns (checkbox/Task Name/Single Select/Currency) are a
-   sticky-left frozen panel; the timeline is a single relatively
-   positioned strip per row with bars/milestones absolutely placed
-   by month. Bar fill = solid var(--p1); remainder = same var(--p1)
-   at reduced opacity (see CSS) — a "single primary" progress-bar
-   look, not a second distinct color. Milestone diamonds and the
-   "today" line both use var(--p3), per chat. */
+   Matches the Figma PowerTable Gantt: a frozen checkbox + Task Name
+   rail (phases are parent rows with a chevron, their tasks indented
+   below), 39px rows, a 100px three-row timeline header, and bars
+   coloured by phase — the done part is the phase's primary colour at
+   45%, the rest at 13%, and the phase's summary bar at 45%. The tints
+   are opacity layers on the real var(--pN) so the canvas colour picker
+   still traces them to that Primary colour. Milestone diamonds and the
+   "today" line use var(--p3). */
 (function(){
   const root=document.getElementById('ptGantt');
   if(!root)return;
   const MONTH_W=92; // px per month column
+  const ROW_H=39;
   // Timeline length in months: at least one year, extended by _ptGanttFill()
   // so the timeline keeps running to the right edge on wide screens.
   let MONTHS_N=12;
+  let year0=2023; // first year on the timeline; the toolbar arrows step it
   const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const PHASES=['Product Engineering','Design Phase','Development Phase','Quality Assurance'];
-  function pill(phase){
-    const idx=PHASES.indexOf(phase)+1||1;
-    return `<span class="pt-pill" style="background:var(--p${idx});color:var(--p${idx}-text)">${phase}</span>`;
-  }
   const L=m=>((m-1)*MONTH_W).toFixed(1); // left px for 1-based (possibly fractional) month
   const W=(a,b)=>((b-a)*MONTH_W).toFixed(1);
   // Exact organic capsule outline supplied for summary/parent bars —
   // stretched via preserveAspectRatio="none" to fit each bar's own
-  // left/width, colored through the theme's primary via CSS (not a
-  // hardcoded fill), rather than approximated with CSS shapes.
-  const SUMMARY_BAR_SVG=`<svg viewBox="0 0 494 10" preserveAspectRatio="none"><path d="M489.836 8.6046L489.674 8.37188C489.299 7.83428 488.685 7.51411 488.03 7.51484L106.225 7.93971L5.84388 7.49307C5.24164 7.49039 4.67025 7.75924 4.2884 8.22495L3.54658 9.12967C2.3555 10.5823 0 9.74008 0 7.86156V2.13772C0 1.03315 0.89543 0.137718 2 0.137718H106.28L491.476 0.000225856C492.581 -0.00016851 493.477 0.895376 493.477 2.00022V7.46164C493.477 9.41955 490.955 10.2113 489.836 8.6046Z" style="fill:var(--p1)"/></svg>`;
+  // left/width, coloured through the phase's primary via --bar.
+  const SUMMARY_BAR_SVG=`<svg viewBox="0 0 494 10" preserveAspectRatio="none"><path d="M489.836 8.6046L489.674 8.37188C489.299 7.83428 488.685 7.51411 488.03 7.51484L106.225 7.93971L5.84388 7.49307C5.24164 7.49039 4.67025 7.75924 4.2884 8.22495L3.54658 9.12967C2.3555 10.5823 0 9.74008 0 7.86156V2.13772C0 1.03315 0.89543 0.137718 2 0.137718H106.28L491.476 0.000225856C492.581 -0.00016851 493.477 0.895376 493.477 2.00022V7.46164C493.477 9.41955 490.955 10.2113 489.836 8.6046Z" style="fill:var(--bar);fill-opacity:.45"/></svg>`;
+
+  // Phases are parent rows; each task is [name, start, end, progress, milestone month?]
+  const T=(name,start,end,progress,ms)=>({name,start,end,progress,ms});
+  const PHASES=[
+    {name:'Gantt Product Engineering',tasks:[T('Requirements Gathering',4.3,6.3,0.55,4.0),T('Project Plan',7.2,9.3,0.5),T('Walkthrough & Ideation',4.6,6.6,0.5)]},
+    {name:'Design Phase Kick off',tasks:[T('Business case study',1.0,2.4,0.6),T('Systems architecture',1.6,2.6,0.55),T('Ux Brainstorm',3.6,5.3,0.4),T('UI Implementation',1.3,3.3,0.55),T('Feedbacks & Review',3.9,6.0,0.35),T('Dev handoff',5.4,6.2,0.3)]},
+    {name:'Development Kickoff',tasks:[T('Environment Setup',2.0,3.4,0.5,1.7),T('Internal Audit',3.9,6.0,0.45),T('Back-end Development',7.1,8.1,0.55,6.8),T('Front-end Development',8.2,9.9,0.5),T('Development Review',10.2,11.9,0.3)]},
+    {name:'Quality Assurance Kickoff',tasks:[T('Kick off meeting',6.9,9.0,0.35),T('Test Plan',8.9,9.9,0.45,8.6),T('Defect Manage',9.9,11.0,0.5),T('Test Deliverable',10.6,11.6,0.4)]}
+  ];
+  // Stable row ids so selection survives collapsing and re-rendering
+  let nid=0;
+  PHASES.forEach(p=>{p.id=nid++;p.open=true;p.start=Math.min(...p.tasks.map(t=>t.start));p.end=Math.max(...p.tasks.map(t=>t.end));p.tasks.forEach(t=>{t.id=nid++;});});
+  const selected=new Set();
 
   function timelineHead(){
-    let year='';
-    for(let y=0;y*12<MONTHS_N;y++)year+=`<div class="pt-gantt-year" style="left:${y*12*MONTH_W}px;width:${Math.min(12,MONTHS_N-y*12)*MONTH_W}px">${2023+y}</div>`;
+    let yr='';
+    for(let y=0;y*12<MONTHS_N;y++)yr+=`<div class="pt-gantt-year" style="left:${y*12*MONTH_W}px;width:${Math.min(12,MONTHS_N-y*12)*MONTH_W}px">${year0+y}</div>`;
     let q='';
     for(let i=0;i*3<MONTHS_N;i++)q+=`<div class="pt-gantt-quarter" style="left:${L(i*3+1)}px;width:${W(i*3+1,Math.min(i*3+4,MONTHS_N+1))}px">Q${i%4+1}</div>`;
     let mo='';
     for(let i=0;i<MONTHS_N;i++)mo+=`<div class="pt-gantt-month" style="left:${L(i+1)}px;width:${MONTH_W}px">${MONTHS[i%12]}</div>`;
     return `<div class="pt-gantt-row head">
-      <div class="pt-gantt-info"><div class="chk"><input type="checkbox" class="pt-cb" data-all aria-label="Select all rows"></div><div class="name">Task Name</div><div class="sel">Single Select</div><div class="cur">Currency</div></div>
-      <div class="pt-gantt-timeline" style="width:${MONTH_W*MONTHS_N}px">${year}${q}${mo}</div>
+      <div class="pt-gantt-info"><div class="chk"><input type="checkbox" class="pt-cb" data-all aria-label="Select all rows"></div><div class="name">Task Name</div></div>
+      <div class="pt-gantt-timeline" style="width:${MONTH_W*MONTHS_N}px">${yr}${q}${mo}</div>
     </div>`;
   }
-  // bar: {type:'task'|'summary', start, end, progress} | null ; milestoneAt: month number | null
-  // Milestones sit a clear 0.3-month gap before their bar starts so
-  // the diamond never touches the bar edge.
-  // Selected rows, by body-row index — kept outside render() so the
-  // selection survives _ptGanttFill() re-rendering on resize.
-  const selected=new Set();
-  let rowIdx=0;
-  function ganttRow(name,phase,currency,bar,milestoneAt){
-    const i=rowIdx++, on=selected.has(i);
-    let tl='';
-    if(bar){
-      const left=L(bar.start), width=W(bar.start,bar.end);
-      if(bar.type==='summary'){
-        tl+=`<div class="pt-gantt-bar summary" style="left:${left}px;width:${width}px">${SUMMARY_BAR_SVG}</div>`;
-      }else{
-        const fillPct=Math.round((bar.progress||0.5)*100);
-        tl+=`<div class="pt-gantt-bar" style="left:${left}px;width:${width}px">
-          <div class="fill" style="width:${fillPct}%"></div>
+  function row(item,phaseIdx,isParent){
+    const on=selected.has(item.id);
+    let tl='',label;
+    if(isParent){
+      tl=`<div class="pt-gantt-bar summary" style="left:${L(item.start)}px;width:${W(item.start,item.end)}px">${SUMMARY_BAR_SVG}</div>`;
+      label=`<button class="pt-tree-chev" data-phase="${phaseIdx}" aria-expanded="${item.open}" aria-label="${item.open?'Collapse':'Expand'} ${item.name}">${window.icon(item.open?'chevronDown12':'chevronRight12')}</button><span class="pt-tree-label">${item.name}</span>`;
+    }else{
+      tl=`<div class="pt-gantt-bar" style="left:${L(item.start)}px;width:${W(item.start,item.end)}px">
+          <div class="fill" style="width:${Math.round(item.progress*100)}%"></div>
           <div class="rem"></div>
         </div>`;
-      }
+      if(item.ms!=null)tl+=`<div class="pt-gantt-milestone" style="left:${(parseFloat(L(item.ms))-6).toFixed(1)}px"></div>`;
+      label=`<span class="pt-tree-label">${item.name}</span>`;
     }
-    if(milestoneAt!=null){
-      tl+=`<div class="pt-gantt-milestone" style="left:${(parseFloat(L(milestoneAt))-6).toFixed(1)}px"></div>`;
-    }
-    return `<div class="pt-gantt-row${on?' is-selected':''}" data-row="${i}" aria-selected="${on}">
+    return `<div class="pt-gantt-row${isParent?' parent':''}${on?' is-selected':''}" data-row="${item.id}" aria-level="${isParent?1:2}" aria-selected="${on}" style="--bar:var(--p${phaseIdx+1})">
       <div class="pt-gantt-info">
-        <div class="chk"><input type="checkbox" class="pt-cb"${on?' checked':''} aria-label="Select ${name}"></div>
-        <div class="name">${name}</div>
-        <div class="sel">${pill(phase)}</div>
-        <div class="cur">${currency}</div>
+        <div class="chk"><input type="checkbox" class="pt-cb"${on?' checked':''} aria-label="Select ${item.name}"></div>
+        <div class="name">${label}</div>
       </div>
       <div class="pt-gantt-timeline" style="width:${MONTH_W*MONTHS_N}px">${tl}</div>
     </div>`;
   }
   // Dependency elbow: Requirements Gathering -> Walkthrough & Ideation
-  // (rows 2 and 4 below), drawn as one absolutely positioned SVG
-  // overlaid on the timeline column, spanning those two row heights.
-  const ROW_H=33, DEP_ROWS=2; // spans rows 2..3 (index 1,2 after header)
+  // (body rows 2 and 4), drawn as one absolutely positioned SVG overlaid
+  // on the timeline column, spanning those row heights.
   function depArrow(){
     const x=L(4.3)-0, y1=ROW_H*0.5, y2=ROW_H*2+ROW_H*0.5;
     const x2=L(4.6);
@@ -1420,83 +1637,80 @@ buildAll();applyTheme();snapshotOrigin();checkDirty();updateDeleteBtn();
   }
 
   function render(){
-  rowIdx=0;
-  const bodyRowsHtml=[
-    ganttRow('Gantt Product Engineering','Product Engineering','$39.99',{type:'summary',start:4,end:9.5}),
-    ganttRow('Requirements Gathering','Product Engineering','$72.25',{type:'task',start:4.3,end:6.3,progress:0.55},4.0),
-    ganttRow('Project Plan','Product Engineering','$58.75',{type:'task',start:7.2,end:9.3,progress:0.5}),
-    ganttRow('Walkthrough & Ideation','Product Engineering','$45.00',{type:'task',start:4.6,end:6.6,progress:0.5}),
-    ganttRow('Design Phase Kick off','Design Phase','$49.99',null),
-    ganttRow('Business case study','Design Phase','$67.50',{type:'summary',start:1,end:6.2}),
-    ganttRow('Systems architecture','Design Phase','$55.00',{type:'task',start:1.6,end:2.6,progress:0.55}),
-    ganttRow('Ux Brainstorm','Design Phase','$42.50',{type:'task',start:3.6,end:5.3,progress:0.4}),
-    ganttRow('UI Implementation','Design Phase','$60.00',{type:'task',start:1.3,end:3.3,progress:0.55}),
-    ganttRow('Feedbacks & Review','Design Phase','$63.00',{type:'task',start:3.9,end:6.0,progress:0.35}),
-    ganttRow('Dev handoff','Design Phase','$70.00',null),
-    ganttRow('Development Kickoff','Development Phase','$48.99',null),
-    ganttRow('Environment Setup','Development Phase','$62.75',{type:'task',start:2.0,end:3.4,progress:0.5},1.7),
-    ganttRow('Internal Audit','Development Phase','$68.90',{type:'task',start:3.9,end:6.0,progress:0.45}),
-    ganttRow('Back-end Development','Development Phase','$53.25',{type:'task',start:7.1,end:8.1,progress:0.55},6.8),
-    ganttRow('Front-end Development','Development Phase','$44.40',{type:'task',start:8.2,end:9.9,progress:0.5}),
-    ganttRow('Development Review','Development Phase','$69.99',{type:'summary',start:4,end:11.9}),
-    ganttRow('Quality Assurance Kickoff','Quality Assurance','$54.50',{type:'task',start:2.0,end:4.0,progress:0.5},1.7),
-    ganttRow('Kick off meeting','Quality Assurance','$59.99',{type:'task',start:6.9,end:9.0,progress:0.35}),
-    ganttRow('Test Plan','Quality Assurance','$50.50',{type:'task',start:8.9,end:9.9,progress:0.45},8.6),
-    ganttRow('Defect Manage','Quality Assurance','$65.00',{type:'task',start:9.9,end:11.0,progress:0.5}),
-    ganttRow('Test Deliverable','Quality Assurance','$47.30',null)
-  ];
-  const ROW_HEIGHT=33, bodyHeight=bodyRowsHtml.length*ROW_HEIGHT;
-  // A single continuous today-line spans the *entire* body height as
-  // a sibling of the rows (not per-row), so scrolling never cuts it
-  // and it never draws over the header. No vertical month gridlines
-  // in the white body area — only the header shows column divisions.
-  const todayLine=`<div class="pt-gantt-today" style="left:${L(7)}px;height:${bodyHeight}px"></div>`;
-
-  root.innerHTML=`
-    ${timelineHead()}
-    <div class="pt-gantt-body" id="ptGanttBody">
-      ${todayLine}
-      ${bodyRowsHtml.join('')}
-    </div>
-  `;
-  // Overlay the dependency arrow onto row 2's timeline cell (index 1
-  // among body rows, i.e. the 2nd .pt-gantt-row after the header).
-  const rows=root.querySelectorAll('.pt-gantt-row:not(.head)');
-  if(rows[1]){
-    const tl=rows[1].querySelector('.pt-gantt-timeline');
-    if(tl){tl.style.overflow='visible';tl.insertAdjacentHTML('beforeend',depArrow());}
+    const rows=[];
+    PHASES.forEach((p,pi)=>{rows.push(row(p,pi,true));if(p.open)p.tasks.forEach(t=>rows.push(row(t,pi,false)));});
+    // A single continuous today-line spans the *entire* body height as
+    // a sibling of the rows (not per-row), so scrolling never cuts it
+    // and it never draws over the header.
+    const todayLine=`<div class="pt-gantt-today" style="left:${L(7)}px;height:${rows.length*ROW_H}px"></div>`;
+    root.innerHTML=`
+      ${timelineHead()}
+      <div class="pt-gantt-body" id="ptGanttBody">
+        ${todayLine}
+        ${rows.join('')}
+      </div>
+    `;
+    if(PHASES[0].open){
+      const tl=root.querySelector(`.pt-gantt-row[data-row="${PHASES[0].tasks[0].id}"] .pt-gantt-timeline`);
+      if(tl){tl.style.overflow='visible';tl.insertAdjacentHTML('beforeend',depArrow());}
+    }
+    syncAll();
   }
-  syncAll();
-  }
-  // Header checkbox mirrors the body: checked when every row is
+  // Header checkbox mirrors the visible rows: checked when every one is
   // selected, indeterminate (Fluent "mixed") when only some are.
   function syncAll(){
-    const all=root.querySelector('.pt-cb[data-all]'),n=root.querySelectorAll('.pt-gantt-row[data-row]').length;
+    const all=root.querySelector('.pt-cb[data-all]');
     if(!all)return;
-    all.checked=n>0&&selected.size===n;
-    all.indeterminate=selected.size>0&&selected.size<n;
+    const rows=[...root.querySelectorAll('.pt-gantt-row[data-row]')],k=rows.filter(r=>selected.has(+r.dataset.row)).length;
+    all.checked=rows.length>0&&k===rows.length;
+    all.indeterminate=k>0&&k<rows.length;
   }
-  function setRow(row,on){
-    const i=+row.dataset.row;
+  function setRow(r,on){
+    const i=+r.dataset.row;
     on?selected.add(i):selected.delete(i);
-    row.classList.toggle('is-selected',on);
-    row.setAttribute('aria-selected',on);
-    row.querySelector('.pt-cb').checked=on;
+    r.classList.toggle('is-selected',on);
+    r.setAttribute('aria-selected',on);
+    r.querySelector('.pt-cb').checked=on;
   }
   // Clicking a row (or its checkbox) toggles that row; the header
-  // checkbox selects or clears every row.
+  // checkbox selects or clears every visible row; a phase's chevron
+  // expands or collapses its tasks.
   root.addEventListener('click',e=>{
+    const chev=e.target.closest('.pt-tree-chev');
+    if(chev){
+      const p=PHASES[chev.dataset.phase];
+      p.open=!p.open;
+      render();
+      root.querySelector(`.pt-tree-chev[data-phase="${chev.dataset.phase}"]`).focus();
+      return;
+    }
     if(e.target.matches('.pt-cb[data-all]')){
       const on=e.target.checked;
       root.querySelectorAll('.pt-gantt-row[data-row]').forEach(r=>setRow(r,on));
       syncAll();return;
     }
-    const row=e.target.closest('.pt-gantt-row[data-row]');
-    if(!row)return;
-    setRow(row,e.target.matches('.pt-cb')?e.target.checked:!selected.has(+row.dataset.row));
+    const r=e.target.closest('.pt-gantt-row[data-row]');
+    if(!r)return;
+    setRow(r,e.target.matches('.pt-cb')?e.target.checked:!selected.has(+r.dataset.row));
     syncAll();
   });
   render();
+
+  // Toolbar: the arrows step the timeline a year at a time; Today
+  // scrolls the today-line into view.
+  const range=document.getElementById('ptGanttRange');
+  function step(d){
+    year0+=d;
+    if(range)range.textContent=`01 Jan, ${year0} - 31 Dec, ${year0}`;
+    render();
+  }
+  document.getElementById('ptGanttPrev')?.addEventListener('click',()=>step(-1));
+  document.getElementById('ptGanttNext')?.addEventListener('click',()=>step(1));
+  document.getElementById('ptGanttToday')?.addEventListener('click',()=>{
+    const wrap=root.parentElement,line=root.querySelector('.pt-gantt-today'),info=root.querySelector('.pt-gantt-info');
+    if(wrap&&line)wrap.scrollLeft=Math.max(0,line.offsetLeft-(wrap.clientWidth-(info?info.offsetWidth:0))/2);
+  });
+
   window._ptGanttFill=function(){
     const wrap=root.parentElement;if(!wrap||!wrap.clientWidth)return;
     const info=root.querySelector('.pt-gantt-info'),iw=info?info.offsetWidth:0;
@@ -1946,21 +2160,25 @@ function clampDropdown(btn,drop){
   window._planSelectLayout=selectLayout;
 })();
 
-/* ── PowerTable layout switcher (Table / Kanban) ── */
+/* ── PowerTable layout switcher (Table / Hierarchy / Crosstab / Gantt / Calendar / Kanban) ── */
 (function(){
   const pick=document.getElementById('ptLayoutPick');
   const btn=document.getElementById('ptLayoutBtn');
   const label=document.getElementById('ptLayoutLabel');
   const icon=document.getElementById('ptLayoutIcon');
   const drop=document.getElementById('ptLayoutDrop');
-  const tableView=document.getElementById('ptTableView');
-  const kanbanView=document.getElementById('ptKanbanView');
-  const ganttView=document.getElementById('ptGanttView');
-  const calendarView=document.getElementById('ptCalendarView');
-  const ganttResView=document.getElementById('ptGanttResView');
-  if(!pick||!btn||!drop||!tableView||!kanbanView||!ganttView||!calendarView||!ganttResView)return;
+  const VIEWS={
+    table:document.getElementById('ptTableView'),
+    hierarchy:document.getElementById('ptHierarchyView'),
+    crosstab:document.getElementById('ptCrosstabView'),
+    kanban:document.getElementById('ptKanbanView'),
+    gantt:document.getElementById('ptGanttView'),
+    calendar:document.getElementById('ptCalendarView'),
+    ganttres:document.getElementById('ptGanttResView')
+  };
+  if(!pick||!btn||!drop||Object.values(VIEWS).some(v=>!v))return;
 
-  const LABELS={table:'Table',kanban:'Kanban',gantt:'Gantt',calendar:'Calendar',ganttres:'Gantt resources'};
+  const LABELS={table:'Table',hierarchy:'Hierarchy',crosstab:'Crosstab',kanban:'Kanban',gantt:'Gantt',calendar:'Calendar',ganttres:'Gantt resources'};
   window._ptShowLayoutPicker=function(show){
     pick.style.display=show?'block':'none';
   };
@@ -1969,11 +2187,8 @@ function clampDropdown(btn,drop){
     label.textContent=LABELS[name]||LABELS.table;
     const activeOpt=drop.querySelector('.pt-layout-opt.active');
     if(activeOpt&&icon&&activeOpt.dataset.ic)icon.innerHTML=window.icon(activeOpt.dataset.ic);
-    tableView.style.display=name==='table'?'flex':'none';
-    kanbanView.style.display=name==='kanban'?'flex':'none';
-    ganttView.style.display=name==='gantt'?'flex':'none';
-    calendarView.style.display=name==='calendar'?'flex':'none';
-    ganttResView.style.display=name==='ganttres'?'flex':'none';
+    const shown=VIEWS[name]?name:'table';
+    Object.entries(VIEWS).forEach(([k,v])=>{v.style.display=k===shown?'flex':'none';});
     drop.classList.remove('open');
     const sub=document.getElementById('pgSub');
     if(sub)sub.textContent='Task tracker · '+(LABELS[name]||LABELS.table);
@@ -2255,7 +2470,7 @@ function clampDropdown(btn,drop){
     {id:'planning',label:'Planning',ic:'sheetPlan',leaves:[
       {key:'matrix',label:'Hierarchy',ic:'layoutHierarchy'},{key:'table',label:'Table',ic:'layoutTable'},{key:'tree',label:'Tree',ic:'layoutTree'}]},
     {id:'powertable',label:'PowerTable',ic:'sheetPT',leaves:[
-      {key:'table',label:'Table',ic:'layoutTable'},{key:'gantt',label:'Gantt',ic:'layoutGantt'},{key:'ganttres',label:'Gantt resources',ic:'layoutGanttRes'},
+      {key:'table',label:'Table',ic:'layoutTable'},{key:'hierarchy',label:'Hierarchy',ic:'layoutHierarchy'},{key:'crosstab',label:'Crosstab',ic:'layoutCrosstab'},{key:'gantt',label:'Gantt',ic:'layoutGantt'},{key:'ganttres',label:'Gantt resources',ic:'layoutGanttRes'},
       {key:'calendar',label:'Calendar',ic:'layoutCalendar'},{key:'kanban',label:'Kanban',ic:'layoutKanban'}]}
   ];
   const lastLeaf={intelligence:'0',planning:'matrix',powertable:'table'};
@@ -4896,7 +5111,7 @@ document.querySelectorAll('#pbtns .dbtn').forEach(b=>b.addEventListener('click',
     'page|Corner radius':{sheets:[I],tokens:['@report']},
     'page|Shadow':{sheets:[I],tokens:['@report']},
     'visuals|Background':{sheets:[I,P,T_],tokens:['el-bg']},
-    'visuals|Border':{sheets:[I,T_],tokens:['el-border-color','el-border-w']},
+    'visuals|Border':{sheets:[I,P,T_],tokens:['el-border-color','el-border-w'],note:'Planning uses the color only, for the tree’s connectors and node dividers.'},
     'visuals|Corner radius':{sheets:[I,T_],tokens:['el-radius']},
     'visuals|Shadow':{sheets:[I],tokens:['el-shadow']},
     'visuals|Padding':{sheets:[I],tokens:['el-pad-t','el-pad-r','el-pad-b','el-pad-l']},

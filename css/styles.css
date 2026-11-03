@@ -1005,41 +1005,85 @@ table.matrix .grpdiv{border-left:1px solid var(--out2)}
 table.matrix tr.lvl0 .lead,table.matrix tr.lvl1 .lead,table.matrix tr.lvl2 .lead,table.matrix tr.lvl3 .lead{font-weight:600}
 .mx-chev{display:inline-flex;width:14px;color:var(--text-color);opacity:.7;vertical-align:middle}
 
-/* PowerTable — table layout. Structural chrome (header, stripes,
-   gridlines) reuses the same structuralColors tokens as Intelligence
-   and Planning; per-value tag pills (Single/Multi Select) cycle
-   through the 8 primaryColors until a dedicated 50-colour category
-   palette is added later; star rating, checkbox, slider handle and
-   button all use primaryColors[0] (--p1 / --p1-text). */
+/* PowerTable — table layout, sized from the Figma "Load table" grid:
+   27px header on a half-strength header fill, 24px white rows (no
+   stripes), 6px cell padding, #E0E0E0-style gridlines (Outline 2)
+   and 12px checkboxes. Tag pills (Single/Multi Select) tint the
+   category's primary colour; star rating, slider handle and button
+   use the accent. */
 .pt-wrap{flex:1;min-height:0;overflow:auto;background:var(--canvas-bg)}
 table.pt{width:100%;border-collapse:collapse;font-size:12px;color:var(--text-color);font-family:var(--font-family);white-space:nowrap}
-table.pt th{background:var(--struct-bg);font-weight:600;text-align:left;padding:8px 12px;border-bottom:1px solid var(--out1);border-right:1px solid var(--out2);position:sticky;top:0;z-index:1}
+table.pt th{height:27px;box-sizing:border-box;background:color-mix(in srgb,var(--struct-bg) 50%,var(--canvas-bg));font-weight:600;line-height:16px;text-align:left;padding:0 6px;border-bottom:1px solid var(--out2);border-right:1px solid var(--out2);position:sticky;top:0;z-index:1}
 table.pt th:last-child{border-right:none}
-table.pt td{padding:5px 12px;border-bottom:1px solid var(--out2);border-right:1px solid var(--out2);vertical-align:middle}
+table.pt td{height:24px;box-sizing:border-box;padding:0 6px;line-height:16px;border-bottom:1px solid var(--out2);border-right:1px solid var(--out2);vertical-align:middle}
 table.pt td:last-child{border-right:none}
-table.pt tbody tr:nth-child(odd) td{background:var(--struct-subtle)}
-table.pt tbody tr:nth-child(even) td{background:var(--canvas-bg)}
+table.pt tbody td{background:var(--struct-subtle)}
 table.pt tbody tr:hover td{filter:brightness(.97)}
 /* Selected row: an Accent border drawn inside the row's cells (inset
    shadows, so it sits on top of the 1px gridlines without shifting
    the layout). Row checkboxes and the Checkbox field use .pt-cb. */
-table.pt th:first-child,table.pt td.pt-selcell{width:16px;padding-right:8px}
+table.pt th:first-child,table.pt td.pt-selcell{width:12px;padding:0 12px}
+table.pt .pt-cb{width:12px;height:12px}
+table.pt .pt-cb:checked::after{width:10px;height:10px;-webkit-mask-size:10px;mask-size:10px}
+table.pt .pt-cb:indeterminate::after{width:6px;height:6px;border-radius:1px}
 table.pt th .pt-cb,table.pt td .pt-cb{vertical-align:middle}
 table.pt tbody tr{cursor:pointer}
 table.pt tbody tr.is-selected td{box-shadow:inset 0 1px var(--struct-accent),inset 0 -1px var(--struct-accent)}
 table.pt tbody tr.is-selected td:first-child{box-shadow:inset 1px 0 var(--struct-accent),inset 0 1px var(--struct-accent),inset 0 -1px var(--struct-accent)}
 table.pt tbody tr.is-selected td:last-child{box-shadow:inset -1px 0 var(--struct-accent),inset 0 1px var(--struct-accent),inset 0 -1px var(--struct-accent)}
+/* PowerTable — Hierarchy and Crosstab layouts. Tree cell: 16px indent
+   per level, chevron and child count in the icon colour (PowerTable's
+   HierarchyDisplayCell). Crosstab: date-range bar, four header rows
+   with only the bottom field-label row filled, 27px rows, no stripes. */
+table.pt .pt-tree-cell{min-width:240px}
+.pt-tree-in{display:flex;align-items:center;min-height:16px}
+.pt-tree-chev{display:inline-flex;align-items:center;justify-content:center;flex:none;width:16px;height:16px;margin-right:4px;padding:0;border:0;border-radius:2px;background:none;color:var(--struct-icon);cursor:pointer}
+.pt-tree-chev:hover{background:color-mix(in srgb,var(--struct-icon) 14%,transparent)}
+.pt-tree-chev:focus-visible{outline:2px solid var(--text-color);outline-offset:1px}
+.pt-tree-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pt-tree-count{flex:none;margin-left:6px;color:var(--struct-icon)}
+.pt-ct-bar{display:flex;align-items:center;gap:8px;flex:none;height:48px;box-sizing:border-box;padding:8px;background:color-mix(in srgb,var(--struct-bg) 50%,var(--canvas-bg));border-bottom:1px solid color-mix(in srgb,var(--out1) 30%,var(--out2));font:600 14px/20px var(--font-family);color:var(--text-color)}
+.pt-ct-bar .fi{width:20px;height:20px;flex:none;color:var(--struct-icon)}
+.pt-ct-bar .pt-cal-btn{gap:4px}
+.pt-ct-bar .pt-cal-icon{width:32px}
+.pt-ct-range{padding:0 4px}
+/* Grid cells from the Figma crosstab: 27px rows, 6px side padding, every
+   cell closed by a bottom and right gridline (including the last header
+   cell of a row, which a spanning Total column sits next to). */
+table.pt-ct{table-layout:fixed}
+table.pt-ct thead{position:sticky;top:0;z-index:2}
+table.pt-ct th,table.pt-ct th:first-child,table.pt-ct th:last-child{position:static;width:auto;height:27px;box-sizing:border-box;padding:0 6px;background:var(--canvas-bg);font-weight:600;line-height:16px;border-bottom:1px solid var(--out2);border-right:1px solid var(--out2);overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+table.pt-ct th.pt-ct-leaf{background:var(--struct-bg)}
+table.pt-ct th.pt-ct-grp{padding-left:0}
+table.pt-ct .pt-ct-grp .pt-tree-in{min-height:20px}
+table.pt-ct .pt-ct-grp .pt-tree-chev{width:20px;height:20px;margin-right:4px}
+table.pt-ct .pt-ct-grp .pt-tree-chev .fi{width:20px;height:20px}
+table.pt-ct .pt-ct-grp .pt-tree-label{padding:0 2px}
+table.pt-ct th.pt-ct-tot span{display:block;overflow:hidden;text-overflow:ellipsis}
+table.pt-ct th.pt-ct-wrap{white-space:normal;padding:0 5px}
+table.pt-ct th.pt-ct-wrap span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+table.pt-ct td,table.pt-ct td:last-child{height:27px;box-sizing:border-box;padding:0 6px;line-height:16px;border-right:1px solid var(--out2);overflow:hidden;text-overflow:ellipsis}
+table.pt-ct th.pt-ct-sel,table.pt-ct td.pt-selcell{padding:0 12px;text-align:center;text-overflow:clip}
+table.pt-ct td.pt-ct-ro{color:color-mix(in srgb,var(--text-color) 65%,var(--canvas-bg))}
 .pt-stars{display:inline-flex;gap:1px}
 .pt-star{fill:var(--struct-accent);stroke:none}
 .pt-star.empty{fill:none;stroke:var(--struct-accent);stroke-width:1.3}
 .pt-slider{position:relative;width:100px;height:4px;background:var(--out2);border-radius:2px;display:inline-block;vertical-align:middle;margin-right:14px}
 .pt-slider-fill{position:absolute;left:0;top:0;bottom:0;background:var(--struct-accent);border-radius:2px}
-.pt-slider-handle{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--struct-accent);box-shadow:0 0 0 3px var(--canvas-bg),0 0 0 4.5px var(--out2);transform:translate(-50%,-50%)}
+/* Sized for the 24px grid rows: a 10px thumb with a 2px canvas ring and
+   a 1px outline (14px overall), leaving a 5px gap above and below. */
+.pt-slider-handle{position:absolute;top:50%;width:10px;height:10px;border-radius:50%;background:var(--struct-accent);box-shadow:0 0 0 2px var(--canvas-bg),0 0 0 3px var(--out2);transform:translate(-50%,-50%)}
 .pt-slider-val{font-weight:700;font-size:13px;color:var(--text-color)}
 .pt-bar{position:relative;width:80px;height:4px;background:var(--out2);border-radius:2px;display:inline-block;vertical-align:middle;margin-right:6px}
 .pt-bar-fill{position:absolute;left:0;top:0;bottom:0;background:var(--p1);border-radius:2px}
 .pt-pill{display:inline-flex;align-items:center;line-height:1;padding:5px 10px;border-radius:10px;font-size:11px;font-weight:600;margin-right:4px;white-space:nowrap}
-.pt-btn{display:inline-flex;padding:5px 12px;border-radius:6px;background:var(--struct-accent);color:var(--struct-accent-text);font-size:11.5px;font-weight:600;cursor:pointer;border:none;font-family:var(--font-family)}
+/* Grid tag (Figma "Base Endorsement"): 16px tall, fully rounded, regular
+   10px text on the category colour at 20% opacity. The tint is a real
+   child layer, not color-mix, so the canvas colour picker still finds
+   the Primary colour it comes from. */
+.pt-tag{position:relative;isolation:isolate;height:16px;box-sizing:border-box;padding:0 12px 0 8px;border-radius:20px;font-size:10px;font-weight:400;line-height:16px;color:var(--text-color)}
+.pt-tag-bg{position:absolute;inset:0;border-radius:inherit;opacity:.2;z-index:-1}
+.pt-btn{display:inline-flex;padding:2px 12px;border-radius:6px;background:var(--struct-accent);color:var(--struct-accent-text);font-size:11.5px;font-weight:600;cursor:pointer;border:none;font-family:var(--font-family)}
 .pt-logo{width:18px;height:18px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:#fff;flex:none;font-family:var(--font-family)}
 
 /* PowerTable — Kanban layout. Card chrome (bg/border/shadow/radius)
@@ -1102,10 +1146,10 @@ table.pt tbody tr.is-selected td:last-child{box-shadow:inset -1px 0 var(--struct
 .pt-gantt-wrap{flex:1;min-height:0;overflow:auto;background:var(--canvas-bg)}
 .pt-gantt{display:flex;flex-direction:column;min-width:max-content}
 .pt-gantt-row{display:flex;align-items:stretch;border-bottom:1px solid var(--out2)}
-.pt-gantt-row.head{border-bottom:none;position:sticky;top:0;z-index:3}
-.pt-gantt-info{flex:0 0 505px;display:flex;align-items:stretch;position:sticky;left:0;z-index:2;background:var(--canvas-bg);border-right:1px solid var(--out1)}
+.pt-gantt-row.head{position:sticky;top:0;z-index:3}
+.pt-gantt-info{flex:0 0 247px;display:flex;align-items:stretch;position:sticky;left:0;z-index:2;background:var(--canvas-bg);border-right:1px solid var(--out2)}
 .pt-gantt-row.head .pt-gantt-info{background:var(--struct-bg);z-index:4}
-.pt-gantt-info .chk{flex:0 0 40px;display:flex;align-items:center;justify-content:center;align-self:stretch;border-right:1px solid var(--out2)}
+.pt-gantt-info .chk{flex:0 0 47px;display:flex;align-items:center;justify-content:center;align-self:stretch;border-right:1px solid var(--out2)}
 /* Row states: hover uses Subtle Fill; a selected row uses Outline 2.
    The sticky info rail paints its own background, so it follows the
    row's state too. */
@@ -1127,30 +1171,15 @@ table.pt tbody tr.is-selected td:last-child{box-shadow:inset -1px 0 var(--struct
 .pt-cb:indeterminate{border-color:var(--struct-accent)}
 .pt-cb:indeterminate::after{content:"";width:8px;height:8px;border-radius:2px;background:var(--struct-accent)}
 .pt-cb:focus-visible{outline:2px solid var(--text-color);outline-offset:1px}
-.pt-gantt-info .name{flex:0 0 200px;padding:0 12px;font-size:13px;font-weight:400;color:var(--text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;align-self:stretch;display:flex;align-items:center;border-right:1px solid var(--out2)}
-/* Fixed width sized to comfortably fit the longest pill label
-   ("Development Phase") without wrapping/clipping — a too-narrow
-   column was forcing that pill to overflow and made rows look
-   uneven in height. */
-.pt-gantt-info .sel{flex:0 0 175px;min-width:0;padding:0 12px;align-self:stretch;display:flex;align-items:center;overflow:hidden;border-right:1px solid var(--out2)}
-.pt-gantt-info .sel .pt-pill{overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.pt-gantt-info .cur{flex:0 0 90px;padding:0 12px;text-align:right;font-size:13px;color:var(--text-color);align-self:stretch;display:flex;align-items:center;justify-content:flex-end}
-/* Audit finding #9: at narrow viewports the sticky info column's full
-   505px width (chk 40 + name 200 + sel 175 + cur 90) can exceed the
-   entire viewport, so the pinned column alone fills the screen and
-   hides every timeline/date column behind an unreachable horizontal
-   scroll. Drop the two lower-priority sub-columns and shrink the name
-   column so the sticky rail stays reasonably sized and the timeline
-   remains reachable. */
-@media (max-width:640px){
-  .pt-gantt-info{flex-basis:240px}
-  .pt-gantt-info .name{flex-basis:200px}
-  .pt-gantt-info .sel,.pt-gantt-info .cur{display:none}
-}
-/* Header labels (Task Name / Single Select / Currency + month/
-   quarter/year) are all semibold and use the theme's text-color
-   token, not a hardcoded/inherited color. */
-.pt-gantt-row.head .name,.pt-gantt-row.head .sel,.pt-gantt-row.head .cur{font-weight:600;color:var(--text-color)}
+/* Task Name cell: phases (parent rows) are semibold with a chevron;
+   their tasks are indented to line up past it, as in the Figma Gantt. */
+.pt-gantt-info .name{flex:0 0 200px;min-width:0;padding:0 6px 0 33px;font-size:12px;font-weight:400;color:var(--text-color);white-space:nowrap;overflow:hidden;align-self:stretch;display:flex;align-items:center}
+.pt-gantt-info .name .pt-tree-label{overflow:hidden;text-overflow:ellipsis}
+.pt-gantt-row.parent .name{padding-left:6px;font-weight:600}
+.pt-gantt-row.parent .name .pt-tree-chev{margin-right:3px}
+/* Header labels (Task Name + month/quarter/year) are semibold 12px in
+   the theme's text colour; the header is 100px, three 33px rows plus its bottom line. */
+.pt-gantt-row.head .name{padding-left:6px;font-weight:600;color:var(--text-color)}
 /* Body rows are wrapped so the today-line can run the full body
    height as one continuous element, without ever drawing over the
    sticky header above it. The timeline gets an explicit width (not
@@ -1158,24 +1187,28 @@ table.pt tbody tr.is-selected td:last-child{box-shadow:inset -1px 0 var(--struct
    all 12 months instead of collapsing to whatever the row's own
    absolutely-positioned bar happens to reach. */
 .pt-gantt-body{position:relative}
-.pt-gantt-timeline{position:relative;flex:none;height:80px}
-.pt-gantt-row:not(.head) .pt-gantt-timeline{height:33px;overflow:visible}
-.pt-gantt-year,.pt-gantt-quarter,.pt-gantt-month{position:absolute;box-sizing:border-box;font-size:11.5px;font-weight:600;color:var(--text-color);display:flex;align-items:center;padding-left:8px;background:var(--struct-bg)}
-.pt-gantt-year{top:0;height:28px;border-right:1px solid var(--out1);border-bottom:1px solid var(--out2)}
-.pt-gantt-quarter{top:28px;height:26px;border-right:1px solid var(--out1);border-bottom:1px solid var(--out2)}
-.pt-gantt-month{top:54px;height:26px}
+.pt-gantt-timeline{position:relative;flex:none;height:99px}
+.pt-gantt-row:not(.head) .pt-gantt-timeline{height:38px;overflow:visible}
+.pt-gantt-year,.pt-gantt-quarter,.pt-gantt-month{position:absolute;box-sizing:border-box;font-size:12px;font-weight:600;color:var(--text-color);display:flex;align-items:center;padding-left:6px;background:var(--struct-bg)}
+.pt-gantt-year{top:0;height:33px;border-right:1px solid var(--out2);border-bottom:1px solid var(--out2)}
+.pt-gantt-quarter{top:33px;height:33px;border-right:1px solid var(--out2);border-bottom:1px solid var(--out2)}
+.pt-gantt-month{top:66px;height:33px}
 .pt-gantt-month:not(:last-child){border-right:1px solid var(--out2)}
-.pt-gantt-bar{position:absolute;top:7.5px;height:18px;border-radius:4px;display:flex;overflow:hidden;z-index:1;box-sizing:border-box;border:1px solid var(--p1)}
-.pt-gantt-bar .fill{background:var(--p1);height:100%}
-.pt-gantt-bar .rem{background:var(--p1);opacity:.3;height:100%;flex:1}
+/* Task bar: phase colour at 45% for the done part, 13% for the rest. */
+.pt-gantt-bar{position:absolute;top:9px;height:20px;display:flex;overflow:hidden;z-index:1}
+.pt-gantt-bar .fill{background:var(--bar,var(--p1));opacity:.45;height:100%}
+.pt-gantt-bar .rem{background:var(--bar,var(--p1));opacity:.13;height:100%;flex:1}
 /* Summary/parent bars use the exact organic/hand-drawn capsule
    outline supplied (an SVG path, not a CSS approximation), stretched
    to fit the bar's own left/width via preserveAspectRatio="none". */
-.pt-gantt-bar.summary{background:none;border:none;border-radius:0;overflow:visible}
+.pt-gantt-bar.summary{top:12px;height:14px;background:none;overflow:visible}
 .pt-gantt-bar.summary svg{display:block;width:100%;height:100%}
-.pt-gantt-milestone{position:absolute;top:10.5px;width:12px;height:12px;background:var(--p3);border-radius:2px;transform:rotate(45deg);z-index:1}
+.pt-gantt-milestone{position:absolute;top:13px;width:12px;height:12px;background:var(--p3);border-radius:2px;transform:rotate(45deg);z-index:1}
 .pt-gantt-today{position:absolute;top:0;width:2px;background:var(--p3);z-index:1;pointer-events:none}
 .pt-gantt-dep{position:absolute;pointer-events:none;z-index:1}
+.pt-cal-toolbar.pt-gantt-toolbar{padding:8px;border-bottom:1px solid var(--out2)}
+.pt-cal-input.pt-gantt-range{min-width:0}
+.pt-gantt-toolbar .fi.pt-gantt-chev{width:12px;height:12px}
 
 /* ── PowerTable "Calendar view" ──
    Task events use var(--p1) (same primary as every other layout's
@@ -1283,26 +1316,27 @@ table.pt tbody tr.is-selected td:last-child{box-shadow:inset -1px 0 var(--struct
    the Visuals-tab element tokens) since Planning has no element
    styling — see the colour mapping below. */
 /* Colour mapping — the tree visual's own Display Settings dropdowns,
-   matched by value to the closest Classic-theme variable (designer's
-   mapping). "Subtle Fill" below is the UI name; its JSON key is
-   structuralColors.background (see buildColors()).
-     Main Color (tree backdrop) ... page.canvas.background     (--canvas-bg)
-     Header BG (top half) ......... elements.background.color  (--el-bg)
+   matched by value to the closest Classic-theme variable (the "Classic
+   theme variables" frames on the Tree View Figma Themes page). "Subtle
+   Fill" and "Background" below are the Structural UI names; their JSON
+   keys are structuralColors.background and .subtleFill (see buildColors()).
+     Main Color (tree backdrop) ... "Subtle Fill"              (--struct-bg)
+     Header BG (top half) ......... Structural "Background"    (--struct-subtle)
      Header font color (top half) . typography.color           (--text-color)
      Font Color (bottom half) ..... typography.color           (--text-color)
      Non-simulation nodes BG
        (bottom half) .............. "Subtle Fill"              (--struct-bg)
-     Composite Nodes .............. elements.background.color  (--el-bg) — not rendered in the preview
-     Connectors ................... structuralColors.outline2  (--out2)
-     Node divider (top/bottom) .... structuralColors.outline2  (--out2), same as connectors
+     Composite Nodes .............. Structural "Background"    (--struct-subtle) — not rendered in the preview
+     Connectors ................... elements.border.color      (--el-border-color)
+     Node divider (top/bottom) .... elements.border.color      (--el-border-color), same as connectors
      Accent Bar (status) .......... primaryColors[0]           (--p1) — default and neutral simulation
        positive simulation ........ semantic.positive          (--pos)
        negative simulation ........ semantic.negative          (--neg)
    Not a product dropdown — fixed choice:
-     collapse "beak" .............. same fill as Header BG (--el-bg), glyph --struct-icon
+     collapse "beak" .............. "Subtle Fill" disc (--struct-bg) with an --el-border-color ring, glyph --struct-icon
    Out of scope for the preview: BG Color (has no visible effect) and
    Highlighted (selection-path highlight on connectors). */
-.plan-tree-wrap{flex:1;min-height:0;overflow:auto;background:var(--canvas-bg);display:flex}
+.plan-tree-wrap{flex:1;min-height:0;overflow:auto;background:var(--struct-bg);display:flex}
 .plan-table-scroll{flex:1;min-height:0;overflow:auto;background:var(--canvas-bg)}
 #planTable{width:100%;border-collapse:separate;border-spacing:0}
 #planTable thead th{background:var(--canvas-bg);border:1px solid var(--out2)}
@@ -1339,7 +1373,7 @@ table.pt tbody tr.is-selected td:last-child{box-shadow:inset -1px 0 var(--struct
    themes the node header matches the canvas), so use a grey hairline
    edge plus a soft grey shadow as the dark-mode counterpart. */
 [data-tone=dark] .plan-tree-node{filter:drop-shadow(0 0 .6px rgba(190,190,200,.55)) drop-shadow(0 1.5px 4px rgba(150,150,160,.22))}
-.plan-tree-card{position:relative;width:256px;box-sizing:border-box;overflow:hidden;background:var(--el-bg);border-left:3px solid var(--p1);border-radius:3px;font-family:var(--font-family);color:var(--text-color);white-space:nowrap}
+.plan-tree-card{position:relative;width:256px;box-sizing:border-box;overflow:hidden;background:var(--struct-subtle);border-left:3px solid var(--p1);border-radius:3px;font-family:var(--font-family);color:var(--text-color);white-space:nowrap}
 .plan-tree-card.sim-pos{border-left-color:var(--pos)}
 .plan-tree-card.sim-neg{border-left-color:var(--neg)}
 .plan-tree-card .head{height:44px;box-sizing:border-box;padding:5px 11px 5px 8px}
@@ -1347,17 +1381,16 @@ table.pt tbody tr.is-selected td:last-child{box-shadow:inset -1px 0 var(--struct
 .plan-tree-card .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .plan-tree-card .head .row{font-size:11.5px;font-weight:700;line-height:17px}
 .plan-tree-card .body{position:relative;background:var(--struct-bg);padding:3px 11px 4px 8px}
-.plan-tree-card .body::before{content:'';position:absolute;top:0;left:8px;right:11px;height:1px;background:var(--out2)}
+.plan-tree-card .body::before{content:'';position:absolute;top:0;left:8px;right:11px;height:1px;background:var(--el-border-color)}
 .plan-tree-card .body .row{font-size:11px;line-height:17.5px}
 .plan-tree-card .row span:first-child{overflow:hidden;text-overflow:ellipsis}
 .plan-tree-card .val{flex:none;font-variant-numeric:tabular-nums}
 .plan-tree-conn{position:absolute;top:0;left:0;pointer-events:none}
-.plan-tree-conn path{fill:none;stroke:var(--out2);stroke-width:1}
-/* Collapse "beak": a roomy disc in the card's own fill, centred just
-   past the card's right edge at the node's vertical middle, so it
-   reads as a rounded bump grown out of the node (speech-bubble tail)
-   rather than a separate button stuck on top. */
-.plan-tree-beak{position:absolute;width:20px;height:20px;border-radius:50%;background:var(--el-bg);display:flex;align-items:center;justify-content:center;color:var(--struct-icon)}
+.plan-tree-conn path{fill:none;stroke:var(--el-border-color);stroke-width:1}
+/* Collapse "beak": a disc centred just past the card's right edge at the
+   node's vertical middle, in the body's Subtle Fill with a thin ring in
+   the connector colour so it reads as the start of the connectors. */
+.plan-tree-beak{position:absolute;width:20px;height:20px;box-sizing:border-box;border-radius:50%;background:var(--struct-bg);border:1px solid var(--el-border-color);display:flex;align-items:center;justify-content:center;color:var(--struct-icon)}
 .plan-tree-beak svg{width:8px;height:8px;flex:none}
 
   .pg{display:none;flex-direction:column;gap:var(--vgap);flex:1;min-height:0;overflow:hidden}

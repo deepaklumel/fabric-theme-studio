@@ -657,7 +657,7 @@
           </section>
         </div>
 
-        <!-- PAGE 5: PowerTable module — "Table layout" / "Kanban layout" -->
+        <!-- PAGE 5: PowerTable module — Table / Hierarchy / Crosstab / Gantt / Calendar / Kanban layouts -->
         <div class="pg" id="pg5" style="display:none">
           <section class="page-canvas" style="overflow:hidden;display:flex;flex-direction:column" id="ptTableView">
             <div class="pt-wrap">
@@ -670,6 +670,33 @@
             </div>
           </section>
 
+          <section class="page-canvas" style="overflow:hidden;display:none;flex-direction:column" id="ptHierarchyView">
+            <div class="pt-wrap">
+              <table class="pt pt-tree" id="ptHier">
+                <thead>
+                  <tr id="ptHierHeadRow"></tr>
+                </thead>
+                <tbody id="ptHierBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="page-canvas" style="overflow:hidden;display:none;flex-direction:column" id="ptCrosstabView">
+            <div class="pt-ct-bar">
+              <button class="pt-cal-btn pt-cal-subtle pt-cal-icon" id="ptCtPrev" aria-label="Previous year"><i data-icon="chevronLeft20"></i></button>
+              <span class="pt-ct-range" id="ptCtRange">01 Jan, 2026 - 31 Dec, 2026</span>
+              <button class="pt-cal-btn pt-cal-subtle pt-cal-icon" id="ptCtNext" aria-label="Next year"><i data-icon="chevronRight20"></i></button>
+              <div class="pt-cal-space"></div>
+              <button class="pt-cal-btn pt-cal-subtle"><i data-icon="options20"></i><span>Display Settings</span></button>
+            </div>
+            <div class="pt-wrap">
+              <table class="pt pt-ct" id="ptCrosstab">
+                <thead id="ptCtHead"></thead>
+                <tbody id="ptCtBody"></tbody>
+              </table>
+            </div>
+          </section>
+
           <section class="page-canvas" style="overflow:hidden;display:none;flex-direction:column" id="ptKanbanView">
             <div class="pt-kanban-wrap">
               <div class="pt-kanban" id="ptKanban"></div>
@@ -677,6 +704,18 @@
           </section>
 
           <section class="page-canvas" style="overflow:hidden;display:none;flex-direction:column" id="ptGanttView">
+            <!-- Gantt toolbar from the Figma Gantt: period arrows around the
+                 date range, Today, then Baselines, Properties and the scale. -->
+            <div class="pt-cal-toolbar pt-gantt-toolbar" style="flex:none">
+              <button class="pt-cal-btn pt-cal-default pt-cal-icon" id="ptGanttPrev" aria-label="Previous year"><i data-icon="chevronLeft20"></i></button>
+              <div class="pt-cal-input pt-gantt-range"><span id="ptGanttRange">01 Jan, 2023 - 31 Dec, 2023</span></div>
+              <button class="pt-cal-btn pt-cal-default pt-cal-icon" id="ptGanttNext" aria-label="Next year"><i data-icon="chevronRight20"></i></button>
+              <button class="pt-cal-btn pt-cal-default" id="ptGanttToday">Today</button>
+              <div class="pt-cal-space"></div>
+              <button class="pt-cal-btn pt-cal-subtle"><i data-icon="layoutGantt"></i><span>Baselines</span><i data-icon="chevronDown12" class="pt-gantt-chev"></i></button>
+              <button class="pt-cal-btn pt-cal-subtle"><i data-icon="options20"></i><span>Properties</span></button>
+              <button class="pt-cal-input pt-cal-dropdown"><span>Month</span><i data-icon="chevronDown20"></i></button>
+            </div>
             <div class="pt-gantt-wrap">
               <div class="pt-gantt" id="ptGantt"></div>
             </div>
@@ -906,6 +945,8 @@
         <button class="btn btn-subtle cmd pt-layout-btn" id="ptLayoutBtn" data-tip="Choose a layout" aria-haspopup="true"><span class="pt-layout-btn-icon ri-misc" id="ptLayoutIcon"><i data-icon="layoutTable"></i></span><span class="cmd-label" id="ptLayoutLabel">Table</span><i data-icon="chevronDown12" class="mb-chev"></i></button>
         <div class="menu pt-layout-drop" id="ptLayoutDrop" role="menu">
           <button data-ic="layoutTable" class="menu-item pt-layout-opt active" data-layout="table" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="layoutTable16" class="mi-icon"></i><span class="mi-label">Table</span></button>
+          <button data-ic="layoutHierarchy" class="menu-item pt-layout-opt" data-layout="hierarchy" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="layoutHierarchy16" class="mi-icon"></i><span class="mi-label">Hierarchy</span></button>
+          <button data-ic="layoutCrosstab" class="menu-item pt-layout-opt" data-layout="crosstab" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="layoutCrosstab16" class="mi-icon"></i><span class="mi-label">Crosstab</span></button>
           <button data-ic="layoutGantt" class="menu-item pt-layout-opt" data-layout="gantt" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="layoutGantt16" class="mi-icon"></i><span class="mi-label">Gantt</span></button>
           <button data-ic="layoutGanttRes" class="menu-item pt-layout-opt" data-layout="ganttres" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="layoutGanttRes16" class="mi-icon"></i><span class="mi-label">Gantt resources</span></button>
           <button data-ic="layoutCalendar" class="menu-item pt-layout-opt" data-layout="calendar" role="menuitemradio"><span class="mi-check"><i data-icon="checkmark16"></i></span><i data-icon="layoutCalendar16" class="mi-icon"></i><span class="mi-label">Calendar</span></button>
