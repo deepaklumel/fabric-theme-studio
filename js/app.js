@@ -19,6 +19,22 @@ const IC={
 
 function lum(h){h=(h||'#000').replace('#','').slice(0,6);const r=i=>{const c=parseInt(h.slice(i,i+2)||'0',16)/255;return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4)};return 0.2126*r(0)+0.7152*r(2)+0.0722*r(4);}
 function cr2(fg,bg){const a=lum(fg),b=lum(bg),hi=Math.max(a,b),lo=Math.min(a,b);return(hi+0.05)/(lo+0.05);}
+/* See-through colours (#RRGGBBAA) as the solid colour they show, blended onto
+   the solid colour beneath. Colour maths (lum, contrast) reads 6 digits, so a
+   10%-white page on a dark wallpaper would otherwise count as white. */
+function solidOver(h,under){
+  const m=/^#([0-9a-f]{6})([0-9a-f]{2})?$/i.exec((h||'').trim());if(!m)return h;
+  if(!m[2])return '#'+m[1].toUpperCase();
+  const a=parseInt(m[2],16)/255,u=solidOver(under||'#FFFFFF','#FFFFFF');
+  return '#'+[0,2,4].map(i=>Math.round(a*parseInt(m[1].slice(i,i+2),16)+(1-a)*parseInt(u.slice(1+i,3+i),16)).toString(16).padStart(2,'0')).join('').toUpperCase();
+}
+// The solid wallpaper, canvas and element colours a theme actually shows (each layer over the one beneath).
+function pageSolids(t){
+  const p=(t&&t.theme&&t.theme.page)||{},e=(t&&t.theme&&t.theme.elements)||{};
+  const wall=solidOver((p.wallpaper&&p.wallpaper.color)||'#FFFFFF','#FFFFFF');
+  const canvas=solidOver((p.canvas&&p.canvas.background&&p.canvas.background.color)||'#FFFFFF',wall);
+  return{wall,canvas,el:solidOver((e.background&&e.background.color)||'#FFFFFF',canvas)};
+}
 function tc(hex){return lum(hex)<0.45?'#fff':'#111';}
 function norm(v){v=(v||'').trim();if(!v.startsWith('#'))v='#'+v;return /^#[0-9a-fA-F]{6}$/.test(v)?v.toUpperCase():null;}
 
@@ -59,7 +75,9 @@ const PRODUCT_THEME={3:'DEFAULT',10:'LIGHT',1:'DARK',4:'MIDNIGHT',5:'IBCS',6:'CO
 // Series and Measures for studio themes the product doesn't have, as the
 // Themes Figma file documents them (Category colors = Series): Fabric and
 // Horizon were designed there; Vivid, Terrain, Sorbet and Neon's lists were
-// generated from their primaries and then documented. Keyed by studio themeType.
+// generated from their primaries and then documented. The work-in-progress Paper
+// and Clay lists use the other palettes of Claude's dashboard template (Clay,
+// Ocean, Meadow and its categorical colours). Keyed by studio themeType.
 const DESIGN_CHART_COLORS={
   2:{series:["#117865","#637CEF","#E3008C","#2AA0A4","#9373C0","#13A10E","#3A96DD","#CA5010","#57811B","#B146C2","#0A5C50","#3C51B4","#AD006A","#026467","#674C8C","#0E7A0B","#2C72A8","#9A3D0C","#405F14","#863593","#1F937E","#4F6BED","#EA38A6","#038387","#8764B8","#11910D","#3487C7","#D06228","#689920","#BA58C9","#033F38","#2C3C85","#7F004E","#02494C","#4C3867","#0B5A08","#20547C","#712D09","#23330B","#63276D","#0C695A","#4760D5","#CC007E","#037679","#795AA6","#3DB838","#65ADE5","#B6480E","#90BE4C","#9F3FAF"],
     measures:["#4A89BA","#DC5E62","#009B51","#B55FC1","#B27C00","#0099BC","#AD4589","#A97652","#546FD2","#7A7574","#003B6A","#9F282B","#00723B","#671174","#835B00","#00748F","#5A003B","#6C4123","#001E89","#5D5958","#004E8C","#D13438","#00B85F","#881798","#D39300","#008AA9","#98246F","#8E562E","#3050C6","#8A8584"]},
@@ -76,8 +94,23 @@ const DESIGN_CHART_COLORS={
     measures:["#7AA2F7","#BDD8FF","#F7A8B8","#FAC9D2","#8EDBC4","#B7E3D4","#FFD27F","#EED4A5","#B4A7F5","#D7D0FF","#8FD3F4","#B7DEF2","#FFB38A","#FBCCB4","#C3E88D","#CAE1AC","#C98DC6","#EFC9ED","#55CBD4","#A6E5E9","#6389DC","#AAC4F8","#DC8F9F","#FAC9D1","#75C1AB","#B7E3D5","#E4B865","#F5DBAB","#9B8EDA","#D3CDFD"]},
   // Neon
   15:{series:["#00DFFF","#90BFFF","#6740E3","#00B799","#E24072","#E4A71F","#1890E1","#8ACB00","#E3711B","#CD5FDE","#00C5E4","#78A6E4","#9277FF","#42ECCB","#FF77A2","#FFDB63","#5AC3FF","#BCFF58","#FFA459","#FF93FF","#46FAFF","#A9D9FF","#5624CB","#009D81","#C51F5B","#CA8E00","#0077C6","#72B100","#C75700","#B245C3","#00ABCA","#608DC9","#A78EFF","#62FFE2","#FF8EB8","#FFDC64","#72DAFF","#BDFF58","#FFBB71","#FFAAFF","#50FFFF","#BAEBFF"],
-    measures:["#7C5CFF","#52459D","#00D1B2","#3A8E7C","#FF5C8A","#A1475E","#FFC145","#B18E50","#3DA9FC","#3A719F","#A3E635","#7DA44C","#FF8A3D","#A6653E","#E879F9","#985CA2","#00DFFF","#459DAF","#90BFFF","#6C87AB","#6740E3","#574BA3","#00B799","#2C7665","#E24072","#8A334A","#E4A71F","#987637","#1890E1","#225A86"]}
+    measures:["#7C5CFF","#52459D","#00D1B2","#3A8E7C","#FF5C8A","#A1475E","#FFC145","#B18E50","#3DA9FC","#3A719F","#A3E635","#7DA44C","#FF8A3D","#A6653E","#E879F9","#985CA2","#00DFFF","#459DAF","#90BFFF","#6C87AB","#6740E3","#574BA3","#00B799","#2C7665","#E24072","#8A334A","#E4A71F","#987637","#1890E1","#225A86"]},
+  16:{"series":["#D97757","#3D3929","#C2B280","#788C5D","#6A9BCC","#8B5D7D","#C9952B","#5F6B73","#1D4E89","#1B9AAA","#7FD1AE","#7A4FB8","#7A8B99","#D9C8A0","#2D6A4F","#52B788","#A3B43C","#7A5C3E","#A8415B"],"measures":["#257DE0","#D97757","#2D6A4F","#1D4E89","#3D3929","#52B788","#C2B280","#A3B43C","#1B9AAA","#788C5D","#7A5C3E","#62B6E6","#D99A2B","#7FD1AE","#8B5D7D","#7A4FB8","#8A8F85","#5F6B73","#A8415B","#D9C8A0"]},
+  17:{"series":["#C9C2B3","#B98E5A","#93A877","#7EADDB","#A97A9B","#D8A747","#8D9AA3","#608FCC","#49B2C2","#81CFFE","#9DEAC8","#EDDDB6","#488166","#72D0A2","#D8E983","#917356","#C05C73"],"measures":["#338CED","#E08363","#488166","#608FCC","#C9C2B3","#72D0A2","#B98E5A","#D8E983","#49B2C2","#93A877","#917356","#81CFFE","#7EADDB","#F1B454","#9DEAC8","#A97A9B","#A58BE8","#A3A79E","#C05C73","#EDDDB6"]},
+  18:{"series":["#257DE0","#F47230","#00B894","#F2A600","#EE7FAC","#008A17","#6A4CE2","#EC4647","#1D4E89","#1B9AAA","#7FD1AE","#7A4FB8","#7A8B99","#D9C8A0","#2D6A4F","#52B788","#A3B43C","#7A5C3E","#A8415B"],"measures":["#D97757","#2D6A4F","#1D4E89","#3D3929","#52B788","#2A78D6","#C2B280","#A3B43C","#1B9AAA","#788C5D","#7A5C3E","#62B6E6","#D99A2B","#7FD1AE","#8B5D7D","#7A4FB8","#8A8F85","#5F6B73","#A8415B","#D9C8A0"]},
+  19:{"series":["#338CED","#E76624","#00A888","#D28E05","#E24D8B","#008A17","#9887EF","#608FCC","#49B2C2","#81CFFE","#9DEAC8","#EDDDB6","#488166","#72D0A2","#D8E983","#917356","#C05C73"],"measures":["#E08363","#488166","#608FCC","#C9C2B3","#72D0A2","#2F7FE8","#B98E5A","#D8E983","#49B2C2","#93A877","#917356","#81CFFE","#7EADDB","#F1B454","#9DEAC8","#A97A9B","#A58BE8","#A3A79E","#C05C73","#EDDDB6"]}
 };
+// Fabric Modern (20) uses the Fabric Theme's (2) Series and Measures.
+DESIGN_CHART_COLORS[20]=DESIGN_CHART_COLORS[2];
+DESIGN_CHART_COLORS[21]={"series":["#00B6E8","#EA8EE8","#4D63D4","#C60074","#00878C","#7B5BA6","#008800","#197DC2","#AE3600","#4C680B","#009CCD","#CF75CE","#7A95FF","#FF38A5","#4AB9BD","#AC8BDA","#3CBB35","#55AFF8","#E66A33","#799845","#3DD0FF","#FFA7FF","#394AB9","#AC0060","#006F74","#64448D","#006F00","#0065A8","#9C2200","#446000"],"measures":["#637CEF","#41508F","#E3008C","#8F265C","#2AA0A4","#2A6466","#9373C0","#5D4C76","#13A10E","#246520","#3A96DD","#305F86","#CA5010","#833F23","#62802B","#4B5C30","#00B6E8","#307995","#EA8EE8","#9C699B","#4D63D4","#40508F","#C60074","#8A2E58","#00878C","#285F62","#7B5BA6","#5D4B76","#008800","#2B6427"]};
+DESIGN_CHART_COLORS[22]={"series":["#66B5FF","#AD7BF9","#40C977","#FF8549","#FF8CC1","#FFD240","#FF6764","#AFAFAF","#1859B7","#3478D4","#5B95E5","#8AB8F8","#B9D5FF","#DCEBFF","#C9CDD3"],"measures":["#0285FF","#FB6A22","#924FF7","#04B84C","#FF66AD","#FFC300","#FA423E","#8F8F8F","#1859B7","#5B95E5","#B9D5FF","#C9CDD3"]};
+DESIGN_CHART_COLORS[23]={"series":["#0285FF","#924FF7","#04B84C","#FB6A22","#FF66AD","#FFC300","#FA423E","#8F8F8F","#1859B7","#3478D4","#5B95E5","#8AB8F8","#B9D5FF","#DCEBFF","#C9CDD3"],"measures":["#66B5FF","#FF8549","#AD7BF9","#40C977","#FF8CC1","#FFD240","#FF6764","#AFAFAF","#5B95E5","#B9D5FF","#1859B7","#C9CDD3"]};
+DESIGN_CHART_COLORS[24]={"series":["#7C6EF6","#22D3EE","#A78BFA","#F472B6","#FBBF24","#34D399","#FB7185","#60A5FA","#3730A3","#525866"],"measures":["#4338CA","#0891B2","#7C3AED","#DB2777","#CA8A04","#059669","#DC2626","#2563EB","#3730A3","#868C98"]};
+DESIGN_CHART_COLORS[25]={"series":["#4338CA","#0891B2","#7C3AED","#DB2777","#CA8A04","#059669","#DC2626","#2563EB","#6D5DE6","#8892A4"],"measures":["#7C6EF6","#22D3EE","#A78BFA","#F472B6","#FBBF24","#34D399","#FB7185","#60A5FA","#6D5DE6","#8892A4"]};
+DESIGN_CHART_COLORS[26]={"series":["#FF8792","#47857D","#B6D9D1","#ED003D","#2F5651","#FFDADC","#10B981","#A855F7","#3B82F6","#FBBF24"],"measures":["#FF5569","#9AC8BF","#376A64","#FFB2B8","#BF002F","#60A195","#253C39","#FF8792","#10B981","#3B82F6"]};
+DESIGN_CHART_COLORS[27]={"series":["#FF8792","#60A195","#B6D9D1","#BF002F","#376A64","#FFDADC","#10B981","#C084FC","#60A5FA","#F59E0B"],"measures":["#FF5569","#9AC8BF","#47857D","#FFB2B8","#ED003D","#60A195","#E8F4F2","#FF8792","#34D399","#60A5FA"]};
+DESIGN_CHART_COLORS[28]={"series":["#FF3B30","#00C7BE","#30B0C7","#A2845E","#8E8E93","#0040DD","#248A3D","#C93400","#8944AB","#D30F45","#0071A4","#3634A3","#B25000","#0C817B"],"measures":["#007AFF","#FF9500","#34C759","#AF52DE","#FF2D55","#32ADE6","#5856D6","#FFCC00","#00C7BE","#8E8E93"]};
+DESIGN_CHART_COLORS[29]={"series":["#FF453A","#63E6E2","#40C8E0","#AC8E68","#98989D","#409CFF","#30DB5B","#FFB340","#DA8FFF","#FF6482","#70D7FF","#FFD426","#FF6961","#66D4CF","#B59469"],"measures":["#0A84FF","#FF9F0A","#30D158","#BF5AF2","#FF375F","#64D2FF","#7D7AFF","#FFD60A","#63E6E2","#98989D"]};
 const CHART_LIST_MAX=60; // the product's limit per list
 const NEW_THEME_CHART_COLORS=20; // Series and Measures each, for a theme built from its primaries
 const PRESETS=[
@@ -95,6 +128,53 @@ const PRESETS=[
   ,{...{"label":"Terrain","themeType":13,"theme":{"colors":{"primaryColors":["#264653","#2A9D8F","#E9C46A","#F4A261","#E76F51","#8AB17D","#6D597A","#B56576"],"structuralColors":{"outline1":"#A8A29E","outline2":"#ECE7E1","background":"#F7F4F0","accent":"#2A9D8F","icon":"#57534E","subtleFill":"#FFFFFF"},"semantic":{"positive":"#2A9D8F","negative":"#C8553D","neutral":"#7A7570"}},"page":{"canvas":{"background":{"type":"color","color":"#FBF9F6","imageUrl":""},"border":{"color":"#E7E1DA","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#FBF9F6","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#E7E1DA","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#E7E1DA","iconColor":"#57534E"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#1F2A30"}},"typography":{"autoFontColor":false,"color":"#1F2A30","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
   ,{...{"label":"Sorbet","themeType":14,"theme":{"colors":{"primaryColors":["#7AA2F7","#F7A8B8","#8EDBC4","#FFD27F","#B4A7F5","#8FD3F4","#FFB38A","#C3E88D"],"structuralColors":{"outline1":"#B7BCCB","outline2":"#ECEEF4","background":"#F7F8FC","accent":"#7AA2F7","icon":"#5B6178","subtleFill":"#FFFFFF"},"semantic":{"positive":"#2F9E6E","negative":"#E0607E","neutral":"#8A8FA3"}},"page":{"canvas":{"background":{"type":"color","color":"#FAFBFF","imageUrl":""},"border":{"color":"#E9ECF5","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#FAFBFF","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#E9ECF5","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#E9ECF5","iconColor":"#5B6178"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#2A2F45"}},"typography":{"autoFontColor":false,"color":"#2A2F45","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
   ,{...{"label":"Neon","themeType":15,"theme":{"colors":{"primaryColors":["#7C5CFF","#00D1B2","#FF5C8A","#FFC145","#3DA9FC","#A3E635","#FF8A3D","#E879F9"],"structuralColors":{"outline1":"#475569","outline2":"#1E293B","background":"#172033","accent":"#7C5CFF","icon":"#CBD5E1","subtleFill":"#111A2E"},"semantic":{"positive":"#34D399","negative":"#FB7185","neutral":"#94A3B8"}},"page":{"canvas":{"background":{"type":"color","color":"#0B1120","imageUrl":""},"border":{"color":"#1E293B","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#0B1120","imageUrl":""}},"elements":{"background":{"type":"color","color":"#111A2E","imageUrl":""},"border":{"color":"#1E293B","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":5,"rightPadding":5,"topPadding":5,"bottomPadding":5,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#111A2E","borderColor":"#1E293B","iconColor":"#CBD5E1"},"tooltip":{"backgroundColor":"#111A2E","color":"#E2E8F0"}},"typography":{"autoFontColor":false,"color":"#E2E8F0","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},builtIn:true}
+  // Work in progress (own section in the theme picker). Paper Light/Dark are the
+  // standard look of Claude's dashboard pages, light and dark, checked against the
+  // colours a live dashboard renders; Clay Light/Dark are its warm "paper, clay and
+  // ink" look. Values come from the dashboard template.
+  // Clay's borders and Outline 2 are darkened from the template's so they read on
+  // its cream or brown page: light #E6DFD3 -> #DCD2C1 (halfway to the 1.5:1 shade, which
+  // looked too heavy), dark #272726 -> #40372B.
+  ,{...{"label":"Paper Light","themeType":16,"theme":{"colors":{"primaryColors":["#257DE0","#F47230","#00B894","#F2A600","#EE7FAC","#008A17","#6A4CE2","#EC4647"],"structuralColors":{"outline1":"#C2C2C2","outline2":"#EBEBEB","background":"#EFEFEF","accent":"#257DE0","icon":"#666666","subtleFill":"#FFFFFF"},"semantic":{"positive":"#0AAC23","negative":"#DC3C3D","neutral":"#878787"}},"page":{"canvas":{"background":{"type":"color","color":"#F9F9F9","imageUrl":""},"border":{"color":"#E5E5E5","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#F9F9F9","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#EBEBEB","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":12,"rightPadding":12,"topPadding":12,"bottomPadding":12,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#EBEBEB","iconColor":"#888888"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#666666"}},"typography":{"autoFontColor":false,"color":"#1A1A1A","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
+  ,{...{"label":"Paper Dark","themeType":17,"theme":{"colors":{"primaryColors":["#338CED","#E76624","#00A888","#D28E05","#E24D8B","#008A17","#9887EF","#EB6263"],"structuralColors":{"outline1":"#5E5E5E","outline2":"#282828","background":"#303030","accent":"#338CED","icon":"#9F9F9F","subtleFill":"#1F1F1F"},"semantic":{"positive":"#0AAC23","negative":"#DC3C3D","neutral":"#959595"}},"page":{"canvas":{"background":{"type":"color","color":"#0B0B0B","imageUrl":""},"border":{"color":"#151515","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#0B0B0B","imageUrl":""}},"elements":{"background":{"type":"color","color":"#1F1F1F","imageUrl":""},"border":{"color":"#282828","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":12,"rightPadding":12,"topPadding":12,"bottomPadding":12,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#1F1F1F","borderColor":"#282828","iconColor":"#797979"},"tooltip":{"backgroundColor":"#303030","color":"#A6A6A6"}},"typography":{"autoFontColor":false,"color":"#EFEFEF","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
+  ,{...{"label":"Clay Light","themeType":18,"theme":{"colors":{"primaryColors":["#D97757","#3D3929","#C2B280","#788C5D","#6A9BCC","#8B5D7D","#C9952B","#5F6B73"],"structuralColors":{"outline1":"#C6B8A0","outline2":"#DCD2C1","background":"#EFE8DC","accent":"#D97757","icon":"#7A6F62","subtleFill":"#FFFFFF"},"semantic":{"positive":"#006300","negative":"#8E2626","neutral":"#7A6F62"}},"page":{"canvas":{"background":{"type":"color","color":"#F6F1E9","imageUrl":""},"border":{"color":"#DCD2C1","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#F6F1E9","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#DCD2C1","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":12,"rightPadding":12,"topPadding":12,"bottomPadding":12,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#DCD2C1","iconColor":"#7A6F62"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#2B2620"}},"typography":{"autoFontColor":false,"color":"#2B2620","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
+  ,{...{"label":"Clay Dark","themeType":19,"theme":{"colors":{"primaryColors":["#E08363","#C9C2B3","#B98E5A","#93A877","#7EADDB","#A97A9B","#D8A747","#8D9AA3"],"structuralColors":{"outline1":"#4A4237","outline2":"#40372B","background":"#2E2720","accent":"#E08363","icon":"#C9C2B3","subtleFill":"#221D17"},"semantic":{"positive":"#0CA30C","negative":"#EC7E7E","neutral":"#898781"}},"page":{"canvas":{"background":{"type":"color","color":"#14110D","imageUrl":""},"border":{"color":"#40372B","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#14110D","imageUrl":""}},"elements":{"background":{"type":"color","color":"#221D17","imageUrl":""},"border":{"color":"#40372B","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":12,"rightPadding":12,"topPadding":12,"bottomPadding":12,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#221D17","borderColor":"#40372B","iconColor":"#898781"},"tooltip":{"backgroundColor":"#221D17","color":"#F0EFEC"}},"typography":{"autoFontColor":false,"color":"#F0EFEC","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
+  // Fabric Modern: the Fabric Theme's own colours (primaries, accent, good/bad and
+  // its Series and Measures) laid out the Paper way: soft grey page, white cards
+  // with a hairline border, 8px corners, 12px padding and calmer secondary text.
+  ,{...{"label":"Fabric Modern","themeType":20,"theme":{"colors":{"primaryColors":["#637CEF","#E3008C","#2AA0A4","#9373C0","#13A10E","#3A96DD","#CA5010","#62802B"],"structuralColors":{"outline1":"#C7C7C7","outline2":"#EBEBEB","background":"#F5F5F5","accent":"#117865","icon":"#616161","subtleFill":"#FFFFFF"},"semantic":{"positive":"#107C10","negative":"#C50F1F","neutral":"#8A8886"}},"page":{"canvas":{"background":{"type":"color","color":"#FAFAFA","imageUrl":""},"border":{"color":"#E6E6E6","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#FAFAFA","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#EBEBEB","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":12,"rightPadding":12,"topPadding":12,"bottomPadding":12,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#EBEBEB","iconColor":"#707070"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#616161"}},"typography":{"autoFontColor":false,"color":"#242424","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
+  // Fabric Modern Dark: the same layout on Fluent's dark greys (page #141414,
+  // cards #1F1F1F), Fabric's primaries, Fluent's dark good/bad colours, and
+  // Series/Measures made from the primaries with chartColorsFromPrimaries (dark).
+  ,{...{"label":"Fabric Modern Dark","themeType":21,"theme":{"colors":{"primaryColors":["#637CEF","#E3008C","#2AA0A4","#9373C0","#13A10E","#3A96DD","#CA5010","#62802B"],"structuralColors":{"outline1":"#666666","outline2":"#2E2E2E","background":"#292929","accent":"#2AAC94","icon":"#ADADAD","subtleFill":"#1F1F1F"},"semantic":{"positive":"#54B054","negative":"#DC626D","neutral":"#999999"}},"page":{"canvas":{"background":{"type":"color","color":"#141414","imageUrl":""},"border":{"color":"#242424","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#141414","imageUrl":""}},"elements":{"background":{"type":"color","color":"#1F1F1F","imageUrl":""},"border":{"color":"#2E2E2E","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":12,"rightPadding":12,"topPadding":12,"bottomPadding":12,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#1F1F1F","borderColor":"#2E2E2E","iconColor":"#999999"},"tooltip":{"backgroundColor":"#292929","color":"#D6D6D6"}},"typography":{"autoFontColor":false,"color":"#F5F5F5","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
+  // Clear Light/Dark: taken from the example dashboards on OpenAI's "put data to
+  // work" page (their light and dark colour tokens, read from the live page):
+  // near-white or charcoal page, hairline-bordered cards, 20px corners, 16/20px
+  // padding, grey axis text and their 8 chart colours. Series add their blue ramp.
+  ,{...{"label":"Clear Light","themeType":22,"theme":{"colors":{"primaryColors":["#0285FF","#924FF7","#04B84C","#FB6A22","#FF66AD","#FFC300","#FA423E","#8F8F8F"],"structuralColors":{"outline1":"#DFDFDF","outline2":"#EDEDED","background":"#F7F7F7","accent":"#339CFF","icon":"#767676","subtleFill":"#FFFFFF"},"semantic":{"positive":"#00A240","negative":"#E02E2A","neutral":"#8F8F8F"}},"page":{"canvas":{"background":{"type":"color","color":"#FCFCFC","imageUrl":""},"border":{"color":"#EDEDED","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#FCFCFC","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#EDEDED","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":20,"radiusTopRight":20,"radiusBottomLeft":20,"radiusBottomRight":20},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":20,"rightPadding":20,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":true,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#EDEDED","iconColor":"#767676"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#1A1C1F"}},"typography":{"autoFontColor":false,"color":"#1A1C1F","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
+  ,{...{"label":"Clear Dark","themeType":23,"theme":{"colors":{"primaryColors":["#66B5FF","#AD7BF9","#40C977","#FF8549","#FF8CC1","#FFD240","#FF6764","#AFAFAF"],"structuralColors":{"outline1":"#414141","outline2":"#303030","background":"#282828","accent":"#99CEFF","icon":"#AFAFAF","subtleFill":"#212121"},"semantic":{"positive":"#40C977","negative":"#FF6764","neutral":"#AFAFAF"}},"page":{"canvas":{"background":{"type":"color","color":"#181818","imageUrl":""},"border":{"color":"#303030","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#181818","imageUrl":""}},"elements":{"background":{"type":"color","color":"#181818","imageUrl":""},"border":{"color":"#303030","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":20,"radiusTopRight":20,"radiusBottomLeft":20,"radiusBottomRight":20},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":20,"rightPadding":20,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":true,"isEnabled":true},"header":{"backgroundColor":"#181818","borderColor":"#303030","iconColor":"#AFAFAF"},"tooltip":{"backgroundColor":"#282828","color":"#FFFFFF"}},"typography":{"autoFontColor":false,"color":"#FFFFFF","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
+  // Slate Light/Dark: Bruin's open-source dashboard tool (github.com/bruin-data/dac,
+  // frontend/src/themes/bruin/tokens.ts): slate greys, indigo-led 8-colour palette,
+  // cards the page colour with a thin border, 4px corners, 12/16px padding.
+  // Coral Light/Dark: Bruin's website look (getbruin.com): crimson-coral brand scale
+  // and green-tinted teal greys, pale teal cards, 10px corners. The site has no
+  // dark mode, so Coral Dark uses the darker steps of the same scales.
+  ,{...{"label":"Slate Light","themeType":24,"theme":{"colors":{"primaryColors":["#4338CA","#0891B2","#7C3AED","#DB2777","#CA8A04","#059669","#DC2626","#2563EB"],"structuralColors":{"outline1":"#868C98","outline2":"#E2E4E9","background":"#F6F7F9","accent":"#4338CA","icon":"#525866","subtleFill":"#FFFFFF"},"semantic":{"positive":"#059669","negative":"#DC2626","neutral":"#868C98"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#E2E4E9","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#F6F7F9","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#E2E4E9","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":4,"radiusTopRight":4,"radiusBottomLeft":4,"radiusBottomRight":4},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":12,"bottomPadding":12,"isCustomPaddingSize":true,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#E2E4E9","iconColor":"#868C98"},"tooltip":{"backgroundColor":"#F6F7F9","color":"#0A0D14"}},"typography":{"autoFontColor":false,"color":"#0A0D14","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
+  ,{...{"label":"Slate Dark","themeType":25,"theme":{"colors":{"primaryColors":["#7C6EF6","#22D3EE","#A78BFA","#F472B6","#FBBF24","#34D399","#FB7185","#60A5FA"],"structuralColors":{"outline1":"#545E72","outline2":"#272D3B","background":"#141720","accent":"#7C6EF6","icon":"#8892A4","subtleFill":"#141720"},"semantic":{"positive":"#34D399","negative":"#F87171","neutral":"#8892A4"}},"page":{"canvas":{"background":{"type":"color","color":"#0B0E14","imageUrl":""},"border":{"color":"#272D3B","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#0B0E14","imageUrl":""}},"elements":{"background":{"type":"color","color":"#0B0E14","imageUrl":""},"border":{"color":"#272D3B","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":4,"radiusTopRight":4,"radiusBottomLeft":4,"radiusBottomRight":4},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":12,"bottomPadding":12,"isCustomPaddingSize":true,"isEnabled":true},"header":{"backgroundColor":"#0B0E14","borderColor":"#272D3B","iconColor":"#545E72"},"tooltip":{"backgroundColor":"#141720","color":"#E8ECF2"}},"typography":{"autoFontColor":false,"color":"#E8ECF2","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
+  ,{...{"label":"Coral Light","themeType":26,"theme":{"colors":{"primaryColors":["#FF5569","#376A64","#9AC8BF","#BF002F","#60A195","#FFB2B8","#253C39","#F59E0B"],"structuralColors":{"outline1":"#9AC8BF","outline2":"#B6D9D1","background":"#E8F4F2","accent":"#ED003D","icon":"#376A64","subtleFill":"#FFFFFF"},"semantic":{"positive":"#059669","negative":"#BF002F","neutral":"#60A195"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#E8F4F2","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#F4F9F8","imageUrl":""}},"elements":{"background":{"type":"color","color":"#F4F9F8","imageUrl":""},"border":{"color":"#E8F4F2","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":10,"radiusTopRight":10,"radiusBottomLeft":10,"radiusBottomRight":10},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":12,"rightPadding":12,"topPadding":12,"bottomPadding":12,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#F4F9F8","borderColor":"#E8F4F2","iconColor":"#47857D"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#253C39"}},"typography":{"autoFontColor":false,"color":"#253C39","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
+  ,{...{"label":"Coral Dark","themeType":27,"theme":{"colors":{"primaryColors":["#FF5569","#9AC8BF","#47857D","#FFB2B8","#ED003D","#E8F4F2","#FBBF24","#34D399"],"structuralColors":{"outline1":"#47857D","outline2":"#2F5651","background":"#294643","accent":"#FF5569","icon":"#9AC8BF","subtleFill":"#253C39"},"semantic":{"positive":"#34D399","negative":"#FF5569","neutral":"#60A195"}},"page":{"canvas":{"background":{"type":"color","color":"#112220","imageUrl":""},"border":{"color":"#2F5651","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#112220","imageUrl":""}},"elements":{"background":{"type":"color","color":"#253C39","imageUrl":""},"border":{"color":"#2F5651","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":10,"radiusTopRight":10,"radiusBottomLeft":10,"radiusBottomRight":10},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":12,"rightPadding":12,"topPadding":12,"bottomPadding":12,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#253C39","borderColor":"#2F5651","iconColor":"#60A195"},"tooltip":{"backgroundColor":"#294643","color":"#E8F4F2"}},"typography":{"autoFontColor":false,"color":"#F4F9F8","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
+  // Glass: an Apple-style glass look within what the theme format allows (no blur,
+  // no gradient or image backgrounds). A pale cool backdrop (#E4E9F0) shows through a
+  // 40%-white page (#FFFFFF66) and 72%-white cards (#FFFFFFB8) with a pure white edge,
+  // large 28px / 20px corners and very soft neutral shadows (black 6-8%). Text, separators
+  // and fills use Apple's label, separator and fill values; charts use its system
+  // colours, with Series adding its higher-contrast variants.
+  ,{...{"label":"Glass","themeType":28,"theme":{"colors":{"primaryColors":["#007AFF","#34C759","#FF9500","#AF52DE","#FF2D55","#32ADE6","#5856D6","#FFCC00"],"structuralColors":{"outline1":"#3C3C434A","outline2":"#3C3C431F","background":"#7676801F","accent":"#007AFF","icon":"#6E6E73","subtleFill":"#FFFFFF"},"semantic":{"positive":"#34C759","negative":"#FF3B30","neutral":"#8E8E93"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF66","imageUrl":""},"border":{"color":"#FFFFFF","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":28,"radiusTopRight":28,"radiusBottomLeft":28,"radiusBottomRight":28},"shadow":{"color":"#000000","blur":40,"isEnabled":true,"placement":"outer","side":"bottom","width":3,"opacity":6,"angle":135,"distance":12},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#E4E9F0","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFFB8","imageUrl":""},"border":{"color":"#FFFFFF","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":20,"radiusTopRight":20,"radiusBottomLeft":20,"radiusBottomRight":20},"shadow":{"color":"#000000","blur":30,"isEnabled":true,"placement":"outer","side":"bottom","width":3,"opacity":8,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFFB8","borderColor":"#FFFFFF","iconColor":"#8A8A8E"},"tooltip":{"backgroundColor":"#FFFFFFF2","color":"#1D1D1F"}},"typography":{"autoFontColor":false,"color":"#1D1D1F","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
+  // Glass Dark: the same Apple-style glass on a cool near-black backdrop (#1B1E26):
+  // a 5%-white page and 8%-white cards with a 16%-white edge, deeper black shadows,
+  // and Apple's dark-mode label, separator, fill and system colours (indigo uses its
+  // higher-contrast #7D7AFF, since the standard one reads 2.2:1 on the cards).
+  ,{...{"label":"Glass Dark","themeType":29,"theme":{"colors":{"primaryColors":["#0A84FF","#30D158","#FF9F0A","#BF5AF2","#FF375F","#64D2FF","#7D7AFF","#FFD60A"],"structuralColors":{"outline1":"#FFFFFF33","outline2":"#FFFFFF1A","background":"#7676803D","accent":"#0A84FF","icon":"#A1A1A6","subtleFill":"#FFFFFF0D"},"semantic":{"positive":"#30D158","negative":"#FF453A","neutral":"#98989D"}},"page":{"canvas":{"background":{"type":"color","color":"#FFFFFF0D","imageUrl":""},"border":{"color":"#FFFFFF1F","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":28,"radiusTopRight":28,"radiusBottomLeft":28,"radiusBottomRight":28},"shadow":{"color":"#000000","blur":40,"isEnabled":true,"placement":"outer","side":"bottom","width":3,"opacity":50,"angle":135,"distance":12},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#1B1E26","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF14","imageUrl":""},"border":{"color":"#FFFFFF29","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":20,"radiusTopRight":20,"radiusBottomLeft":20,"radiusBottomRight":20},"shadow":{"color":"#000000","blur":30,"isEnabled":true,"placement":"outer","side":"bottom","width":3,"opacity":35,"angle":135,"distance":10},"padding":{"leftPadding":16,"rightPadding":16,"topPadding":16,"bottomPadding":16,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF14","borderColor":"#FFFFFF29","iconColor":"#8E8E93"},"tooltip":{"backgroundColor":"#2C2C2EF2","color":"#F5F5F7"}},"typography":{"autoFontColor":false,"color":"#F5F5F7","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
 ];
 // Built-in themes take the product's Series and Measures, or the design file's.
 PRESETS.forEach(p=>{
@@ -196,7 +276,7 @@ function saveTheme(after){
   const inLib=lib.some(x=>x.label===T.label);
   if(inLib){
     // User theme — silent update in place (always custom themeType)
-    T.themeType=CUSTOM_THEME_TYPE;delete T.builtIn;
+    T.themeType=CUSTOM_THEME_TYPE;delete T.builtIn;delete T.wip;
     const idx=lib.findIndex(x=>x.label===T.label);
     const entry={...JSON.parse(JSON.stringify(T)),savedAt:Date.now()};
     if(idx>=0)lib[idx]=entry;else lib.unshift(entry);
@@ -235,7 +315,7 @@ function saveCopy(after){
     showPrompt('Name this theme',T.label+' (custom)',name=>{
       // A copy of a built-in is a custom theme: drop the preset's own
       // themeType and builtIn marker so it can't pass as the original.
-      T.label=name;T.themeType=CUSTOM_THEME_TYPE;delete T.builtIn;
+      T.label=name;T.themeType=CUSTOM_THEME_TYPE;delete T.builtIn;delete T.wip;
       const lib2=libLoad();
       lib2.unshift({...JSON.parse(JSON.stringify(T)),savedAt:Date.now()});
       libSave(lib2);
@@ -314,7 +394,7 @@ function applyTheme(){
   root.style.setProperty('--canvas-bg',p.canvas.background.color);
   // Tone flag for styles that can't be expressed as a single token —
   // e.g. black drop shadows vanish on a dark canvas and need a grey one.
-  root.dataset.tone=lum(p.canvas.background.color)<0.18?'dark':'light';
+  root.dataset.tone=lum(pageSolids(T).canvas)<0.18?'dark':'light';
   root.style.setProperty('--canvas-border-color',p.canvas.border.color);
   // Canvas border: only on the chosen side (all / top / right / bottom / left).
   const cb=p.canvas.border,cbw=cb.isEnabled?cb.width+'px':'0px';
@@ -327,6 +407,12 @@ function applyTheme(){
   root.style.setProperty('--el-border-w',e.border.isEnabled?e.border.width+'px':'0px');
   const er=e.cornerRadius;root.style.setProperty('--el-radius',er.isEnabled?er.radiusTopLeft+'px':'0px');
   root.style.setProperty('--el-shadow',shadowCss(e.shadow));
+  // Room for shadows so they aren't cut off: report pages bleed by the card
+  // shadow's reach, and the stage pads by whatever spills past the page
+  // (the page shadow, or a card shadow beyond the report's 16px padding).
+  const elReach=shadowReach(e.shadow),stagePad=Math.max(20,shadowReach(p.canvas.shadow),elReach-16);
+  root.style.setProperty('--el-shadow-reach',elReach+'px');
+  if(root.style.getPropertyValue('--stage-pad')!==stagePad+'px'){root.style.setProperty('--stage-pad',stagePad+'px');requestAnimationFrame(()=>fit());}
   // Padding off = no padding (mirrors border/radius/shadow, which drop to 0/none when disabled).
   const pd=e.padding,padPx=v=>pd.isEnabled?v+'px':'0px';
   root.style.setProperty('--el-pad-t',padPx(pd.topPadding));root.style.setProperty('--el-pad-r',padPx(pd.rightPadding));root.style.setProperty('--el-pad-b',padPx(pd.bottomPadding));root.style.setProperty('--el-pad-l',padPx(pd.leftPadding));
@@ -366,7 +452,7 @@ function updateThemeIcon(){
    against white regardless of what the theme really looks like. */
 const tipEl=$('#tip');let _tipTarget=null,_tipHex=null;
 function currentCanvasBg(){
-  try{return(T&&T.theme&&T.theme.page&&T.theme.page.canvas&&T.theme.page.canvas.background&&T.theme.page.canvas.background.color)||'#FFFFFF';}
+  try{return pageSolids(T).canvas;} // see-through canvases as the colour they show
   catch(e){return'#FFFFFF';}
 }
 function tipHTML(hex,bg,key){
@@ -785,6 +871,8 @@ function formatShadowColor(orig,rgb,alpha){
 }
 // Preview approximation: colour alpha × (opacity/100), inset for "inner",
 // offset along the chosen position using the (read-only) distance.
+// How far an outer shadow reaches past its box (blur + offset), in px.
+function shadowReach(s){return s&&s.isEnabled&&s.placement!=='inner'?Math.ceil((s.blur||0)+(s.distance||0)):0;}
 function shadowCss(s){
   if(!s||!s.isEnabled)return 'none';
   const {rgb,alpha}=parseShadowColor(s.color);
@@ -2663,16 +2751,30 @@ function clampDropdown(btn,drop){
     function renderCards(q){
       container.innerHTML='';
       // Built-in
-      const filtered=PRESETS.filter(p=>!q||p.label.toLowerCase().includes(q));
+      const match=p=>!q||p.label.toLowerCase().includes(q);
+      const filtered=PRESETS.filter(p=>!p.wip&&match(p));
       if(filtered.length){
         const sh=document.createElement('div');sh.className='ftd-section';sh.textContent='Built-in';container.appendChild(sh);
         const grid=document.createElement('div');grid.className='ftd-grid';
         filtered.forEach(p=>{
           const colors=(p.theme&&p.theme.colors&&p.theme.colors.primaryColors)||[];
-          const bg=(p.theme&&p.theme.page&&p.theme.page.canvas&&p.theme.page.canvas.background&&p.theme.page.canvas.background.color)||'#fff';
+          const bg=pageSolids(p).canvas;
           grid.appendChild(makeCard(colors,bg,p.label,T.label===p.label,()=>loadPreset(p),null));
         });
         container.appendChild(grid);
+      }
+      // Work in progress
+      const wip=PRESETS.filter(p=>p.wip&&match(p));
+      if(wip.length){
+        if(filtered.length){const div=document.createElement('div');div.className='ftd-divider';container.appendChild(div);}
+        const wh=document.createElement('div');wh.className='ftd-section';wh.textContent='Work in progress';container.appendChild(wh);
+        const wgrid=document.createElement('div');wgrid.className='ftd-grid';
+        wip.forEach(p=>{
+          const colors=(p.theme&&p.theme.colors&&p.theme.colors.primaryColors)||[];
+          const bg=pageSolids(p).canvas;
+          wgrid.appendChild(makeCard(colors,bg,p.label,T.label===p.label,()=>loadPreset(p),null));
+        });
+        container.appendChild(wgrid);
       }
       // Saved
       const lib=libLoad();
@@ -2683,13 +2785,13 @@ function clampDropdown(btn,drop){
         const ugrid=document.createElement('div');ugrid.className='ftd-grid';
         filteredLib.forEach((item,i)=>{
           const ucolors=(item.theme&&item.theme.colors&&item.theme.colors.primaryColors)||[];
-          const ubg=(item.theme&&item.theme.page&&item.theme.page.canvas&&item.theme.page.canvas.background&&item.theme.page.canvas.background.color)||'#fff';
+          const ubg=pageSolids(item).canvas;
           const isActive=T.label===item.label&&!PRESETS.find(p=>p.label===T.label);
           ugrid.appendChild(makeCard(ucolors,ubg,item.label||'Untitled',isActive,()=>loadUser(item),()=>{drop.classList.remove('open');confirmUnsaved(()=>openWizardEdit(item,i));}));
         });
         container.appendChild(ugrid);
       }
-      if(!filtered.length&&!filteredLib.length){
+      if(!filtered.length&&!wip.length&&!filteredLib.length){
         const empty=document.createElement('div');empty.className='ftd-empty';empty.textContent='No themes match your search. Try a different name.';container.appendChild(empty);
       }
     }
@@ -2733,8 +2835,9 @@ function fit(){
     if(window._ptGanttResFill)window._ptGanttResFill();
     return;
   }
-  const aw=stage.clientWidth-40;
-  const ah=stage.clientHeight-40; /* 20 top + 20 bottom padding */
+  const pad=parseFloat(getComputedStyle(stage).paddingTop)||20; /* --stage-pad, set from the shadows */
+  const aw=stage.clientWidth-2*pad;
+  const ah=stage.clientHeight-2*pad;
   const s=Math.min(aw/DESIGN_W,ah/DESIGN_H);
   /* Prefer CSS zoom over transform:scale() — zoom makes the browser
      genuinely re-layout and re-rasterize the canvas at the new size, so
@@ -2759,7 +2862,8 @@ function fitPlanTree(){
   if(!wrap||!wrap.clientWidth)return;
   tree.style.zoom='';tree.style.transform='';
   const w=parseFloat(tree.style.width)||tree.offsetWidth,h=parseFloat(tree.style.height)||tree.offsetHeight;
-  const s=Math.min(1,(wrap.clientWidth-16)/w,(wrap.clientHeight-16)/h);
+  // 48px of room (24 a side) so the node shadows (up to 18px) aren't cut off at the edge.
+  const s=Math.min(1,(wrap.clientWidth-48)/w,(wrap.clientHeight-48)/h);
   if(SUPPORTS_ZOOM)tree.style.zoom=s;else{tree.style.transform='scale('+s+')';tree.style.transformOrigin='center';}
 }
 addEventListener('resize',fit);
@@ -3125,7 +3229,7 @@ function moreChartColors(list,need,dark,avoid=[]){
   return out;
 }
 const chartAvoid=(c,k)=>k==='series'?c.primaryColors.slice(0,8):[];
-const themeIsDark=t=>lum(((t.theme.page&&t.theme.page.canvas.background.color)||'#FFFFFF').slice(0,7))<0.18;
+const themeIsDark=t=>lum(pageSolids(t).canvas)<0.18;
 /* Gives a theme its Series and Measures if it has none, and tops up a list
    shorter than CHART_LIST_MIN. Returns the JSON paths it filled. */
 function ensureChartColors(t,count){
@@ -3912,7 +4016,7 @@ function inferTone(){
   if(ntmToneManual)return;
   let detected=null;
   if(ntmMode==='json'&&ntmJsonParsed){
-    const canvasCol=(ntmJsonParsed.theme&&ntmJsonParsed.theme.page&&ntmJsonParsed.theme.page.canvas&&ntmJsonParsed.theme.page.canvas.background&&ntmJsonParsed.theme.page.canvas.background.color)||null;
+    const canvasCol=ntmJsonParsed.theme&&ntmJsonParsed.theme.page&&ntmJsonParsed.theme.page.canvas?pageSolids(ntmJsonParsed).canvas:null;
     if(canvasCol){const[cL]=hexToOklch(canvasCol);detected=cL<0.5?'dark':'light';}
   } else if(ntmMode==='image'&&ntmImageHexes.length){
     const avgL=ntmImageHexes.reduce((s,h)=>s+hexToOklch(h)[0],0)/ntmImageHexes.length;
@@ -4515,7 +4619,7 @@ applyBtn.addEventListener('click',()=>{
   const name=document.getElementById('ntmThemeName').value.trim()||'My Theme';
   ntmGenerated.label=name;
   // Whatever the source (incl. an imported built-in), the result is a custom theme.
-  ntmGenerated.themeType=CUSTOM_THEME_TYPE;delete ntmGenerated.builtIn;
+  ntmGenerated.themeType=CUSTOM_THEME_TYPE;delete ntmGenerated.builtIn;delete ntmGenerated.wip;
   T=JSON.parse(JSON.stringify(ntmGenerated));
   snapshotOrigin();buildAll();applyTheme();
   requestAnimationFrame(()=>requestAnimationFrame(fit));
@@ -4600,7 +4704,7 @@ window.openWizardEdit=function openWizardEdit(item, libIdx){
   // Pre-populate name
   document.getElementById('ntmThemeName').value=item.label||'';
   // Detect tone from canvas background lightness
-  const canvasCol=item.theme&&item.theme.page&&item.theme.page.canvas&&item.theme.page.canvas.background&&item.theme.page.canvas.background.color||'#FFFFFF';
+  const canvasCol=pageSolids(item).canvas;
   const[cL]=hexToOklch(canvasCol);
   ntmTone=cL<0.5?'dark':'light';
   ntmToneManual=true;
@@ -4830,9 +4934,11 @@ function showPage(idx){
   requestAnimationFrame(()=>requestAnimationFrame(fit));
 }
 /* ── Decomposition tree (Intelligence) ──
-   Colors follow the product's mapping: bars and the selected path's
-   connectors use Primary 1; bar background and the other connectors use the
-   element border color; text uses Text color; the card uses Element
+   Colors follow the Proposed tree mapping: the first (Baseline) bar uses
+   Primary 1 and the second (Compare) bar Primary 2, not the semantic colours,
+   as in the product; the selected
+   node and its path use Accent (highlighted); other connectors use Outline 1;
+   bar background uses Outline 2; text uses Text color; the card uses Element
    background. Laid out as a tidy tree: the visible leaves stack top to
    bottom and each parent sits midway between its first and last child.
    Nothing is selected until someone clicks a node in Viewing mode, as in the
@@ -5048,12 +5154,13 @@ document.querySelectorAll('#pbtns .dbtn').forEach(b=>b.addEventListener('click',
    Key order follows the current theme, so the JSON stays in its shape. */
 (function(){
   const btn=document.getElementById('toneTwinBtn');if(!btn)return;
-  const isDark=()=>lum(T.theme.page.canvas.background.color||'#FFFFFF')<0.18;
+  const isDark=()=>themeIsDark(T);
   function sync(){
     const toDark=!isDark();
     document.getElementById('toneTwinLabel').textContent=toDark?'Dark version':'Light version';
     btn.querySelector('.tt-ic').innerHTML=icon(toDark?'moon20':'sunny20','ri-validation');
     btn.dataset.tip=toDark?'Create a dark version of this theme':'Create a light version of this theme';
+    btn.setAttribute('aria-label',btn.dataset.tip); // screen readers hear what the tooltip says
   }
   window._syncToneTwin=sync;
   const readable=(hex,toDark)=>{
@@ -5076,7 +5183,7 @@ document.querySelectorAll('#pbtns .dbtn').forEach(b=>b.addEventListener('click',
     Object.assign(e.header,{backgroundColor:g.elements.header.backgroundColor,borderColor:g.elements.header.borderColor,iconColor:g.elements.header.iconColor});
     Object.assign(e.tooltip,{backgroundColor:g.elements.tooltip.backgroundColor,color:g.elements.tooltip.color});
     ty.color=g.typography.color;
-    tw.label=name;tw.themeType=CUSTOM_THEME_TYPE;delete tw.builtIn;
+    tw.label=name;tw.themeType=CUSTOM_THEME_TYPE;delete tw.builtIn;delete tw.wip;
     return tw;
   }
   window._buildTwin=buildTwin;
@@ -5111,7 +5218,7 @@ document.querySelectorAll('#pbtns .dbtn').forEach(b=>b.addEventListener('click',
     'page|Corner radius':{sheets:[I],tokens:['@report']},
     'page|Shadow':{sheets:[I],tokens:['@report']},
     'visuals|Background':{sheets:[I,P,T_],tokens:['el-bg']},
-    'visuals|Border':{sheets:[I,P,T_],tokens:['el-border-color','el-border-w'],note:'Planning uses the color only, for the tree’s connectors and node dividers.'},
+    'visuals|Border':{sheets:[I,T_],tokens:['el-border-color','el-border-w']},
     'visuals|Corner radius':{sheets:[I,T_],tokens:['el-radius']},
     'visuals|Shadow':{sheets:[I],tokens:['el-shadow']},
     'visuals|Padding':{sheets:[I],tokens:['el-pad-t','el-pad-r','el-pad-b','el-pad-l']},
@@ -5370,8 +5477,10 @@ document.querySelectorAll('#pbtns .dbtn').forEach(b=>b.addEventListener('click',
   }
   const GRAPHIC=new Set(['p1','p2','p3','p4','p5','p6','p7','p8',...CHART_TOKENS('s'),...CHART_TOKENS('m'),'pos','neg','neu','struct-accent','struct-icon']);
   function contrastOf(t,v){
-    const hex=(v||'').slice(0,7);if(!/^#[0-9a-f]{6}$/i.test(hex))return null;
-    const canvas=(T.theme.page.canvas.background.color||'#FFFFFF').slice(0,7),text=(T.theme.typography.color||'#242424').slice(0,7);
+    if(!/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(v||''))return null;
+    // See-through surfaces count as the solid colour they show on the page.
+    const S=pageSolids(T),canvas=S.canvas,text=(T.theme.typography.color||'#242424').slice(0,7);
+    const hex=t==='wallpaper'?S.wall:t==='canvas-bg'?S.canvas:t==='el-bg'||t==='header-bg'?solidOver(v,S.canvas):SURFACES.has(t)?solidOver(v,S.el):v.slice(0,7);
     const fx=window._suggestFix||(()=>null);
     let r=null;
     if(SURFACES.has(t)&&t!=='wallpaper')r={what:'Text on it',ratio:cr2(text,hex),need:4.5,fix:()=>fx(hex,text,4.5)};
@@ -6104,8 +6213,11 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
       const x1=cx+ro*Math.cos(a),y1=cy+ro*Math.sin(a),x2=cx+ro*Math.cos(a2),y2=cy+ro*Math.sin(a2);
       const ix1=cx+ri*Math.cos(a),iy1=cy+ri*Math.sin(a),ix2=cx+ri*Math.cos(a2),iy2=cy+ri*Math.sin(a2);
       const p=document.createElementNS(NS,'path');
-      p.setAttribute('d',`M${ix1.toFixed(1)},${iy1.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)} A${ro},${ro} 0 ${lg} 1 ${x2.toFixed(1)},${y2.toFixed(1)} L${ix2.toFixed(1)},${iy2.toFixed(1)} A${ri},${ri} 0 ${lg} 0 ${ix1.toFixed(1)},${iy1.toFixed(1)} Z`);
-      p.setAttribute('style',`fill:${catCol(i)};stroke:var(--canvas-bg);stroke-width:2`);
+      const f=n=>n.toFixed(3);
+      p.setAttribute('d',`M${f(ix1)},${f(iy1)} L${f(x1)},${f(y1)} A${ro},${ro} 0 ${lg} 1 ${f(x2)},${f(y2)} L${f(ix2)},${f(iy2)} A${ri},${ri} 0 ${lg} 0 ${f(ix1)},${f(iy1)} Z`);
+      // Slices meet with no gap and no outline: no canvas-coloured separator,
+      // just a hairline in the slice's own colour so antialiasing leaves no seam.
+      p.setAttribute('style',`fill:${catCol(i)};stroke:${catCol(i)};stroke-width:.5;stroke-linejoin:round`);
       svg.appendChild(p);
       addChartTip(p,sl.lbl,[{color:`${catCol(i)}`,label:'Revenue',value:'$'+sl.v.toFixed(2)+'M'},{label:'Share',value:(sl.v/tot*100).toFixed(1)+'%'}]);
       if(leg){const it=document.createElement('span');it.className='item';it.innerHTML=`<span class="sw" style="background:${catCol(i)}"></span>${sl.lbl}`;leg.appendChild(it);}
@@ -6886,10 +6998,10 @@ $('#exportShareUrl').addEventListener('click',()=>{
     const e=T.theme.elements;
     const p=T.theme.page;
     const typo=T.theme.typography;
-    const canvasBg=p.canvas.background.color||'#FFFFFF';
-    const elBg=e.background.color||'#FFFFFF';
+    // See-through backgrounds are judged as the solid colour they show.
+    const S=pageSolids(T),canvasBg=S.canvas,elBg=S.el,wallpaper=S.wall;
+    const onEl=h=>solidOver(h,elBg);
     const textCol=typo.color||'#242424';
-    const wallpaper=p.wallpaper.color||'#F5F5F5';
 
     // Every pair is checked against this theme's own actual
     // backgrounds (canvas/element/wallpaper) — never a hardcoded
@@ -6910,9 +7022,9 @@ $('#exportShareUrl').addEventListener('click',()=>{
       ...chartPairs,
       {name:'Accent on canvas',fg:c.structuralColors.accent,bg:canvasBg,size:'large',set:setAccent},
       {name:'Accent on element background',fg:c.structuralColors.accent,bg:elBg,size:'large',set:setAccent},
-      {name:'Text on Subtle Fill',fg:textCol,bg:c.structuralColors.background,size:'normal',set:setText},
-      {name:'Text on Background',fg:textCol,bg:c.structuralColors.subtleFill,size:'normal',set:setText},
-      {name:'Text on header background',fg:textCol,bg:e.header.backgroundColor||elBg,size:'normal',set:setText},
+      {name:'Text on Subtle Fill',fg:textCol,bg:onEl(c.structuralColors.background),size:'normal',set:setText},
+      {name:'Text on Background',fg:textCol,bg:onEl(c.structuralColors.subtleFill),size:'normal',set:setText},
+      {name:'Text on header background',fg:textCol,bg:e.header.backgroundColor?solidOver(e.header.backgroundColor,canvasBg):elBg,size:'normal',set:setText},
       // Labels on colored fills (pills, buttons) are picked black or white automatically,
       // so the fix adjusts the fill itself.
       ...c.primaryColors.map((col,i)=>({name:`Labels on Primary ${i+1}`,fg:label(col),bg:col,size:'normal',fixBg:true,set:setPrim(i)})),
@@ -7188,7 +7300,7 @@ const LIB_KEY='lumel_theme_lib';
 // Library themes are custom by definition — normalise entries saved by
 // older versions that inherited a preset's themeType (or builtIn flag).
 // Themes saved before Series and Measures existed get them on load.
-function libLoad(){try{return JSON.parse(localStorage.getItem(LIB_KEY)||'[]').map(x=>{const{builtIn,...t}=x;ensureChartColors(t);return{...t,themeType:CUSTOM_THEME_TYPE};});}catch(e){return[];}}
+function libLoad(){try{return JSON.parse(localStorage.getItem(LIB_KEY)||'[]').map(x=>{const{builtIn,wip,...t}=x;ensureChartColors(t);return{...t,themeType:CUSTOM_THEME_TYPE};});}catch(e){return[];}}
 function libSave(lib){try{localStorage.setItem(LIB_KEY,JSON.stringify(lib));}catch(e){}}
 
 /* ══════════════════════════════════════════════════════════

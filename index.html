@@ -5,7 +5,7 @@
 <meta name="description" content="Design, check, and share one theme for every sheet in a Fabric Planning workspace: Intelligence, Planning, and PowerTable.">
 <title>Fabric Planning Theme Studio</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/styles.css?v=20261110k">
 
 
 <!-- ── Item header (the app's own title bar) ── -->
@@ -401,8 +401,10 @@
               <div class="kpi-pct pos-t" id="pg0k3p"><span class="dot neu" style="background:var(--neu)"></span>+0.2%</div>
             </section>
           </div>
-          <!-- Line + Donut row -->
-          <div class="rcharts" style="flex:0 0 210px">
+          <!-- Line + Donut row: takes the space the KPI row and the bridge leave, so a
+               theme with roomy padding shrinks these charts instead of pushing the
+               bridge off the page. -->
+          <div class="rcharts" style="flex:1 1 0;min-height:0;grid-template-rows:minmax(0,1fr)">
             <section class="visual flex-fill">
               <div class="vt" style="flex:none">AC vs Plan vs PY by month</div>
               <svg id="p0line" viewBox="0 0 520 200" width="100%"></svg>
@@ -955,4 +957,4 @@
       </div>
 </div>
 <script src="js/icons.js"></script>
-<script src="js/app.js"></script>
+<script src="js/app.js?v=20261110p"></script>

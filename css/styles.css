@@ -376,15 +376,17 @@ button{font-family:inherit}
 /* Zoom control for tree visuals: a vertical stack in the canvas corner, above the edit layer */
 .zoom-ctl{position:absolute;right:16px;bottom:16px;z-index:4;display:flex;flex-direction:column;align-items:center;gap:6px}
 .zoom-ctl[hidden]{display:none}
-.zoom-btn{width:24px;height:24px;display:grid;place-items:center;padding:0;border:1px solid var(--fx-stroke1);border-radius:var(--fx-r);background:var(--fx-bg1);color:var(--fx-fg1);box-shadow:var(--fx-shadow2);cursor:pointer}
-.zoom-btn:hover{background:var(--fx-bg3);border-color:var(--fx-stroke1-hover)}
-.zoom-btn:active{background:var(--fx-bg1-pressed)}
+/* Zoom controls sit on the sheet, so they take the theme's colours: Element
+   background, Outline 1 border, Icon colour; Structural background on hover. */
+.zoom-btn{width:24px;height:24px;display:grid;place-items:center;padding:0;border:1px solid var(--out1);border-radius:var(--fx-r);background:var(--el-bg);color:var(--struct-icon);box-shadow:var(--fx-shadow2);cursor:pointer}
+.zoom-btn:hover{background:var(--struct-bg);border-color:var(--struct-icon)}
+.zoom-btn:active{background:color-mix(in srgb,var(--struct-bg),var(--text-color) 8%)}
 .zoom-btn:focus-visible{outline:2px solid var(--fx-focus2);outline-offset:1px}
 .zoom-btn .fi{width:16px;height:16px}
 .zoom-slider{position:relative;width:24px;height:88px;cursor:pointer;touch-action:none;outline:none}
-.zoom-track{position:absolute;left:50%;top:6px;bottom:6px;width:4px;margin-left:-2px;border-radius:2px;background:var(--fx-fg3)}
-.zoom-thumb{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--fx-fg2);box-shadow:0 0 0 2px var(--fx-bg1),var(--fx-shadow4)}
-.zoom-slider:hover .zoom-thumb{background:var(--fx-fg1)}
+.zoom-track{position:absolute;left:50%;top:6px;bottom:6px;width:4px;margin-left:-2px;border-radius:2px;background:var(--out1)}
+.zoom-thumb{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--struct-icon);box-shadow:0 0 0 2px var(--el-bg),var(--fx-shadow4)}
+.zoom-slider:hover .zoom-thumb{background:var(--text-color)}
 .zoom-slider:focus-visible .zoom-thumb{outline:2px solid var(--fx-focus2);outline-offset:3px}
 .zoom-world{transform-origin:0 0}
 .zoomable{cursor:grab}
@@ -876,7 +878,7 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
 .toast .btn-icon .fi{width:16px;height:16px;color:var(--fx-fg2)}
 
 /* Stage & Report */
-.stage{background:var(--wallpaper);overflow:hidden;height:100%;display:flex;align-items:flex-start;justify-content:center;padding:20px;transition:background .25s}
+.stage{background:var(--wallpaper);overflow:hidden;height:100%;display:flex;align-items:flex-start;justify-content:center;padding:var(--stage-pad,20px);transition:background .25s}
 .scaler{transform-origin:top center;will-change:transform;backface-visibility:hidden}
 @keyframes canvasIn{from{opacity:0;transform:scale(.97) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .report{width:1160px;height:780px;background:var(--canvas-bg);border-style:solid;border-color:var(--canvas-border-color);border-width:var(--cb-t) var(--cb-r) var(--cb-b) var(--cb-l);border-radius:var(--canvas-radius);box-shadow:var(--canvas-shadow);padding:16px 20px;display:flex;flex-direction:column;gap:var(--vgap);overflow:hidden;scrollbar-width:none;animation:canvasIn .35s cubic-bezier(.22,.61,.36,1)}
@@ -893,6 +895,9 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
    stage at real size on the canvas background — no page header, no wallpaper
    behind it, no page border/radius/shadow. Only Intelligence is a report page. */
 .stage.sheet-fill{padding:0;background:var(--canvas-bg)}
+/* A report page lets card shadows spill past its edge onto the wallpaper
+   (the pages clip content themselves); sheets keep clipping. */
+.stage:not(.sheet-fill) .report{overflow:visible}
 .stage.sheet-fill .report{width:100%;height:100%;border:0;border-radius:0;box-shadow:none;padding:12px 16px;animation:none}
 .stage.sheet-fill .rheader{display:none}
 .rheader{display:flex;align-items:center;gap:12px;background:var(--header-bg);border:1px solid var(--header-border);border-radius:8px;padding:12px 16px;min-height:60px}
@@ -1315,28 +1320,23 @@ table.pt-ct td.pt-ct-ro{color:color-mix(in srgb,var(--text-color) 65%,var(--canv
    chevron on every parent's right edge. Uses structural tokens (not
    the Visuals-tab element tokens) since Planning has no element
    styling — see the colour mapping below. */
-/* Colour mapping — the tree visual's own Display Settings dropdowns,
-   matched by value to the closest Classic-theme variable (the "Classic
-   theme variables" frames on the Tree View Figma Themes page). "Subtle
-   Fill" and "Background" below are the Structural UI names; their JSON
-   keys are structuralColors.background and .subtleFill (see buildColors()).
-     Main Color (tree backdrop) ... "Subtle Fill"              (--struct-bg)
-     Header BG (top half) ......... Structural "Background"    (--struct-subtle)
-     Header font color (top half) . typography.color           (--text-color)
-     Font Color (bottom half) ..... typography.color           (--text-color)
-     Non-simulation nodes BG
-       (bottom half) .............. "Subtle Fill"              (--struct-bg)
-     Composite Nodes .............. Structural "Background"    (--struct-subtle) — not rendered in the preview
-     Connectors ................... elements.border.color      (--el-border-color)
-     Node divider (top/bottom) .... elements.border.color      (--el-border-color), same as connectors
-     Accent Bar (status) .......... primaryColors[0]           (--p1) — default and neutral simulation
-       positive simulation ........ semantic.positive          (--pos)
-       negative simulation ........ semantic.negative          (--neg)
-   Not a product dropdown — fixed choice:
-     collapse "beak" .............. "Subtle Fill" disc (--struct-bg) with an --el-border-color ring, glyph --struct-icon
-   Out of scope for the preview: BG Color (has no visible effect) and
-   Highlighted (selection-path highlight on connectors). */
-.plan-tree-wrap{flex:1;min-height:0;overflow:auto;background:var(--struct-bg);display:flex}
+/* Colour mapping — the tree visual's own Display Settings keys (product
+   code: UX-Plan-Matrix matrix-tree), mapped to theme variables as in the
+   "Proposed" frames on the Tree View Figma Themes page. "Subtle Fill" is
+   the Structural UI name for structuralColors.background (see buildColors()).
+     main_color (tree canvas) ............. page.canvas.background   (--canvas-bg)
+     header_kpi.background_color (head) ... elements.background      (--el-bg)
+     header_kpi.font_color / font_color ... typography.color         (--text-color)
+     background (nodes with simulation) ... elements.background      (--el-bg)
+     derived_nodes (nodes without sim) .... "Subtle Fill"            (--struct-bg)
+     connectors (links + head divider) .... structuralColors.outline1 (--out1), 1px
+     highlighted (selection path) ......... structuralColors.accent  (--struct-accent) — not shown in this preview
+     composite_nodes ...................... not drawn by the product
+   Accent bar (status): --p1 default, --pos / --neg for simulated nodes.
+   Fixed in the product, themed here:
+     collapse "beak" ...................... --el-bg disc, glyph --struct-icon
+     node shadow .......................... colour --text-color; offsets, blur and opacity hard-coded */
+.plan-tree-wrap{flex:1;min-height:0;overflow:auto;background:var(--canvas-bg);display:flex}
 .plan-table-scroll{flex:1;min-height:0;overflow:auto;background:var(--canvas-bg)}
 #planTable{width:100%;border-collapse:separate;border-spacing:0}
 #planTable thead th{background:var(--canvas-bg);border:1px solid var(--out2)}
@@ -1367,13 +1367,18 @@ table.pt-ct td.pt-ct-ro{color:color-mix(in srgb,var(--text-color) 65%,var(--canv
    No outline border — just the 3px status bar and a soft shadow.
    The shadow lives on the .plan-tree-node wrapper (drop-shadow filter)
    rather than the card, so the card and its collapse "beak" share one
-   continuous silhouette with no seam where they meet. */
-.plan-tree-node{position:absolute;width:256px;filter:drop-shadow(0 0 .6px rgba(0,0,0,.3)) drop-shadow(0 1.5px 3px rgba(0,0,0,.10))}
-/* Dark canvases: a black shadow has nothing to darken (and in some dark
-   themes the node header matches the canvas), so use a grey hairline
-   edge plus a soft grey shadow as the dark-mode counterpart. */
-[data-tone=dark] .plan-tree-node{filter:drop-shadow(0 0 .6px rgba(190,190,200,.55)) drop-shadow(0 1.5px 4px rgba(150,150,160,.22))}
-.plan-tree-card{position:relative;width:256px;box-sizing:border-box;overflow:hidden;background:var(--struct-subtle);border-left:3px solid var(--p1);border-radius:3px;font-family:var(--font-family);color:var(--text-color);white-space:nowrap}
+   continuous silhouette with no seam where they meet. Two layers in the
+   Text color: a 12% contact edge (0 0 2px) and a 16% soft drop (0 4px
+   12px); only the colour follows the theme. */
+.plan-tree-node{position:absolute;width:256px;filter:drop-shadow(0 0 2px color-mix(in srgb,var(--text-color) 12%,transparent)) drop-shadow(0 4px 12px color-mix(in srgb,var(--text-color) 16%,transparent))}
+/* Dark themes: a shadow in the (light) Text colour glows instead of lifting
+   the card. On dark canvases depth comes from a black drop and a faint light
+   edge, the way dark UIs show elevation: a 0.5px edge in Text colour at 22%
+   outlines the card, and a black 0 4px 14px drop at 55% sits under it. */
+:root[data-tone=dark] .plan-tree-node{filter:drop-shadow(0 0 .5px color-mix(in srgb,var(--text-color) 22%,transparent)) drop-shadow(0 4px 14px rgba(0,0,0,.55))}
+:root[data-tone=dark] .zoom-btn{box-shadow:0 1px 3px rgba(0,0,0,.5)}
+:root[data-tone=dark] .zoom-thumb{box-shadow:0 0 0 2px var(--el-bg),0 1px 4px rgba(0,0,0,.6)}
+.plan-tree-card{position:relative;width:256px;box-sizing:border-box;overflow:hidden;background:var(--el-bg);border-left:3px solid var(--p1);border-radius:3px;font-family:var(--font-family);color:var(--text-color);white-space:nowrap}
 .plan-tree-card.sim-pos{border-left-color:var(--pos)}
 .plan-tree-card.sim-neg{border-left-color:var(--neg)}
 .plan-tree-card .head{height:44px;box-sizing:border-box;padding:5px 11px 5px 8px}
@@ -1381,21 +1386,34 @@ table.pt-ct td.pt-ct-ro{color:color-mix(in srgb,var(--text-color) 65%,var(--canv
 .plan-tree-card .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .plan-tree-card .head .row{font-size:11.5px;font-weight:700;line-height:17px}
 .plan-tree-card .body{position:relative;background:var(--struct-bg);padding:3px 11px 4px 8px}
-.plan-tree-card .body::before{content:'';position:absolute;top:0;left:8px;right:11px;height:1px;background:var(--el-border-color)}
+/* Simulated nodes take the node "background" instead of derived_nodes. */
+.plan-tree-card.sim-pos .body,.plan-tree-card.sim-neg .body{background:var(--el-bg)}
+.plan-tree-card .body::before{content:'';position:absolute;top:0;left:8px;right:11px;height:1px;background:var(--out1)}
 .plan-tree-card .body .row{font-size:11px;line-height:17.5px}
 .plan-tree-card .row span:first-child{overflow:hidden;text-overflow:ellipsis}
 .plan-tree-card .val{flex:none;font-variant-numeric:tabular-nums}
 .plan-tree-conn{position:absolute;top:0;left:0;pointer-events:none}
-.plan-tree-conn path{fill:none;stroke:var(--el-border-color);stroke-width:1}
+.plan-tree-conn path{fill:none;stroke:var(--out1);stroke-width:1}
 /* Collapse "beak": a disc centred just past the card's right edge at the
-   node's vertical middle, in the body's Subtle Fill with a thin ring in
-   the connector colour so it reads as the start of the connectors. */
-.plan-tree-beak{position:absolute;width:20px;height:20px;box-sizing:border-box;border-radius:50%;background:var(--struct-bg);border:1px solid var(--el-border-color);display:flex;align-items:center;justify-content:center;color:var(--struct-icon)}
+   node's vertical middle, in the card's background, so it reads as a
+   rounded bump grown out of the node. */
+.plan-tree-beak{position:absolute;width:20px;height:20px;box-sizing:border-box;border-radius:50%;background:var(--el-bg);display:flex;align-items:center;justify-content:center;color:var(--struct-icon)}
 .plan-tree-beak svg{width:8px;height:8px;flex:none}
 
-  .pg{display:none;flex-direction:column;gap:var(--vgap);flex:1;min-height:0;overflow:hidden}
+  /* A page clips its content, but its clip box bleeds past the content by the
+     card shadow's reach (padding in, margin out), so shadows on cards at the
+     page edge aren't cut. The bleed is click-through; the cards aren't. */
+  .pg{display:none;flex-direction:column;gap:var(--vgap);flex:1;min-height:0;overflow:hidden;padding:var(--el-shadow-reach,0px);margin:calc(var(--el-shadow-reach,0px) * -1);pointer-events:none}
+  .pg>*{pointer-events:auto}
   .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);flex:none;height:82px}
-  .kpi-card{padding:12px 16px}
+  /* Content is centred in the card's fixed height, so it never runs into the
+     top or bottom edge; long text is cut off with an ellipsis, not clipped. */
+  .kpi-card{padding:8px 16px;display:flex;flex-direction:column;justify-content:center;gap:3px;overflow:hidden}
+  /* Fixed line heights: label 15 + value 26 + change 17 + gaps 6 = 64px, well
+     inside the card's 82px less 16px padding, so nothing reaches an edge. */
+  section.kpi-card>*{margin:0;min-width:0;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:15px}
+  section.kpi-card>.kpi-val{line-height:26px}
+  section.kpi-card>.kpi-pct,section.kpi-card>.kpi-sub{line-height:17px}
   .kpi-lbl{font-size:11.5px;color:var(--text-color);opacity:.72;font-family:var(--font-family);margin-bottom:4px}
   .kpi-val{font-size:22px;font-weight:700;color:var(--text-color);font-family:var(--font-family);line-height:1.1}
   .kpi-pct{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px;margin-top:4px;font-variant-numeric:tabular-nums;font-family:var(--font-family)}
@@ -1404,27 +1422,29 @@ table.pt-ct td.pt-ct-ro{color:color-mix(in srgb,var(--text-color) 65%,var(--canv
 
 
 /* ── Decomposition tree (Intelligence) ──
-   Bars and the selected path: Primary 1. Bar background and other
-   connectors: Element border. Text: Text color. Card: Element background. */
+   Bars: Primary 1. Selected node and path (highlighted): Accent. Other
+   connectors: Outline 1, as in the Proposed tree mapping. Bar background:
+   Outline 2 (the product default is #E6E6E6). Text: Text color. Card:
+   Element background. */
 .dt{position:relative;flex:1;min-height:0;overflow:hidden}
 .dt>.zoom-world{position:absolute;inset:0}
 .dt-links{position:absolute;left:0;top:0;overflow:visible}
 .dt-links path{fill:none}
-.dt-link{stroke:var(--el-border-color);stroke-width:1.25}
-.dt-link.sel{stroke:var(--p1);stroke-width:2}
-.dt-hit{stroke:var(--el-border-color);stroke-width:12;opacity:0}
-.dt-hit.sel{stroke:var(--p1)}
+.dt-link{stroke:var(--out1);stroke-width:1.25}
+.dt-link.sel{stroke:var(--struct-accent);stroke-width:2}
+.dt-hit{stroke:var(--out1);stroke-width:12;opacity:0}
+.dt-hit.sel{stroke:var(--struct-accent)}
 .dt-node{position:absolute;font-family:var(--font-family);color:var(--text-color);cursor:pointer}
 .dt-barrow{display:flex;align-items:center;gap:6px}
 /* Baseline bar over Compare bar. Hover: dashed outline; selected: solid. */
 .dt-bars{flex:1;display:flex;flex-direction:column;gap:2px;padding:2px;border:1px solid transparent;border-radius:3px}
 .dt-node:hover .dt-bars{border-style:dashed;border-color:var(--out1)}
-.dt-node.sel .dt-bars{border-style:solid;border-color:var(--text-color);box-shadow:inset 0 0 0 .5px var(--text-color)}
-.dt-bar{position:relative;height:6px;background:var(--el-border-color)}
+.dt-node.sel .dt-bars{border-style:solid;border-color:var(--struct-accent);box-shadow:inset 0 0 0 .5px var(--struct-accent)}
+.dt-bar{position:relative;height:6px;background:var(--out2)}
 .dt-bar>i{position:absolute;left:0;top:0;bottom:0;background:var(--p1)}
-.dt-cmp.pos>i{background:var(--pos)}
-.dt-cmp.neg>i{background:var(--neg)}
-.dt-cmp.neu>i{background:var(--neu)}
+/* The second (Compare) bar uses Primary 2, as in the product — not the
+   semantic colours. */
+.dt-cmp>i{background:var(--p2)}
 /* (the .visual.flex-fill rule stretches svgs to fill the card; these keep their own size) */
 .visual.flex-fill .dt svg{flex:none;min-height:0}
 .visual.flex-fill .dt .dt-exp,.visual.flex-fill .dt .dt-more,.visual.flex-fill .dt .dt-comment{width:14px;height:14px}
