@@ -111,6 +111,12 @@ DESIGN_CHART_COLORS[26]={"series":["#FF8792","#47857D","#B6D9D1","#ED003D","#2F5
 DESIGN_CHART_COLORS[27]={"series":["#FF8792","#60A195","#B6D9D1","#BF002F","#376A64","#FFDADC","#10B981","#C084FC","#60A5FA","#F59E0B"],"measures":["#FF5569","#9AC8BF","#47857D","#FFB2B8","#ED003D","#60A195","#E8F4F2","#FF8792","#34D399","#60A5FA"]};
 DESIGN_CHART_COLORS[28]={"series":["#FF3B30","#00C7BE","#30B0C7","#A2845E","#8E8E93","#0040DD","#248A3D","#C93400","#8944AB","#D30F45","#0071A4","#3634A3","#B25000","#0C817B"],"measures":["#007AFF","#FF9500","#34C759","#AF52DE","#FF2D55","#32ADE6","#5856D6","#FFCC00","#00C7BE","#8E8E93"]};
 DESIGN_CHART_COLORS[29]={"series":["#FF453A","#63E6E2","#40C8E0","#AC8E68","#98989D","#409CFF","#30DB5B","#FFB340","#DA8FFF","#FF6482","#70D7FF","#FFD426","#FF6961","#66D4CF","#B59469"],"measures":["#0A84FF","#FF9F0A","#30D158","#BF5AF2","#FF375F","#64D2FF","#7D7AFF","#FFD60A","#63E6E2","#98989D"]};
+// Fabric Quiet (30): no new hues, as its sheet asks. Both lists start with its eight colours,
+// then a darker and a lighter step of each, made the way its Azure ramp steps from #3A6FD8
+// to #2D59B3 and #8DAEEA (same lightness change and chroma ratio in OKLCH). Series go
+// darker first and end in Other #B3B3B3; Measures go lighter first (its Plan is a tint of
+// the measure's hue) and end in On plan #8A8A8A.
+DESIGN_CHART_COLORS[30]={"series":["#3A6FD8","#14958A","#D9693A","#7B61D1","#4E8A3E","#C2508A","#B98A12","#C8434E","#2D59B3","#087B72","#B7572F","#644EAD","#3D7130","#A14072","#9C740C","#A6333E","#8DAEEA","#92C7C0","#F9B79D","#B1A7E7","#9BBD92","#E4A1BF","#E4CA97","#E69999","#B3B3B3"],"measures":["#3A6FD8","#14958A","#D9693A","#7B61D1","#4E8A3E","#C2508A","#B98A12","#C8434E","#8DAEEA","#92C7C0","#F9B79D","#B1A7E7","#9BBD92","#E4A1BF","#E4CA97","#E69999","#2D59B3","#087B72","#B7572F","#644EAD","#3D7130","#A14072","#9C740C","#A6333E","#8A8A8A"]};
 const CHART_LIST_MAX=60; // the product's limit per list
 const NEW_THEME_CHART_COLORS=20; // Series and Measures each, for a theme built from its primaries
 const PRESETS=[
@@ -147,6 +153,11 @@ const PRESETS=[
   // cards #1F1F1F), Fabric's primaries, Fluent's dark good/bad colours, and
   // Series/Measures made from the primaries with chartColorsFromPrimaries (dark).
   ,{...{"label":"Fabric Modern Dark","themeType":21,"theme":{"colors":{"primaryColors":["#637CEF","#E3008C","#2AA0A4","#9373C0","#13A10E","#3A96DD","#CA5010","#62802B"],"structuralColors":{"outline1":"#666666","outline2":"#2E2E2E","background":"#292929","accent":"#2AAC94","icon":"#ADADAD","subtleFill":"#1F1F1F"},"semantic":{"positive":"#54B054","negative":"#DC626D","neutral":"#999999"}},"page":{"canvas":{"background":{"type":"color","color":"#141414","imageUrl":""},"border":{"color":"#242424","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#141414","imageUrl":""}},"elements":{"background":{"type":"color","color":"#1F1F1F","imageUrl":""},"border":{"color":"#2E2E2E","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":12,"rightPadding":12,"topPadding":12,"bottomPadding":12,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#1F1F1F","borderColor":"#2E2E2E","iconColor":"#999999"},"tooltip":{"backgroundColor":"#292929","color":"#D6D6D6"}},"typography":{"autoFontColor":false,"color":"#F5F5F5","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
+  // Fabric Quiet: the "Fabric Quiet - chart colour tokens" sheet. Restrained mid-lightness
+  // hues in a fixed order beside Fluent neutrals: #F5F5F5 canvas behind white cards with a
+  // 1px #E3E3E3 stroke and 8px corners, #EDEDED gridlines, #BDBDBD baseline, #117865 focus,
+  // #242424 text. Good/bad/neutral use the sheet's variance fill colours.
+  ,{...{"label":"Fabric Quiet","themeType":30,"theme":{"colors":{"primaryColors":["#3A6FD8","#14958A","#D9693A","#7B61D1","#4E8A3E","#C2508A","#B98A12","#C8434E"],"structuralColors":{"outline1":"#BDBDBD","outline2":"#EDEDED","background":"#F5F5F5","accent":"#117865","icon":"#616161","subtleFill":"#FFFFFF"},"semantic":{"positive":"#3E9A3A","negative":"#D64550","neutral":"#8A8A8A"}},"page":{"canvas":{"background":{"type":"color","color":"#F5F5F5","imageUrl":""},"border":{"color":"#E3E3E3","side":"all","width":0,"isEnabled":false},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":0,"radiusTopRight":0,"radiusBottomLeft":0,"radiusBottomRight":0},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"dimension":{"dimensionType":"DEFAULT_16_9","width":1600,"height":900},"showGridLines":false,"showVisualGuide":false},"wallpaper":{"type":"color","color":"#F5F5F5","imageUrl":""}},"elements":{"background":{"type":"color","color":"#FFFFFF","imageUrl":""},"border":{"color":"#E3E3E3","side":"all","width":1,"isEnabled":true},"cornerRadius":{"isCustomCornerRadius":false,"isEnabled":true,"radiusTopLeft":8,"radiusTopRight":8,"radiusBottomLeft":8,"radiusBottomRight":8},"shadow":{"color":"#000000","blur":12,"isEnabled":false,"placement":"outer","side":"bottom","width":3,"opacity":16,"angle":135,"distance":10},"padding":{"leftPadding":12,"rightPadding":12,"topPadding":12,"bottomPadding":12,"isCustomPaddingSize":false,"isEnabled":true},"header":{"backgroundColor":"#FFFFFF","borderColor":"#E3E3E3","iconColor":"#616161"},"tooltip":{"backgroundColor":"#FFFFFF","color":"#616161"}},"typography":{"autoFontColor":false,"color":"#242424","fontFamily":"\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif","fontSize":14,"responsiveFontSize":true}}},wip:true,builtIn:true}
   // Clear Light/Dark: taken from the example dashboards on OpenAI's "put data to
   // work" page (their light and dark colour tokens, read from the live page):
   // near-white or charcoal page, hairline-bordered cards, 20px corners, 16/20px
@@ -685,7 +696,7 @@ function buildChartList(host,k,name,open){
   chartSel[k]=Math.min(chartSel[k],list.length-1);
   buildColorGroup(host,name,list,(body,resets)=>{
     const intro=document.createElement('div');intro.className='field-hint chip-intro';
-    intro.textContent=k==='series'?'Categories use Primary 1–8 first, then these colors in order: the 9th category takes Series 1.':'Each measure takes the next color in order.';
+    intro.textContent=k==='series'?'Categories take these colors in order: the 1st category takes Series 1. After the last color they start again.':'Each measure takes the next color in order.';
     body.appendChild(intro);
     const grid=document.createElement('div');grid.className='chips';
     grid.setAttribute('role','group');grid.setAttribute('aria-label',name+' colors');
@@ -3189,13 +3200,13 @@ function generateThemeFromPalette(hexList,tone,name){
 
 /* ── Series and measure colours (theme.colors.chart) ──
    When categories split a chart (stack segments, one legend item per field
-   value) they take Primary 1–8 first, then Series 1, 2, 3…; when measures
+   value) they take Series 1, 2, 3… in order; when measures
    do (one bar or line per measure) they take Measures 1, 2, 3…. The lists
    vary in length by theme; every theme has at least CHART_LIST_MIN of each.
    A theme without its own lists (a new theme, or an import without them)
    gets NEW_THEME_CHART_COLORS of each, built from its primaries: Series
-   opens with new hues and goes on with rounds of darker and lighter
-   versions, never repeating a primary; Measures is strong and soft pairs. CHART_LIST_MIN and
+   opens with the primaries and two new hues and goes on with rounds of
+   darker and lighter versions; Measures is strong and soft pairs. CHART_LIST_MIN and
    CHART_LISTS are defined with the themes, at the top. */
 const SERIES_ROUND_L=[-0.08,+0.08,-0.16,+0.15];
 // Nudges lightness until the colour isn't already in the list.
@@ -3211,9 +3222,10 @@ function chartColorsFromPrimaries(primaries,dark,count=NEW_THEME_CHART_COLORS){
   if(base.length<CHART_LIST_MIN)base.push(...extendPalette(base,CHART_LIST_MIN-base.length,dark));
   const lo=dark?0.45:0.30,hi=dark?0.93:0.88;
   const shade=(h,dL,cK=1)=>{const [L,C,H]=hexToOklch(h);return oklchToHex(clamp(L+dL,lo,hi),C*cK,H);};
-  // Categories 1–8 already have Primary 1–8, so Series starts after them.
-  const prim=base.slice(0,8),series=[];
-  base.slice(8).concat(...SERIES_ROUND_L.map(dL=>base.map(h=>shade(h,dL)))).forEach(h=>series.push(uniqueIn(prim.concat(series),h)));
+  // Categories take Series from Series 1, so it opens with the primaries (what the
+  // product falls back to without a Series list) and the two hues after them.
+  const series=[];
+  base.concat(...SERIES_ROUND_L.map(dL=>base.map(h=>shade(h,dL)))).forEach(h=>series.push(uniqueIn(series,h)));
   const measures=[];
   base.concat(base.slice(0,5).map(h=>shade(h,-0.08))).forEach(h=>{
     measures.push(uniqueIn(measures,h));
@@ -5207,8 +5219,8 @@ document.querySelectorAll('#pbtns .dbtn').forEach(b=>b.addEventListener('click',
   const NAMES={intelligence:'Intelligence',planning:'Planning',powertable:'PowerTable'};
   // [tab, section] → {sheets, tokens (CSS vars the preview uses), note?}
   const SHEET_USE={
-    'colors|Primary':{sheets:[I,P,T_],tokens:['p1','p2','p3','p4','p5','p6','p7','p8'],note:'Intelligence uses all eight, PowerTable 1–4, Planning Primary 1.'},
-    'colors|Series':{sheets:[I],tokens:CHART_TOKENS('s'),note:'Charts split by category use Primary 1–8 first, then Series from the 9th category on.'},
+    'colors|Primary':{sheets:[I,P,T_],tokens:['p1','p2','p3','p4','p5','p6','p7','p8'],note:'Intelligence uses Primary 1–2 (totals and highlights; category charts take Series), PowerTable 1–4, Planning Primary 1.'},
+    'colors|Series':{sheets:[I],tokens:CHART_TOKENS('s'),note:'Charts split by category take Series 1, 2, 3… in order.'},
     'colors|Measures':{sheets:[I],tokens:CHART_TOKENS('m'),note:'Charts split by measure, such as AC, Plan and Prior year lines.'},
     'colors|Structural':{sheets:[I,P,T_],tokens:['out1','out2','struct-bg','struct-icon','struct-accent','struct-subtle'],note:'Accent isn’t used on Planning sheets.'},
     'colors|Semantic':{sheets:[I,P],tokens:['pos','neg','neu'],note:'Neutral is used on Intelligence only.'},
@@ -6142,19 +6154,51 @@ window.VIZ=window.VIZ||{};
 })();
 
 /* ── SVG helpers ── */
-// Category colours: Primary 1–8 first, then Series 1, 2, 3… (the 9th category takes Series 1).
-const catCol=(i,suffix='')=>i<8?`var(--p${i+1}${suffix})`:`var(--s${i-7}${suffix})`;
+// Category colours come from Series in order, as the product's charts take them
+// (Analytics+ seriesColors = theme.colors.chart.series, cycled when it runs out).
+// Every theme has at least CHART_LIST_MIN Series and no preview chart has more
+// categories, so the preview cycles at that length.
+const catCol=(i,suffix='')=>`var(--s${(i%CHART_LIST_MIN)+1}${suffix})`;
 function mkSVG(id){return document.getElementById(id);}
 function svgEl(svg,t,at){const NS='http://www.w3.org/2000/svg';const e=document.createElementNS(NS,t);for(const k in at)e.setAttribute(k,at[k]);svg.appendChild(e);return e;}
 function axisLine(svg,x1,y1,x2,y2){svgEl(svg,'line',{x1,y1,x2,y2,style:'stroke:var(--out1);stroke-width:1'});}
-function gridLine(svg,x1,y1,x2,y2){svgEl(svg,'line',{x1,y1,x2,y2,style:'stroke:var(--out2);stroke-width:1'});}
+// Gridlines are dotted, as the product draws them (2px dash, 6px gap, scaled to the page).
+function gridLine(svg,x1,y1,x2,y2){svgEl(svg,'line',{x1,y1,x2,y2,style:'stroke:var(--out2);stroke-width:1;stroke-dasharray:1.5 4.5'});}
 function axLabel(svg,x,y,txt,anchor){const t=svgEl(svg,'text',{x,y,'text-anchor':anchor||'middle',class:'axis-label'});t.textContent=txt;return t;}
+// Data label on a mark, as the product shows data labels by default.
+function dataLabel(svg,x,y,txt,anchor,cls){const t=svgEl(svg,'text',{x,y,'text-anchor':anchor||'middle',class:'data-label'+(cls?' '+cls:'')});t.textContent=txt;return t;}
+// Axis titles, shown by default in the product: the category axis title
+// centred under the labels, the value axis title turned up the left edge.
+function axisTitles(svg,W,H,xt,yt,pL){
+  if(xt){const t=svgEl(svg,'text',{x:(pL+W)/2,y:H-2,'text-anchor':'middle',class:'axis-title'});t.textContent=xt;}
+  if(yt){const t=svgEl(svg,'text',{x:9,y:H/2,'text-anchor':'middle',class:'axis-title',transform:`rotate(-90,9,${H/2})`});t.textContent=yt;}
+}
+// Product line default: no point markers except on the first and last
+// points and on the highest (green) and lowest (red), each with its value.
+// The product draws those two in fixed green and red whatever the theme.
+const LINE_HI='#008000',LINE_LO='#FF0000';
+// Stack and waterfall connectors: the product draws them in a fixed grey, whatever the theme.
+const STACK_CONNECTOR='#707070';
+function lineMarks(svg,pts,col,fmt){
+  if(!pts.length)return;
+  let hi=0,lo=0;pts.forEach((p,i)=>{if(p.v>pts[hi].v)hi=i;if(p.v<pts[lo].v)lo=i;});
+  const marks=new Map([[0,col],[pts.length-1,col]]);marks.set(hi,LINE_HI);marks.set(lo,LINE_LO);
+  marks.forEach((c,i)=>{const p=pts[i];svgEl(svg,'circle',{cx:p.x,cy:p.y,r:2.2,style:`fill:${c}`});dataLabel(svg,p.x,p.y-5,fmt?fmt(p.v):p.v,null,'mix-dl');});
+}
+// Product waterfall totals fade from the bar color at the top to nothing at the base.
+function wfTotalFill(svg,id,col){
+  const NS='http://www.w3.org/2000/svg';let defs=svg.querySelector('defs');if(!defs){defs=document.createElementNS(NS,'defs');svg.prepend(defs);}
+  const g=document.createElementNS(NS,'linearGradient');g.setAttribute('id',id);g.setAttribute('x1','0');g.setAttribute('y1','0');g.setAttribute('x2','0');g.setAttribute('y2','1');
+  g.innerHTML=`<stop offset="0" style="stop-color:${col}"/><stop offset="1" style="stop-color:${col};stop-opacity:0"/>`;defs.appendChild(g);return `url(#${id})`;
+}
+// The product's average reference line across a plot, labelled above it.
+function refLine(svg,x1,x2,y,txt){svgEl(svg,'line',{x1,y1:y,x2,y2:y,class:'ref-line'});const t=svgEl(svg,'text',{x:x1+(x2-x1)*0.62,y:y-4,class:'ref-label'});t.textContent=txt;}
 function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items.forEach(([lbl,col,dot])=>{const s=document.createElement('span');s.className='item';s.innerHTML=`<span class="sw" style="background:${col};${dot?'height:2px;width:16px':''}"></span>${lbl}`;c.appendChild(s);});}
 
 /* ── P0: Multi-series line (AC vs Plan vs PY) ── */
 (function(){
   const svg=mkSVG('p0line');if(!svg)return;
-  const W=520,H=200,pL=32,pB=26,pT=10,pR=10,plot=H-pB-pT,base=H-pB;
+  const W=520,H=200,pL=44,pB=34,pT=14,pR=10,plot=H-pB-pT,base=H-pB;
   const cats=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   let data={
     yMin:15,yMax:65,
@@ -6176,15 +6220,16 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
     axisLine(svg,pL,base,W-pR,base);
     series.forEach(s=>{
       const pts=s.data.map((v,i)=>x(i).toFixed(1)+','+y(v).toFixed(1)).join(' ');
-      const style=`stroke:${s.col};stroke-width:2;stroke-linejoin:round;stroke-linecap:round;fill:none${s.dash?';stroke-dasharray:'+s.dash:''}`;
+      const style=`stroke:${s.col};stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;fill:none${s.dash?';stroke-dasharray:'+s.dash:''}`;
       svgEl(svg,'polyline',{points:pts,style});
       s.data.forEach((v,i)=>{
         const c=svgEl(svg,'circle',{cx:x(i),cy:y(v),r:5,style:`fill:${s.col};opacity:0`});
         addChartTip(c,MONTHS[i],[{color:s.col,label:s.lbl,value:v}]);
-        svgEl(svg,'circle',{cx:x(i),cy:y(v),r:2.2,style:`fill:${s.col}`});
       });
     });
-    cats.forEach((c,i)=>{if(i%2===0)axLabel(svg,x(i),base+15,c);});
+    lineMarks(svg,series[0].data.map((v,i)=>({x:x(i),y:y(v),v})),series[0].col);
+    cats.forEach((c,i)=>axLabel(svg,x(i),base+13,c));
+    axisTitles(svg,W,H,'Month','Sales ($M)',pL);
     mkLegH('p0lineLeg',series.map(s=>[s.lbl,s.col,!!s.dash]));
   }
   render();
@@ -6221,8 +6266,16 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
       svg.appendChild(p);
       addChartTip(p,sl.lbl,[{color:`${catCol(i)}`,label:'Revenue',value:'$'+sl.v.toFixed(2)+'M'},{label:'Share',value:(sl.v/tot*100).toFixed(1)+'%'}]);
       if(leg){const it=document.createElement('span');it.className='item';it.innerHTML=`<span class="sw" style="background:${catCol(i)}"></span>${sl.lbl}`;leg.appendChild(it);}
+      // Product donut: value and (share) inside each slice wide enough to
+      // hold them, in black or white for contrast with the slice.
+      if((a2-a)>0.42){
+        const m=(a+a2)/2,r=(ro+ri)/2,t=svgEl(svg,'text',{x:cx+r*Math.cos(m),y:cy+r*Math.sin(m)-2,'text-anchor':'middle',class:'data-label',style:`fill:${catCol(i,'-text')};pointer-events:none`});
+        t.innerHTML=`<tspan x="${cx+r*Math.cos(m)}">${sl.v.toFixed(2)}M</tspan><tspan x="${cx+r*Math.cos(m)}" dy="1.15em">(${(sl.v/tot*100).toFixed(1)}%)</tspan>`;
+      }
       a=a2;
     });
+    const ct=svgEl(svg,'text',{x:cx,y:cy-2,'text-anchor':'middle',class:'data-label',style:'font-weight:700'});
+    ct.innerHTML=`<tspan x="${cx}">Total</tspan><tspan x="${cx}" dy="1.15em">${tot.toFixed(2)}M</tspan>`;
   }
   render();
   window.VIZ.p0pie={page:'pg0',get data(){return data;},set data(d){data=d;},render};
@@ -6231,7 +6284,7 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
 /* ── P0: Waterfall ── */
 (function(){
   const svg=mkSVG('p0wf');if(!svg)return;
-  const W=1000,H=140,pL=38,pB=32,pT=10;
+  const W=1000,H=140,pL=8,pB=22,pT=14;
   const gap=10;
   const base=H-pB;
   let data={
@@ -6252,26 +6305,24 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
     const barW=(W-pL-8-(nBars-1)*gap)/nBars;
     const plot=H-pB-pT;
     const y=v=>base-((v-yMin)/(yMax-yMin))*plot;
-    const step=Math.round((yMax-yMin)/6/5)*5||5;
-    const grid=[];for(let g=Math.ceil(yMin/step)*step;g<yMax;g+=step)grid.push(g);
-    grid.forEach(g=>{gridLine(svg,pL,y(g),W-8,y(g));axLabel(svg,pL-4,y(g)+3,g,'end');});
-    axisLine(svg,pL,base,W-8,base);
+    // Product waterfall: no gridlines or value axis, just a dark baseline
+    svgEl(svg,'line',{x1:pL,y1:base,x2:W-8,y2:base,style:'stroke:var(--text-color);stroke-width:1'});
+    const totFill=wfTotalFill(svg,'p0wfTot','var(--p1)');
     let running=bars[0].v;
     bars.forEach((b,i)=>{
       const bx=pL+i*(barW+gap);
       let top,bot,col;
-      if(b.type==='total'){top=y(b.v);bot=y(yMin+2);col='var(--p1)';}
+      if(b.type==='total'){top=y(b.v);bot=base;col='var(--p1)';}
       else if(b.type==='pos'){top=y(running+b.v);bot=y(running);col='var(--pos)';}
       else{top=y(running);bot=y(running+b.v);col='var(--neg)';}
-      const wr=svgEl(svg,'rect',{x:bx,y:top,width:barW,height:Math.max(2,bot-top),fill:col,rx:2});
+      const wr=svgEl(svg,'rect',{x:bx,y:top,width:barW,height:Math.max(2,bot-top),fill:b.type==='total'?totFill:col});
       addChartTip(wr,b.lbl,[{label:'Value',value:b.v>0?'+'+b.v:String(b.v)},{color:col,label:'Type',value:b.type==='pos'?'Positive':b.type==='neg'?'Negative':'Total'}]);
-      if(b.type!=='total'&&i<bars.length-1){
-        const nextX=bx+barW+gap;
-        const connY=b.v>0?top:bot;
-        svgEl(svg,'line',{x1:bx+barW,y1:connY,x2:nextX,y2:connY,style:'stroke:var(--out2);stroke-width:1;stroke-dasharray:3 2'});
+      if(i<bars.length-1){
+        const connY=b.type==='total'?top:b.v>0?top:bot;
+        svgEl(svg,'line',{x1:bx+barW,y1:connY,x2:bx+barW+gap,y2:connY,style:`stroke:${STACK_CONNECTOR};stroke-width:.75`});
       }
-      axLabel(svg,bx+barW/2,base+14,b.lbl);
-      if(b.type!=='total'){const t=svgEl(svg,'text',{x:bx+barW/2,y:top-3,'text-anchor':'middle',class:'axis-label',style:`fill:${col};font-weight:600`});t.textContent=(b.v>0?'+':'')+b.v;}
+      const xl=axLabel(svg,bx+barW/2,base+13,b.lbl);if(b.type==='total')xl.style.fontWeight='700';
+      dataLabel(svg,bx+barW/2,top-4,b.type==='total'?String(b.v):(b.v>0?'+':'')+b.v,null,b.type==='total'?'total':'');
       if(b.type!=='total')running+=b.v;
     });
   }
@@ -6300,17 +6351,17 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
     const leg=document.getElementById('p1barLeg');if(leg)leg.innerHTML='';
     const{yMax,regions,channels,rows}=data;
     const nG=regions.length,nB=channels.length;
-    const groupW=(W-pL-pR)/nG,bw=(groupW-6)/nB;
+    const groupW=(W-pL-pR)/nG,inner=groupW*0.70,bw=inner/nB;
     const y=v=>base-((v/yMax)*plot);
     const step=Math.round(yMax/5)||1;
     const grid=[];for(let g=step;g<yMax+step/2;g+=step)grid.push(g);
     grid.forEach(g=>{gridLine(svg,pL,y(g),W-pR,y(g));axLabel(svg,pL-4,y(g)+3,g,'end');});
     axisLine(svg,pL,base,W-pR,base);
     rows.forEach((row,gi)=>{
-      const gx=pL+gi*groupW+3;
+      const gx=pL+gi*groupW+(groupW-inner)/2;
       row.forEach((v,bi)=>{
         const bx=gx+bi*bw;
-        svgEl(svg,'rect',{x:bx,y:y(v),width:Math.max(1,bw-1),height:base-y(v),fill:`${catCol(bi)}`,rx:1});
+        svgEl(svg,'rect',{x:bx,y:y(v),width:bw,height:base-y(v),fill:`${catCol(bi)}`});
       });
       axLabel(svg,pL+gi*groupW+groupW/2,base+14,regions[gi]);
     });
@@ -6334,7 +6385,7 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
     svg.innerHTML='';
     const leg=document.getElementById('p1comboLeg');if(leg)leg.innerHTML='';
     const{volMax,avgMax,volData,avgData}=data;
-    const bw=(W-pL-pR)/cats.length-8;
+    const bw=(W-pL-pR)/cats.length*0.70;
     const y1=v=>base-((v/volMax)*plot);
     const y2=v=>base-((v/avgMax)*plot);
     const cx=i=>pL+(i+0.5)*((W-pL-pR)/cats.length);
@@ -6342,10 +6393,14 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
     const grid=[];for(let g=step;g<volMax+step/2;g+=step)grid.push(g);
     grid.forEach(g=>{gridLine(svg,pL,y1(g),W-pR,y1(g));axLabel(svg,pL-4,y1(g)+3,g,'end');});
     axisLine(svg,pL,base,W-pR,base);
-    volData.forEach((v,i)=>{svgEl(svg,'rect',{x:cx(i)-bw/2,y:y1(v),width:bw,height:base-y1(v),fill:'var(--m1)',opacity:.8,rx:2});});
+    volData.forEach((v,i)=>svgEl(svg,'rect',{x:cx(i)-bw/2,y:y1(v),width:bw,height:base-y1(v),fill:'var(--m1)'}));
+    const hiV=volData.indexOf(Math.max(...volData));
+    [...new Set([0,hiV,volData.length-1])].forEach(i=>dataLabel(svg,cx(i),y1(volData[i])-4,volData[i].toFixed(1)));
+    const avgV=volData.reduce((a,b)=>a+b,0)/volData.length;
+    refLine(svg,pL,W-pR,y1(avgV),'Average : '+avgV.toFixed(1));
     const pts=avgData.map((v,i)=>cx(i).toFixed(1)+','+y2(v).toFixed(1)).join(' ');
-    svgEl(svg,'polyline',{points:pts,style:'stroke:var(--m2);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;fill:none'});
-    avgData.forEach((v,i)=>svgEl(svg,'circle',{cx:cx(i),cy:y2(v),r:3,style:'fill:var(--m2)'}));
+    svgEl(svg,'polyline',{points:pts,style:'stroke:var(--m2);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;fill:none'});
+    lineMarks(svg,avgData.map((v,i)=>({x:cx(i),y:y2(v),v})),'var(--m2)');
     cats.forEach((c,i)=>axLabel(svg,cx(i),base+14,c));
     [20,40,60,80,100].forEach(g=>{axLabel(svg,W-pR+6,y2(g)+3,g,'start');});
     mkLegH('p1comboLeg',[['Volume (M)','var(--m1)',false],['Avg deal size','var(--m2)',false]]);
@@ -6368,21 +6423,25 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
     host.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)';
     const{globalYMax,regions,qData}=data;
     regions.forEach((reg,ri)=>{
-      const wrap=document.createElement('div');wrap.className='visual';wrap.style.cssText='padding:10px;display:flex;flex-direction:column;min-height:0';
-      const title=document.createElement('div');title.style.cssText='font-size:11px;font-weight:600;color:var(--text-color);margin-bottom:4px;font-family:var(--font-family)';title.textContent=reg;wrap.appendChild(title);
-      const NS='http://www.w3.org/2000/svg';const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 240 75');svg.setAttribute('width','100%');svg.setAttribute('height','100%');svg.style.flex='1';svg.style.minHeight='0';svg.style.display='block';
-      const W=240,H=75,pL=28,pB=16,pT=6,pR=8,plot=H-pB-pT,base=H-pB;
-      const yMax=globalYMax,bw=(W-pL-pR)/4-6;
+      const wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-direction:column;min-height:0';
+      const title=document.createElement('div');title.className='trellis-head';title.textContent=`${reg}  : ${qData[ri].reduce((a,b)=>a+b,0).toFixed(1)}M`;wrap.appendChild(title);
+      const NS='http://www.w3.org/2000/svg';const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 380 120');svg.setAttribute('width','100%');svg.setAttribute('height','100%');svg.style.flex='1';svg.style.minHeight='0';svg.style.display='block';
+      // Drawn at about the panel's real size so its text matches the other charts
+      const W=380,H=120,pL=24,pB=16,pT=12,pR=8,plot=H-pB-pT,base=H-pB;
+      const yMax=globalYMax,bw=(W-pL-pR)/4*0.70;
       const el=(t,at)=>{const e=document.createElementNS(NS,t);for(const k in at)e.setAttribute(k,at[k]);svg.appendChild(e);return e;};
-      [2,4].forEach(g=>{const gy=base-((g/yMax)*plot);el('line',{x1:pL,y1:gy,x2:W-pR,y2:gy,style:'stroke:var(--out2);stroke-width:1'});const t=el('text',{x:pL-3,y:gy+3,'text-anchor':'end',class:'axis-label'});t.textContent=g;});
+      [2,4].forEach(g=>{const gy=base-((g/yMax)*plot);el('line',{x1:pL,y1:gy,x2:W-pR,y2:gy,style:'stroke:var(--out2);stroke-width:1;stroke-dasharray:1.5 4.5'});const t=el('text',{x:pL-3,y:gy+3,'text-anchor':'end',class:'axis-label'});t.textContent=g;});
       el('line',{x1:pL,y1:base,x2:W-pR,y2:base,style:'stroke:var(--out1);stroke-width:1'});
-      qData[ri].forEach((v,qi)=>{
-        const bx=pL+qi*((W-pL-pR)/4)+3;
+      const vals=qData[ri],lo=vals.indexOf(Math.min(...vals)),hi=vals.indexOf(Math.max(...vals)),show=new Set([0,lo,hi,vals.length-1]);
+      vals.forEach((v,qi)=>{
+        const bx=pL+(qi+0.5)*((W-pL-pR)/4)-bw/2;
         const yv=base-((v/yMax)*plot);
-        const br=el('rect',{x:bx,y:yv,width:bw,height:base-yv,fill:`${catCol(ri)}`,opacity:.85,rx:2});
+        const br=el('rect',{x:bx,y:yv,width:bw,height:base-yv,fill:`${catCol(ri)}`});
+        if(show.has(qi)){const dl=el('text',{x:bx+bw/2,y:yv-3,'text-anchor':'middle',class:'data-label'});dl.textContent=v.toFixed(1);}
         addChartTip(br,reg,[{color:`${catCol(ri)}`,label:qs[qi],value:'$'+v+'M'}]);
         const t=el('text',{x:bx+bw/2,y:base+14,'text-anchor':'middle',class:'axis-label'});t.textContent=qs[qi];
       });
+      const avg=vals.reduce((a,b)=>a+b,0)/vals.length;refLine(svg,pL,W-pR,base-((avg/yMax)*plot),'Average : '+avg.toFixed(1));
       wrap.appendChild(svg);host.appendChild(wrap);
     });
   }
@@ -6412,8 +6471,8 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
     [30,40,50,60,70,80].forEach(g=>{gridLine(svg,pL,py(g),W-pR,py(g));axLabel(svg,pL-4,py(g)+3,g,'end');});
     [20,40,60,80].forEach(g=>{gridLine(svg,px(g),pT,px(g),base);axLabel(svg,px(g),base+14,g);});
     axisLine(svg,pL,base,W-pR,base);axisLine(svg,pL,pT,pL,base);
-    const xt=svgEl(svg,'text',{x:W/2,y:base+24,'text-anchor':'middle',class:'axis-label'});xt.textContent='Deal size ($k)';
-    const yt=svgEl(svg,'text',{x:8,y:H/2,'text-anchor':'middle',class:'axis-label',transform:`rotate(-90,8,${H/2})`});yt.textContent='Win rate (%)';
+    const xt=svgEl(svg,'text',{x:W/2,y:base+24,'text-anchor':'middle',class:'axis-title'});xt.textContent='Deal size ($k)';
+    const yt=svgEl(svg,'text',{x:8,y:H/2,'text-anchor':'middle',class:'axis-title',transform:`rotate(-90,8,${H/2})`});yt.textContent='Win rate (%)';
     segs.forEach((s,i)=>{
       const bc=svgEl(svg,'circle',{cx:px(s.x),cy:py(s.y),r:s.r,fill:`${catCol(i)}`,stroke:`${catCol(i)}`,strokeWidth:1.5});
       addChartTip(bc,s.lbl,[{color:`${catCol(i)}`,label:'Deal size',value:'$'+s.x+'k'},{label:'Win rate',value:s.y+'%'},{label:'Volume',value:'$'+s.r+'M'}]);
@@ -6495,7 +6554,7 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
 /* ── P3: Combo bar + line (AC vs Plan vs Forecast) ── */
 (function(){
   const svg=mkSVG('p3combo');if(!svg)return;
-  const W=520,H=185,pL=32,pB=26,pT=10,pR=10,plot=H-pB-pT,base=H-pB;
+  const W=520,H=185,pL=44,pB=34,pT=14,pR=10,plot=H-pB-pT,base=H-pB;
   const cats=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   let data={
     yMin:20,yMax:60,
@@ -6514,13 +6573,14 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
     const grid=[];for(let g=Math.ceil(yMin/step)*step;g<yMax;g+=step)grid.push(g);
     grid.forEach(g=>{gridLine(svg,pL,y(g),W-pR,y(g));axLabel(svg,pL-4,y(g)+3,g,'end');});
     axisLine(svg,pL,base,W-pR,base);
-    ac.forEach((v,i)=>{if(v===null)return;svgEl(svg,'rect',{x:x(i)-bw/2,y:y(v),width:bw,height:base-y(v),fill:'var(--m1)',opacity:.8,rx:2});});
+    ac.forEach((v,i)=>{if(v===null)return;svgEl(svg,'rect',{x:x(i)-bw/2,y:y(v),width:bw,height:base-y(v),fill:'var(--m1)'});});
     [{data:plan,col:'var(--m2)',dash:'4 3'},{data:fc,col:'var(--m3)',dash:'2 3'}].forEach(s=>{
       const pts=s.data.map((v,i)=>v!==null?x(i).toFixed(1)+','+y(v).toFixed(1):null).filter(Boolean).join(' ');
-      svgEl(svg,'polyline',{points:pts,style:`stroke:${s.col};stroke-width:2;fill:none;stroke-dasharray:${s.dash};stroke-linecap:round`});
-      s.data.forEach((v,i)=>{if(v===null)return;svgEl(svg,'circle',{cx:x(i),cy:y(v),r:2.5,style:`fill:${s.col}`});});
+      svgEl(svg,'polyline',{points:pts,style:`stroke:${s.col};stroke-width:2.2;fill:none;stroke-dasharray:${s.dash};stroke-linecap:round`});
     });
-    cats.forEach((c,i)=>{if(i%2===0)axLabel(svg,x(i),base+14,c);});
+    lineMarks(svg,plan.map((v,i)=>v===null?null:{x:x(i),y:y(v),v}).filter(Boolean),'var(--m2)');
+    cats.forEach((c,i)=>axLabel(svg,x(i),base+13,c));
+    axisTitles(svg,W,H,'Month','Sales ($M)',pL);
     mkLegH('p3comboLeg',[['AC (bars)','var(--m1)',false],['Plan','var(--m2)',true],['Forecast','var(--m3)',true]]);
   }
   render();
@@ -6530,7 +6590,7 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
 /* ── P3: Waterfall (plan bridge) ── */
 (function(){
   const svg=mkSVG('p3wf');if(!svg)return;
-  const W=480,H=185,pL=38,pB=32,pT=10,barW=46,gap=8;
+  const W=480,H=185,pL=8,pB=22,pT=14,barW=56,gap=8;
   const base=H-pB;
   let data={
     yMin:108,yMax:154,
@@ -6549,10 +6609,9 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
     const{yMin,yMax,bars}=data;
     const plot=H-pB-pT;
     const y=v=>base-((v-yMin)/(yMax-yMin))*plot;
-    const step=Math.round((yMax-yMin)/5/5)*5||5;
-    const grid=[];for(let g=Math.ceil(yMin/step)*step;g<yMax;g+=step)grid.push(g);
-    grid.forEach(g=>{gridLine(svg,pL,y(g),W-8,y(g));axLabel(svg,pL-4,y(g)+3,g,'end');});
-    axisLine(svg,pL,base,W-8,base);
+    // Product waterfall: no gridlines or value axis, just a dark baseline
+    svgEl(svg,'line',{x1:pL,y1:base,x2:W-8,y2:base,style:'stroke:var(--text-color);stroke-width:1'});
+    const totFill=wfTotalFill(svg,'p3wfTot','var(--p1)');
     let running=bars[0].v;
     bars.forEach((b,i)=>{
       const bx=pL+i*(barW+gap);
@@ -6560,14 +6619,14 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
       if(b.type==='total'){top=y(b.v);bot=base;col='var(--p1)';}
       else if(b.type==='pos'){top=y(running+b.v);bot=y(running);col='var(--pos)';}
       else{top=y(running);bot=y(running+b.v);col='var(--neg)';}
-      const wr=svgEl(svg,'rect',{x:bx,y:top,width:barW,height:Math.max(2,bot-top),fill:col,rx:2});
+      const wr=svgEl(svg,'rect',{x:bx,y:top,width:barW,height:Math.max(2,bot-top),fill:b.type==='total'?totFill:col});
       addChartTip(wr,b.lbl,[{label:'Value',value:b.v>0?'+'+b.v:String(b.v)},{color:col,label:'Type',value:b.type==='pos'?'Positive':b.type==='neg'?'Negative':'Total'}]);
-      if(b.type!=='total'&&i<bars.length-1){
-        const connY=b.v>0?top:bot;
-        svgEl(svg,'line',{x1:bx+barW,y1:connY,x2:bx+barW+gap,y2:connY,style:'stroke:var(--out2);stroke-width:1;stroke-dasharray:3 2'});
+      if(i<bars.length-1){
+        const connY=b.type==='total'?top:b.v>0?top:bot;
+        svgEl(svg,'line',{x1:bx+barW,y1:connY,x2:bx+barW+gap,y2:connY,style:`stroke:${STACK_CONNECTOR};stroke-width:.75`});
       }
-      axLabel(svg,bx+barW/2,base+14,b.lbl);
-      if(b.type!=='total'){const t=svgEl(svg,'text',{x:bx+barW/2,y:top-4,'text-anchor':'middle',class:'axis-label',style:`fill:${col};font-weight:600`});t.textContent=(b.v>0?'+':'')+b.v;}
+      const xl=axLabel(svg,bx+barW/2,base+13,b.lbl);if(b.type==='total')xl.style.fontWeight='700';
+      dataLabel(svg,bx+barW/2,top-4,b.type==='total'?String(b.v):(b.v>0?'+':'')+b.v,null,b.type==='total'?'total':'');
       if(b.type!=='total')running+=b.v;
     });
   }
@@ -6603,28 +6662,39 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
 })();
 
 /* ── P7 (Template 5): Sales mix ──
-   Four category charts on one West-region dataset. Categories take Primary
-   1–8, then Series 1, 2, 3…; extra measures take Measures 1, 2, 3…. No
-   gridlines: a baseline, y-axis labels in thousands and values on the marks,
-   as in Inforiver charts. */
+   Four category charts on one West-region dataset, drawn as the product's
+   Analytics+ charts draw them by default (measured in the Lumel Shell mock):
+   legend on top, dotted gridlines, axis titles, segments and areas with no
+   gaps or separators, and the product's reference line. Categories take
+   Series 1, 2, 3…; extra measures take Measures 1, 2, 3…. */
 const MIX_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const mixK=v=>v>=1000?(v/1000).toFixed(1)+'m':v.toFixed(1)+'k';
 const mixTick=v=>v===0?'0':v>=1000?+(v/1000).toFixed(2)+'m':v+'k';
 // A round axis step that gives about n intervals up to max.
 function mixStep(max,n){const raw=max/n,mag=Math.pow(10,Math.floor(Math.log10(raw)));return[1,2,2.5,5,10].map(m=>m*mag).find(s=>s>=raw);}
-// Baseline, y-axis labels and month numbers; returns the y scale.
-function mixAxes(svg,f,max,xs){
+// Value axis with dotted gridlines above zero, the baseline, month numbers
+// and both axis titles; returns the y scale.
+function mixAxes(svg,f,max,xs,yTitle){
   const step=mixStep(max,5),top=Math.ceil(max/step)*step,base=f.H-f.pB;
   const y=v=>base-(v/top)*(base-f.pT);
-  for(let g=0;g<=top+step/2;g+=step)axLabel(svg,f.pL-6,y(g)+3,mixTick(g),'end');
+  for(let g=0;g<=top+step/2;g+=step){if(g>0)gridLine(svg,f.pL,y(g),f.W-f.pR,y(g));axLabel(svg,f.pL-6,y(g)+3,mixTick(g),'end');}
   axisLine(svg,f.pL,base,f.W-f.pR,base);
-  xs.forEach((x,i)=>axLabel(svg,x,base+14,String(i+1)));
+  xs.forEach((x,i)=>axLabel(svg,x,base+13,String(i+1)));
+  axisTitles(svg,f.W,f.H,'Month',yTitle||'Sales',f.pL);
   return y;
 }
-const MIX_FRAME={W:520,H:230,pL:38,pR:6,pT:14,pB:20};
+// The product's average reference line: dashed grey across the plot, its
+// value written above it in dark red.
+function mixRefLine(svg,f,y,v,lbl){
+  const l=svgEl(svg,'line',{x1:f.pL,y1:y,x2:f.W-f.pR,y2:y,class:'ref-line'});
+  const t=svgEl(svg,'text',{x:f.pL+(f.W-f.pL-f.pR)*0.62,y:y-4,class:'ref-label'});t.textContent='Average : '+mixK(v);
+  if(lbl)addChartTip(l,'Average',[{label:lbl,value:mixK(v)}]);
+}
+const MIX_FRAME={W:520,H:230,pL:50,pR:6,pT:14,pB:30};
 
-/* Stacked area: sales by channel. Layers stack bottom-up in Series order;
-   a thin element-background line separates them. */
+/* Stacked area: each series is a 15% tint of its color running down to
+   the baseline (the tints overlap), with a 3px line on top. Every point is
+   labelled with its series value, and the top line with the month total. */
 (function(){
   const svg=mkSVG('p7area');if(!svg)return;
   const f=MIX_FRAME,base=f.H-f.pB;
@@ -6640,27 +6710,32 @@ const MIX_FRAME={W:520,H:230,pL:38,pR:6,pT:14,pB:20};
     const{series}=data,n=series[0].data.length;
     const x=i=>f.pL+8+i*((f.W-f.pR-f.pL-16)/(n-1));
     const cum=[];series.forEach((s,k)=>cum.push(s.data.map((v,i)=>v+(k?cum[k-1][i]:0))));
-    const y=mixAxes(svg,f,Math.max(...cum[cum.length-1]),series[0].data.map((_,i)=>x(i)));
+    const tot=cum[cum.length-1];
+    const y=mixAxes(svg,f,Math.max(...tot)*1.08,series[0].data.map((_,i)=>x(i)));
     const pts=arr=>arr.map((v,i)=>x(i).toFixed(1)+','+y(v).toFixed(1));
+    const floor=[x(n-1).toFixed(1)+','+base,x(0).toFixed(1)+','+base];
     series.forEach((s,k)=>{
-      const lower=k?pts(cum[k-1]).reverse():[x(n-1).toFixed(1)+','+base,x(0).toFixed(1)+','+base];
-      const col=`${catCol(k)}`,tot=s.data.reduce((a,b)=>a+b,0),all=cum[cum.length-1].reduce((a,b)=>a+b,0);
-      const a=svgEl(svg,'polygon',{points:pts(cum[k]).concat(lower).join(' '),style:`fill:${col}`});
-      addChartTip(a,s.lbl,[{color:col,label:'FY25',value:mixK(tot)},{label:'Share',value:(tot/all*100).toFixed(1)+'%'}]);
+      const col=`${catCol(k)}`,sTot=s.data.reduce((a,b)=>a+b,0),all=tot.reduce((a,b)=>a+b,0);
+      const a=svgEl(svg,'polygon',{points:pts(cum[k]).concat(floor).join(' '),style:`fill:${col};fill-opacity:.15`});
+      addChartTip(a,s.lbl,[{color:col,label:'FY25',value:mixK(sTot)},{label:'Share',value:(sTot/all*100).toFixed(1)+'%'}]);
     });
-    cum.slice(0,-1).forEach(c=>svgEl(svg,'polyline',{points:pts(c).join(' '),style:'stroke:var(--el-bg);stroke-width:1.2;fill:none;stroke-linejoin:round'}));
+    series.forEach((s,k)=>svgEl(svg,'polyline',{points:pts(cum[k]).join(' '),style:`stroke:${catCol(k)};stroke-width:2.2;fill:none;stroke-linejoin:round;stroke-linecap:round`}));
     series.forEach((s,k)=>s.data.forEach((v,i)=>{
+      dataLabel(svg,x(i),y(cum[k][i])-4,mixK(v));
       const c=svgEl(svg,'circle',{cx:x(i),cy:y(cum[k][i]),r:5,style:`fill:${catCol(k)};opacity:0`});
       addChartTip(c,MIX_MONTHS[i],[{color:`${catCol(k)}`,label:s.lbl,value:mixK(v)}]);
     }));
+    tot.forEach((t,i)=>dataLabel(svg,x(i),y(t)-14,mixK(t)));
     mkLegH('p7areaLeg',series.map((s,k)=>[s.lbl,`${catCol(k)}`]));
   }
   render();
   window.VIZ.p7area={page:'pg7',get data(){return data;},set data(d){data=d;},render};
 })();
 
-/* Stacked column: the same three categories as the grouped column and the
-   treemap, stacked per month with the month total on top. */
+/* Stacked column: segments sit flush with no gaps; thin grey connector
+   lines join each segment boundary to the next month's; the month total is
+   written in bold on top, and the average of the totals is the reference
+   line. Bars take 70% of each month's slot. */
 const MIX_CATS=[
   {lbl:'Bikes',     data:[87.6,71.1,211.1,162.4,162.2,183.4,197.4,206.3,309.9,231.0,319.9,416.9]},
   {lbl:'Components',data:[100.3,78.3,252.4,162.6,178.7,202.4,221.0,233.6,345.4,251.5,350.3,449.3]},
@@ -6668,36 +6743,39 @@ const MIX_CATS=[
 ];
 (function(){
   const svg=mkSVG('p7stack');if(!svg)return;
-  const f=MIX_FRAME,base=f.H-f.pB;
+  const f=MIX_FRAME;
   let data={series:MIX_CATS.map(s=>({lbl:s.lbl,data:s.data.slice()}))};
   function render(){
     svg.innerHTML='';
     const leg=document.getElementById('p7stackLeg');if(leg)leg.innerHTML='';
-    const{series}=data,n=series[0].data.length,gw=(f.W-f.pL-f.pR)/n,bw=gw*0.62;
+    const{series}=data,n=series[0].data.length,gw=(f.W-f.pL-f.pR)/n,bw=gw*0.70;
     const cx=i=>f.pL+(i+0.5)*gw;
     const tots=series[0].data.map((_,i)=>series.reduce((a,s)=>a+s.data[i],0));
     const y=mixAxes(svg,f,Math.max(...tots)*1.08,tots.map((_,i)=>cx(i)));
+    const bounds=tots.map((_,i)=>{let run=0;return series.map(s=>(run+=s.data[i]));});
+    for(let i=0;i<n-1;i++)bounds[i].forEach((b,k)=>svgEl(svg,'line',{x1:cx(i)+bw/2,y1:y(b),x2:cx(i+1)-bw/2,y2:y(bounds[i+1][k]),style:`stroke:${STACK_CONNECTOR};stroke-width:.75`}));
     tots.forEach((t,i)=>{
       let run=0;
       series.forEach((s,k)=>{
-        const v=s.data[i],top=y(run+v),bot=y(run)-(k?1:0),col=`${catCol(k)}`; // 1px gap between segments
+        const v=s.data[i],top=y(run+v),bot=y(run),col=`${catCol(k)}`;
         const r=svgEl(svg,'rect',{x:cx(i)-bw/2,y:top,width:bw,height:Math.max(0,bot-top),style:`fill:${col}`});
         addChartTip(r,MIX_MONTHS[i],[{color:col,label:s.lbl,value:mixK(v)},{label:'Month total',value:mixK(t)}]);
         run+=v;
       });
-      const lbl=svgEl(svg,'text',{x:cx(i),y:y(t)-4,'text-anchor':'middle',class:'axis-label'});
-      lbl.textContent=t>=1000?(t/1000).toFixed(1)+'m':Math.round(t)+'k';
+      dataLabel(svg,cx(i),y(t)-4,mixK(t),null,'total');
     });
+    const avg=tots.reduce((a,b)=>a+b,0)/n;
+    mixRefLine(svg,f,y(avg),avg,'Month total');
     mkLegH('p7stackLeg',series.map((s,k)=>[s.lbl,`${catCol(k)}`]));
   }
   render();
   window.VIZ.p7stack={page:'pg7',get data(){return data;},set data(d){data=d;},render};
 })();
 
-/* Grouped column with lines (matches the reference screenshot): three
-   category bars per month, three measures as lines on the same axis, a
-   dashed average of the first category, and its first, lowest, highest and
-   last values labelled. */
+/* Grouped column with lines: three category bars per month sitting side by
+   side (the group takes 70% of the slot), three measures as lines on the
+   same axis, the product's average reference line for the first category,
+   and its first, lowest, highest and last values labelled. */
 (function(){
   const svg=mkSVG('p7group');if(!svg)return;
   const f=MIX_FRAME,base=f.H-f.pB;
@@ -6712,41 +6790,37 @@ const MIX_CATS=[
   function render(){
     svg.innerHTML='';
     const leg=document.getElementById('p7groupLeg');if(leg)leg.innerHTML='';
-    const{bars,lines}=data,n=bars[0].data.length,gw=(f.W-f.pL-f.pR)/n,inner=gw*0.74,bw=inner/bars.length;
+    const{bars,lines}=data,n=bars[0].data.length,gw=(f.W-f.pL-f.pR)/n,inner=gw*0.70,bw=inner/bars.length;
     const cx=i=>f.pL+(i+0.5)*gw;
-    const y=mixAxes(svg,f,Math.max(...bars.concat(lines).flatMap(s=>s.data)),bars[0].data.map((_,i)=>cx(i)));
+    const y=mixAxes(svg,f,Math.max(...bars.concat(lines).flatMap(s=>s.data))*1.05,bars[0].data.map((_,i)=>cx(i)));
     bars[0].data.forEach((_,i)=>bars.forEach((s,k)=>{
       const v=s.data[i],col=`${catCol(k)}`;
       const r=svgEl(svg,'rect',{x:cx(i)-inner/2+k*bw,y:y(v),width:bw,height:base-y(v),style:`fill:${col}`});
       addChartTip(r,MIX_MONTHS[i],bars.map((b,j)=>({color:`${catCol(j)}`,label:b.lbl,value:mixK(b.data[i])})));
     }));
     const first=bars[0].data,avg=first.reduce((a,b)=>a+b,0)/n;
-    const al=svgEl(svg,'line',{x1:f.pL,y1:y(avg),x2:f.W-f.pR,y2:y(avg),style:'stroke:var(--out1);stroke-width:1;stroke-dasharray:5 3'});
-    addChartTip(al,'Average',[{color:catCol(0),label:bars[0].lbl,value:mixK(avg)}]);
+    mixRefLine(svg,f,y(avg),avg,bars[0].lbl);
     lines.forEach((s,k)=>{
       const col=`var(--m${k+1})`;
       svgEl(svg,'polyline',{points:s.data.map((v,i)=>cx(i).toFixed(1)+','+y(v).toFixed(1)).join(' '),style:`stroke:${col};stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;fill:none`});
       s.data.forEach((v,i)=>{const c=svgEl(svg,'circle',{cx:cx(i),cy:y(v),r:5,style:`fill:${col};opacity:0`});addChartTip(c,MIX_MONTHS[i],[{color:col,label:s.lbl,value:mixK(v)}]);});
     });
     const lo=first.indexOf(Math.min(...first)),hi=first.indexOf(Math.max(...first));
-    [...new Set([0,lo,hi,n-1])].forEach(i=>{
-      const t=svgEl(svg,'text',{x:cx(i)-inner/2+bw/2,y:y(first[i])-4,'text-anchor':'middle',class:'axis-label mix-dl'});
-      t.textContent=mixK(first[i]);
-    });
-    mkLegH('p7groupLeg',bars.map((s,k)=>[s.lbl,`${catCol(k)}`]).concat(lines.map((s,k)=>[s.lbl,`var(--m${k+1})`,true])));
+    [...new Set([0,lo,hi,n-1])].forEach(i=>dataLabel(svg,cx(i)-inner/2+bw/2,y(first[i])-4,mixK(first[i])));
+    mkLegH('p7groupLeg',bars.map((s,k)=>[s.lbl,`${catCol(k)}`]).concat(lines.map((s,k)=>[s.lbl,`var(--m${k+1})`])));
   }
   render();
   window.VIZ.p7group={page:'pg7',get data(){return data;},set data(d){data=d;},render};
 })();
 
-/* Treemap (styled after the reference screenshot): categories, then
-   months inside each category in calendar order. Colored by category, one
-   Series color each. The first three keep their colors from the other charts here.
-   Tile labels are black or white for contrast, the same as other labels on
-   colored fills, and are left off tiles too small to hold them. */
+/* Treemap, as the product draws it: one block per category in its color,
+   each topped by a header strip naming the category and its total, with
+   the months inside as tiles in the same color at 87.5%, about 2px apart.
+   Labels are black or white for contrast and are cut short with an
+   ellipsis, or left off tiles too small to hold them. No legend. */
 (function(){
   const svg=mkSVG('p7tree');if(!svg)return;
-  const W=520,H=200,GAP=0.5; // GAP on each side: 1px between tiles, as between stacked-column segments; H matches the card once the two-row legend is in
+  const W=520,H=200,GAP=1,HEAD=16; // GAP on each side: 2px between tiles; HEAD: the 22px header strip, scaled to the page
   const more=[
     {lbl:'Accessories',data:[52.4,41.8,96.3,88.1,84.6,92.7,101.2,108.5,142.3,118.6,151.4,186.2]},
     {lbl:'Services',   data:[38.1,30.6,64.2,59.8,57.3,63.5,68.9,72.4,95.1,80.7,99.8,121.5]},
@@ -6773,24 +6847,32 @@ const MIX_CATS=[
     }
     return out;
   }
+  // Cut text to fit a width, ending in an ellipsis as the product does.
+  const fit=(txt,w,px)=>{const max=Math.floor(w/px);return txt.length<=max?txt:max>3?txt.slice(0,max-3)+'...':'';};
   function render(){
     svg.innerHTML='';
     const leg=document.getElementById('p7treeLeg');if(leg)leg.innerHTML='';
     const cats=data.cats.slice(0,8),{months}=data; // one Primary per category, at most 8
     const cItems=cats.map((lbl,c)=>({c,v:months.reduce((a,vals)=>a+vals[c],0)}));
     squarify(cItems,0,0,W,H).forEach(cr=>{
-      const{c}=cr.it,p=c+1,col=`${catCol(p-1)}`,cTot=cr.it.v;
+      const{c}=cr.it,col=`${catCol(c)}`,txt=catCol(c,'-text'),cTot=cr.it.v;
+      const gx=cr.x+GAP,gy=cr.y+GAP,gw=cr.w-2*GAP,gh=cr.h-2*GAP;if(gw<=0||gh<=0)return;
+      const head=Math.min(HEAD,gh);
+      svgEl(svg,'rect',{x:gx,y:gy,width:gw,height:head,style:`fill:${col}`});
+      const hl=fit(`${cats[c]}(${mixK(cTot)})`,gw-6,5.6);
+      if(hl&&head>=12){const t=svgEl(svg,'text',{x:gx+3,y:gy+head/2+3,class:'tm-title',style:`fill:${txt};pointer-events:none`});t.textContent=hl;}
+      if(gh-head<4)return;
       const kids=months.map((vals,m)=>({m,v:vals[c]}));
-      squarify(kids,cr.x,cr.y,cr.w,cr.h).forEach(r=>{
+      squarify(kids,cr.x,cr.y+GAP+head,cr.w,cr.h-GAP-head).forEach(r=>{
         const{m,v}=r.it,w=r.w-2*GAP,h=r.h-2*GAP;if(w<=0||h<=0)return;
-        const t=svgEl(svg,'rect',{x:r.x+GAP,y:r.y+GAP,width:w,height:h,style:`fill:${col}`});
+        const t=svgEl(svg,'rect',{x:r.x+GAP,y:r.y+GAP,width:w,height:h,style:`fill:${col};fill-opacity:.875`});
         addChartTip(t,`${cats[c]} · ${MIX_MONTHS[m]}`,[{color:col,label:cats[c],value:mixK(v)},{label:'Share of category',value:(v/cTot*100).toFixed(1)+'%'}]);
-        if(w<32||h<24)return;
-        const lbl=svgEl(svg,'text',{x:r.x+r.w/2,y:r.y+r.h/2-2,'text-anchor':'middle',class:'axis-label',style:`fill:${catCol(p-1,'-text')};pointer-events:none`}); // clicks and hover reach the tile
-        lbl.innerHTML=`<tspan x="${r.x+r.w/2}">${m+1}</tspan><tspan x="${r.x+r.w/2}" dy="1.2em">${mixK(v)}</tspan>`;
+        if(w<30||h<22)return;
+        const name=fit(MIX_MONTHS[m],w-4,4.9);if(!name)return;
+        const lbl=svgEl(svg,'text',{x:r.x+r.w/2,y:r.y+r.h/2-2,'text-anchor':'middle',class:'tm-label',style:`fill:${txt};pointer-events:none`}); // clicks and hover reach the tile
+        lbl.innerHTML=`<tspan x="${r.x+r.w/2}">${name}</tspan><tspan x="${r.x+r.w/2}" dy="1.2em">${mixK(v)}</tspan>`;
       });
     });
-    mkLegH('p7treeLeg',cats.map((l,c)=>[l,`${catCol(c)}`]));
   }
   render();
   window.VIZ.p7tree={page:'pg7',get data(){return data;},set data(d){data=d;},render};

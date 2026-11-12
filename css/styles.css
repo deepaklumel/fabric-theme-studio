@@ -926,7 +926,17 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
 .rcharts.mix-grid{grid-template-rows:1fr 1fr;flex:1;min-height:0}
 .mix-grid .visual{overflow:hidden}
 /* Data labels sit over neighbouring bars and lines; a halo in the element background keeps them readable */
-.mix-dl{paint-order:stroke;stroke:var(--el-bg);stroke-width:3px;stroke-linejoin:round;font-weight:600}
+/* Product data labels have no halo; stack totals and waterfall totals are bold. */
+.mix-dl{font-weight:400}
+.data-label.total{font-weight:700}
+/* Trellis panel header, as the product writes it: "Member : total" in small regular text. */
+.trellis-head{flex:none;font-size:calc(var(--font-size) * 0.72);color:var(--text-color);font-family:var(--font-family);margin:0 0 2px}
+/* Treemap header strip (bold) and tile labels, as the product draws them. */
+.tm-title{font-size:calc(var(--font-size) * 0.62);font-weight:700}
+.tm-label{font-size:calc(var(--font-size) * 0.55)}
+/* Average reference line: dashed #999999 (8px dash, 6px gap) with its label in the product's dark red. */
+.ref-line{stroke:#999999;stroke-width:1;stroke-dasharray:5.8 4.35}
+.ref-label{font-size:calc(var(--font-size) * 0.62);fill:#6B2328}
 .visual{background:var(--el-bg);border:var(--el-border-w) solid var(--el-border-color);border-radius:var(--el-radius);box-shadow:var(--el-shadow);padding:var(--el-pad-t) var(--el-pad-r) var(--el-pad-b) var(--el-pad-l);min-width:0;min-height:0}
 .visual.flex-fill{flex:1;min-height:0;display:flex;flex-direction:column}
 .visual.flex-fill svg{flex:1;min-height:0;height:100%;display:block}
@@ -937,7 +947,8 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
    (background/border/radius/shadow/padding). Flat, full-bleed,
    only the flex/scroll mechanics of .visual.flex-fill. */
 .page-canvas{flex:1;min-height:0;min-width:0;display:flex;flex-direction:column}
-.vt{font-size:var(--font-size);font-weight:600;color:var(--text-color);font-family:var(--font-family);margin:0 0 14px;display:flex;align-items:center;gap:8px}
+/* Visual title: bold, the product's 15px title scaled to the page. */
+.vt{font-size:calc((var(--font-size) + 1px) * 0.725);font-weight:700;color:var(--text-color);font-family:var(--font-family);margin:0 0 6px;display:flex;align-items:center;gap:8px}
 .vt .ti{color:var(--struct-icon);display:flex}
 
 .score{display:flex;align-items:center;background:var(--el-bg);border:var(--el-border-w) solid var(--el-border-color);border-radius:var(--el-radius);box-shadow:var(--el-shadow);padding:20px 28px}
@@ -987,40 +998,55 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
 
 .mapv{display:flex;flex-direction:column;flex:1;min-height:0}
 .mapv svg{flex:1;width:100%;min-height:200px;border-radius:6px;display:block;border:1px solid var(--out2)}
+/* Chart text, sized as the product draws it: the product report page is
+   1600px wide and the studio's is 1160px, so product pixel sizes are
+   scaled by .725 (14px axis labels and data labels -> ~10px). */
 .axis-label{font-size:calc(var(--font-size) * 0.72);fill:var(--text-color)}
+.axis-title{font-size:calc(var(--font-size) * 0.72);font-weight:600;fill:var(--text-color)}
+.data-label{font-size:calc(var(--font-size) * 0.72);fill:var(--text-color)}
 .pie-wrap{display:flex;gap:16px;align-items:center;justify-content:center;flex:1;min-height:0}
 .pie-wrap svg{flex:0 0 auto;width:auto;height:100%;max-height:280px;aspect-ratio:1}
 .legend-v{display:flex;flex-direction:column;gap:7px;flex:none}
-.legend-v .item,.legend-h .item{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text-color);font-family:var(--font-family)}
-.legend-v .sw{width:10px;height:10px;border-radius:3px;flex:none}
-.legend-h{display:flex;flex-wrap:wrap;gap:7px 14px;margin-top:12px}
-.legend-h .sw{width:12px;height:3px;border-radius:2px}
+/* Legends: a round marker per series, as the product draws them. */
+.legend-v .item,.legend-h .item{display:flex;align-items:center;gap:5px;font-size:calc(var(--font-size) * 0.72);color:var(--text-color);font-family:var(--font-family)}
+.legend-v .sw,.legend-h .sw{width:7px;height:7px;border-radius:50%;flex:none}
+/* Legends sit above the plot, left-aligned, as the product places them. */
+.legend-h{display:flex;flex-wrap:wrap;gap:4px 12px;margin:0 0 4px;flex:none}
 
-table.matrix{width:100%;border-collapse:collapse;font-size:12px;color:var(--text-color);font-family:var(--font-family)}
-/* Text-only grids use compact rows (~26px); rich-cell grids (PowerTable, Gantt) keep their own heights */
-table.matrix th,table.matrix td{padding:5px 14px;line-height:16px;text-align:right;white-space:nowrap}
+/* Matrix, as the product's matrix and Planning grid draw it: a plain header
+   (column members bold, measure names regular and right-aligned), a dark
+   Outline 1 line under the header and after the row-label column, bands of
+   the structural Background on every other row, Outline 2 row and column
+   lines, and the total row in bold with an Outline 1 line under it.
+   26px rows at 14px on a sheet; scaled by .725 on a report page. */
+table.matrix{width:100%;border-collapse:collapse;font-size:calc(var(--font-size) * 0.725);color:var(--text-color);font-family:var(--font-family)}
+table.matrix th,table.matrix td{padding:3px 8px;line-height:12px;text-align:right;white-space:nowrap}
+.stage.sheet-fill table.matrix{font-size:var(--font-size)}
+.stage.sheet-fill table.matrix th,.stage.sheet-fill table.matrix td{padding:5px 8px;line-height:15px}
 table.matrix .lead{text-align:left}
-table.matrix thead th{background:var(--struct-bg);font-weight:600;color:var(--text-color)}
-table.matrix thead .grp th{text-align:left;border-bottom:1px solid var(--out2)}
+table.matrix tbody .lead,table.matrix thead th:first-child{border-right:1px solid var(--out1)}
+table.matrix thead th{background:var(--el-bg);font-weight:400;color:var(--text-color);border-top:1px solid var(--out2)}
+table.matrix thead .grp th{text-align:left;font-weight:700;border-bottom:1px solid var(--out2)}
 table.matrix thead .sub th{border-bottom:1px solid var(--out1)}
-table.matrix tbody tr:nth-child(odd) td{background:var(--struct-subtle)}
-table.matrix tbody tr:nth-child(even) td{background:var(--struct-bg)}
+table.matrix tbody tr:nth-child(odd) td{background:var(--struct-bg)}
+table.matrix tbody tr:nth-child(even) td{background:var(--el-bg)}
 table.matrix tbody td{border-bottom:1px solid var(--out2)}
+table.matrix td:not(.lead),table.matrix thead th:not(:first-child){border-right:1px solid var(--out2)}
 table.matrix .grpdiv{border-left:1px solid var(--out2)}
-table.matrix tr.lvl0 .lead,table.matrix tr.lvl1 .lead,table.matrix tr.lvl2 .lead,table.matrix tr.lvl3 .lead{font-weight:600}
-.mx-chev{display:inline-flex;width:14px;color:var(--text-color);opacity:.7;vertical-align:middle}
+table.matrix tr.lvl0 td{font-weight:700;border-bottom-color:var(--out1)}
+.mx-chev{display:inline-flex;align-items:center;width:14px;height:1em;color:var(--text-color);opacity:.7;vertical-align:-1px}
 
-/* PowerTable — table layout, sized from the Figma "Load table" grid:
-   27px header on a half-strength header fill, 24px white rows (no
+/* PowerTable — table layout, sized as the product's grid draws it:
+   33px header on a half-strength header fill, 26px white rows (no
    stripes), 6px cell padding, #E0E0E0-style gridlines (Outline 2)
    and 12px checkboxes. Tag pills (Single/Multi Select) tint the
    category's primary colour; star rating, slider handle and button
    use the accent. */
 .pt-wrap{flex:1;min-height:0;overflow:auto;background:var(--canvas-bg)}
 table.pt{width:100%;border-collapse:collapse;font-size:12px;color:var(--text-color);font-family:var(--font-family);white-space:nowrap}
-table.pt th{height:27px;box-sizing:border-box;background:color-mix(in srgb,var(--struct-bg) 50%,var(--canvas-bg));font-weight:600;line-height:16px;text-align:left;padding:0 6px;border-bottom:1px solid var(--out2);border-right:1px solid var(--out2);position:sticky;top:0;z-index:1}
+table.pt th{height:33px;box-sizing:border-box;background:color-mix(in srgb,var(--struct-bg) 50%,var(--canvas-bg));font-weight:600;line-height:16px;text-align:left;padding:0 6px;border-bottom:1px solid var(--out2);border-right:1px solid var(--out2);position:sticky;top:0;z-index:1}
 table.pt th:last-child{border-right:none}
-table.pt td{height:24px;box-sizing:border-box;padding:0 6px;line-height:16px;border-bottom:1px solid var(--out2);border-right:1px solid var(--out2);vertical-align:middle}
+table.pt td{height:26px;box-sizing:border-box;padding:0 6px;line-height:16px;border-bottom:1px solid var(--out2);border-right:1px solid var(--out2);vertical-align:middle}
 table.pt td:last-child{border-right:none}
 table.pt tbody td{background:var(--struct-subtle)}
 table.pt tbody tr:hover td{filter:brightness(.97)}
@@ -1408,16 +1434,19 @@ table.pt-ct td.pt-ct-ro{color:color-mix(in srgb,var(--text-color) 65%,var(--canv
   .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);flex:none;height:82px}
   /* Content is centred in the card's fixed height, so it never runs into the
      top or bottom edge; long text is cut off with an ellipsis, not clipped. */
-  .kpi-card{padding:8px 16px;display:flex;flex-direction:column;justify-content:center;gap:3px;overflow:hidden}
+  /* Product KPI card: label over a bold value, both centred; the change
+     line is plain coloured text (no badge). */
+  .kpi-card{padding:8px 16px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:3px;overflow:hidden}
   /* Fixed line heights: label 15 + value 26 + change 17 + gaps 6 = 64px, well
      inside the card's 82px less 16px padding, so nothing reaches an edge. */
   section.kpi-card>*{margin:0;min-width:0;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:15px}
   section.kpi-card>.kpi-val{line-height:26px}
   section.kpi-card>.kpi-pct,section.kpi-card>.kpi-sub{line-height:17px}
-  .kpi-lbl{font-size:11.5px;color:var(--text-color);opacity:.72;font-family:var(--font-family);margin-bottom:4px}
-  .kpi-val{font-size:22px;font-weight:700;color:var(--text-color);font-family:var(--font-family);line-height:1.1}
-  .kpi-pct{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px;margin-top:4px;font-variant-numeric:tabular-nums;font-family:var(--font-family)}
-  .kpi-sub{font-size:11.5px;margin-top:4px;font-family:var(--font-family)}
+  .kpi-lbl{font-size:calc(var(--font-size) * 0.725);color:var(--text-color);font-family:var(--font-family);margin-bottom:2px}
+  .kpi-val{font-size:calc(var(--font-size) * 1.45);font-weight:700;color:var(--text-color);font-family:var(--font-family);line-height:1.1}
+  .kpi-pct{font-size:calc(var(--font-size) * 0.725);font-weight:400;display:flex;align-items:center;gap:6px;margin-top:2px;font-variant-numeric:tabular-nums;font-family:var(--font-family)}
+  .kpi-pct .dot{display:none}
+  .kpi-sub{font-size:calc(var(--font-size) * 0.725);margin-top:2px;font-family:var(--font-family)}
   .trellis{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:var(--gap)}
 
 
