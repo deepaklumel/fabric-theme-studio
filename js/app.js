@@ -111,12 +111,10 @@ DESIGN_CHART_COLORS[26]={"series":["#FF8792","#47857D","#B6D9D1","#ED003D","#2F5
 DESIGN_CHART_COLORS[27]={"series":["#FF8792","#60A195","#B6D9D1","#BF002F","#376A64","#FFDADC","#10B981","#C084FC","#60A5FA","#F59E0B"],"measures":["#FF5569","#9AC8BF","#47857D","#FFB2B8","#ED003D","#60A195","#E8F4F2","#FF8792","#34D399","#60A5FA"]};
 DESIGN_CHART_COLORS[28]={"series":["#FF3B30","#00C7BE","#30B0C7","#A2845E","#8E8E93","#0040DD","#248A3D","#C93400","#8944AB","#D30F45","#0071A4","#3634A3","#B25000","#0C817B"],"measures":["#007AFF","#FF9500","#34C759","#AF52DE","#FF2D55","#32ADE6","#5856D6","#FFCC00","#00C7BE","#8E8E93"]};
 DESIGN_CHART_COLORS[29]={"series":["#FF453A","#63E6E2","#40C8E0","#AC8E68","#98989D","#409CFF","#30DB5B","#FFB340","#DA8FFF","#FF6482","#70D7FF","#FFD426","#FF6961","#66D4CF","#B59469"],"measures":["#0A84FF","#FF9F0A","#30D158","#BF5AF2","#FF375F","#64D2FF","#7D7AFF","#FFD60A","#63E6E2","#98989D"]};
-// Fabric Quiet (30): no new hues, as its sheet asks. Both lists start with its eight colours,
-// then a darker and a lighter step of each, made the way its Azure ramp steps from #3A6FD8
-// to #2D59B3 and #8DAEEA (same lightness change and chroma ratio in OKLCH). Series go
-// darker first and end in Other #B3B3B3; Measures go lighter first (its Plan is a tint of
-// the measure's hue) and end in On plan #8A8A8A.
-DESIGN_CHART_COLORS[30]={"series":["#3A6FD8","#14958A","#D9693A","#7B61D1","#4E8A3E","#C2508A","#B98A12","#C8434E","#2D59B3","#087B72","#B7572F","#644EAD","#3D7130","#A14072","#9C740C","#A6333E","#8DAEEA","#92C7C0","#F9B79D","#B1A7E7","#9BBD92","#E4A1BF","#E4CA97","#E69999","#B3B3B3"],"measures":["#3A6FD8","#14958A","#D9693A","#7B61D1","#4E8A3E","#C2508A","#B98A12","#C8434E","#8DAEEA","#92C7C0","#F9B79D","#B1A7E7","#9BBD92","#E4A1BF","#E4CA97","#E69999","#2D59B3","#087B72","#B7572F","#644EAD","#3D7130","#A14072","#9C740C","#A6333E","#8A8A8A"]};
+// Fabric Quiet (30): Series starts with its eight primary colours, then extends them with
+// 22 distinct muted hues in the same mid, deep and soft colour range. Measures uses its own
+// related 30-colour palette.
+DESIGN_CHART_COLORS[30]={"series":["#3A6FD8","#14958A","#D9693A","#7B61D1","#4E8A3E","#C2508A","#B98A12","#C8434E","#B96DB0","#A87D3A","#00A481","#937AD2","#B26C4D","#5B9E6D","#526191","#8B5051","#4B602D","#056C95","#83506F","#68561B","#057177","#705787","#925019","#057652","#9BA1E6","#DCA595","#86B77A","#84ADD2","#CC99B4","#AEAF7B"],"measures":["#2D8ECD","#B16793","#968316","#099FAB","#9E71B5","#BF7027","#2C9666","#757ECD","#C16363","#649A46","#2F5C91","#8E405A","#656510","#036277","#7B4681","#7D5D29","#066757","#5A5298","#894431","#216833","#6CBCE7","#DB9CD0","#C7A65D","#55C2BE","#C2A8D6","#DF9773","#77C599","#A3B3E2","#DE8D9B","#A4C079"]};
 const CHART_LIST_MAX=60; // the product's limit per list
 const NEW_THEME_CHART_COLORS=20; // Series and Measures each, for a theme built from its primaries
 const PRESETS=[
