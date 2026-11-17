@@ -6199,6 +6199,10 @@ window.VIZ=window.VIZ||{};
 // Every theme has at least CHART_LIST_MIN Series and no preview chart has more
 // categories, so the preview cycles at that length.
 const catCol=(i,suffix='')=>`var(--s${(i%CHART_LIST_MIN)+1}${suffix})`;
+// Pie and donut slices take Primary 1–8 first, then continue with Series
+// from Series 1 (slice 9 = Series 1, slice 10 = Series 2, …).
+const PIE_PRIMARY_N=8;
+const pieCol=(i,suffix='')=>i<PIE_PRIMARY_N?`var(--p${i+1}${suffix})`:catCol(i-PIE_PRIMARY_N,suffix);
 function mkSVG(id){return document.getElementById(id);}
 function svgEl(svg,t,at){const NS='http://www.w3.org/2000/svg';const e=document.createElementNS(NS,t);for(const k in at)e.setAttribute(k,at[k]);svg.appendChild(e);return e;}
 function axisLine(svg,x1,y1,x2,y2){svgEl(svg,'line',{x1,y1,x2,y2,style:'stroke:var(--out1);stroke-width:1'});}
@@ -6302,14 +6306,14 @@ function mkLegH(id,items){const c=document.getElementById(id);if(!c)return;items
       p.setAttribute('d',`M${f(ix1)},${f(iy1)} L${f(x1)},${f(y1)} A${ro},${ro} 0 ${lg} 1 ${f(x2)},${f(y2)} L${f(ix2)},${f(iy2)} A${ri},${ri} 0 ${lg} 0 ${f(ix1)},${f(iy1)} Z`);
       // Slices meet with no gap and no outline: no canvas-coloured separator,
       // just a hairline in the slice's own colour so antialiasing leaves no seam.
-      p.setAttribute('style',`fill:${catCol(i)};stroke:${catCol(i)};stroke-width:.5;stroke-linejoin:round`);
+      p.setAttribute('style',`fill:${pieCol(i)};stroke:${pieCol(i)};stroke-width:.5;stroke-linejoin:round`);
       svg.appendChild(p);
-      addChartTip(p,sl.lbl,[{color:`${catCol(i)}`,label:'Revenue',value:'$'+sl.v.toFixed(2)+'M'},{label:'Share',value:(sl.v/tot*100).toFixed(1)+'%'}]);
-      if(leg){const it=document.createElement('span');it.className='item';it.innerHTML=`<span class="sw" style="background:${catCol(i)}"></span>${sl.lbl}`;leg.appendChild(it);}
+      addChartTip(p,sl.lbl,[{color:`${pieCol(i)}`,label:'Revenue',value:'$'+sl.v.toFixed(2)+'M'},{label:'Share',value:(sl.v/tot*100).toFixed(1)+'%'}]);
+      if(leg){const it=document.createElement('span');it.className='item';it.innerHTML=`<span class="sw" style="background:${pieCol(i)}"></span>${sl.lbl}`;leg.appendChild(it);}
       // Product donut: value and (share) inside each slice wide enough to
       // hold them, in black or white for contrast with the slice.
       if((a2-a)>0.42){
-        const m=(a+a2)/2,r=(ro+ri)/2,t=svgEl(svg,'text',{x:cx+r*Math.cos(m),y:cy+r*Math.sin(m)-2,'text-anchor':'middle',class:'data-label',style:`fill:${catCol(i,'-text')};pointer-events:none`});
+        const m=(a+a2)/2,r=(ro+ri)/2,t=svgEl(svg,'text',{x:cx+r*Math.cos(m),y:cy+r*Math.sin(m)-2,'text-anchor':'middle',class:'data-label',style:`fill:${pieCol(i,'-text')};pointer-events:none`});
         t.innerHTML=`<tspan x="${cx+r*Math.cos(m)}">${sl.v.toFixed(2)}M</tspan><tspan x="${cx+r*Math.cos(m)}" dy="1.15em">(${(sl.v/tot*100).toFixed(1)}%)</tspan>`;
       }
       a=a2;
