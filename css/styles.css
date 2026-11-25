@@ -18,7 +18,7 @@
   --el-pad-t:16px;--el-pad-r:16px;--el-pad-b:16px;--el-pad-l:16px;
   --header-bg:#ffffff;--header-border:#D1D1D1;--header-icon:#616161;
   --tt-bg:#ffffff;--tt-color:#242424;
-  --text-color:#242424;--font-family:"Segoe UI",wf_segoe-ui_normal,helvetica,arial,sans-serif;--font-size:14px;
+  --text-color:#242424;--text-secondary:#242424;--tt-label:#242424;--font-family:"Segoe UI",wf_segoe-ui_normal,helvetica,arial,sans-serif;--font-size:14px;
   --p1-hover:color-mix(in srgb,var(--p1) 88%,#000);--p1-press:color-mix(in srgb,var(--p1) 76%,#000);
   --gap:12px;--vgap:16px;
 
@@ -660,8 +660,9 @@ body:not(.mode-edit) .cedit-hover,body:not(.mode-edit) .cedit-tag{display:none!i
 .tip .cmp .sw{width:12px;height:12px;border-radius:var(--fx-r-sm);border:1px solid var(--fx-stroke1-hover)}
 .chart-tip{position:fixed;z-index:var(--z-tooltip);background:var(--tt-bg,#fff);color:var(--tt-color,#242424);border-radius:4px;box-shadow:var(--fx-shadow16);padding:8px 12px;font-size:12px;font-family:var(--font-family);line-height:1.5;pointer-events:none;opacity:0;transition:opacity .12s;max-width:240px;white-space:normal}
 .chart-tip.show{opacity:1}
-.chart-tip-title{font-weight:600;color:var(--tt-color,#242424);margin-bottom:3px}
-.chart-tip-row{display:flex;align-items:center;gap:6px}
+.chart-tip-title{font-weight:600;color:var(--tt-label,#242424);margin-bottom:3px}
+.chart-tip-row{display:flex;align-items:center;gap:6px;color:var(--tt-label,#242424)}
+.chart-tip-row b{color:var(--tt-color,#242424)}
 .chart-tip-dot{width:8px;height:8px;border-radius:50%;flex:none}
 
 /* ── Dialogs (DESIGN.md → Dialog): 24px padding, 12px between regions, shadow64, 8px ── */
@@ -903,7 +904,7 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
 .rheader{display:flex;align-items:center;gap:12px;background:var(--header-bg);border:1px solid var(--header-border);border-radius:8px;padding:12px 16px;min-height:60px}
 .logo{width:40px;height:40px;border-radius:8px;background:var(--struct-accent);display:grid;place-items:center;color:var(--struct-accent-text);flex:none}
 .htitle h2{margin:0;font-size:calc(var(--font-size) + 5px);font-weight:600;color:var(--text-color);font-family:var(--font-family)}
-.htitle p{margin:3px 0 0;font-size:12px;color:var(--text-color);opacity:.72;font-family:var(--font-family)}
+.htitle p{margin:3px 0 0;font-size:12px;color:var(--text-secondary);font-family:var(--font-family)}
 .hspace{margin-left:auto}
 /* Page buttons: switch the page in Viewing mode (in step with the Template
    dropdown); in Editing mode the edit layer on top takes the clicks. Hover
@@ -930,13 +931,13 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
 .mix-dl{font-weight:400}
 .data-label.total{font-weight:700}
 /* Trellis panel header, as the product writes it: "Member : total" in small regular text. */
-.trellis-head{flex:none;font-size:calc(var(--font-size) * 0.72);color:var(--text-color);font-family:var(--font-family);margin:0 0 2px}
+.trellis-head{flex:none;font-size:calc(var(--font-size) * 0.72);color:var(--text-secondary);font-family:var(--font-family);margin:0 0 2px}
 /* Treemap header strip (bold) and tile labels, as the product draws them. */
 .tm-title{font-size:calc(var(--font-size) * 0.62);font-weight:700}
 .tm-label{font-size:calc(var(--font-size) * 0.55)}
 /* Average reference line: dashed #999999 (8px dash, 6px gap) with its label in the product's dark red. */
 .ref-line{stroke:#999999;stroke-width:1;stroke-dasharray:5.8 4.35}
-.ref-label{font-size:calc(var(--font-size) * 0.62);fill:#6B2328}
+.ref-label{font-size:calc(var(--font-size) * 0.62);fill:var(--text-color)}
 .visual{background:var(--el-bg);border:var(--el-border-w) solid var(--el-border-color);border-radius:var(--el-radius);box-shadow:var(--el-shadow);padding:var(--el-pad-t) var(--el-pad-r) var(--el-pad-b) var(--el-pad-l);min-width:0;min-height:0}
 .visual.flex-fill{flex:1;min-height:0;display:flex;flex-direction:column}
 .visual.flex-fill svg{flex:1;min-height:0;height:100%;display:block}
@@ -1001,9 +1002,9 @@ textarea.ntm-input{height:auto;padding:6px 12px;resize:none;font:400 14px/20px v
 /* Chart text, sized as the product draws it: the product report page is
    1600px wide and the studio's is 1160px, so product pixel sizes are
    scaled by .725 (14px axis labels and data labels -> ~10px). */
-.axis-label{font-size:calc(var(--font-size) * 0.72);fill:var(--text-color)}
-.axis-title{font-size:calc(var(--font-size) * 0.72);font-weight:600;fill:var(--text-color)}
-.data-label{font-size:calc(var(--font-size) * 0.72);fill:var(--text-color)}
+.axis-label{font-size:calc(var(--font-size) * 0.72);fill:var(--text-secondary)}
+.axis-title{font-size:calc(var(--font-size) * 0.72);font-weight:600;fill:var(--text-secondary)}
+.data-label{font-size:calc(var(--font-size) * 0.72);fill:var(--text-secondary)}
 .pie-wrap{display:flex;gap:16px;align-items:center;justify-content:center;flex:1;min-height:0}
 .pie-wrap svg{flex:0 0 auto;width:auto;height:100%;max-height:280px;aspect-ratio:1}
 .legend-v{display:flex;flex-direction:column;gap:7px;flex:none}
@@ -1024,8 +1025,9 @@ table.matrix th,table.matrix td{padding:3px 8px;line-height:12px;text-align:righ
 .stage.sheet-fill table.matrix{font-size:var(--font-size)}
 .stage.sheet-fill table.matrix th,.stage.sheet-fill table.matrix td{padding:5px 8px;line-height:15px}
 table.matrix .lead{text-align:left}
+table.matrix tbody .lead{color:var(--text-secondary)}
 table.matrix tbody .lead,table.matrix thead th:first-child{border-right:1px solid var(--out1)}
-table.matrix thead th{background:var(--el-bg);font-weight:400;color:var(--text-color);border-top:1px solid var(--out2)}
+table.matrix thead th{background:var(--el-bg);font-weight:400;color:var(--text-secondary);border-top:1px solid var(--out2)}
 table.matrix thead .grp th{text-align:left;font-weight:700;border-bottom:1px solid var(--out2)}
 table.matrix thead .sub th{border-bottom:1px solid var(--out1)}
 table.matrix tbody tr:nth-child(odd) td{background:var(--struct-bg)}
@@ -1480,7 +1482,7 @@ table.pt-ct td.pt-ct-ro{color:color-mix(in srgb,var(--text-color) 65%,var(--canv
 .visual.flex-fill .dt svg.dt-links{height:auto}
 .dt-var svg{width:7px;height:7px}
 .dt-exp,.dt-more,.dt-comment{flex:none;color:var(--struct-icon)}
-.dt-name{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding-right:20px;font-size:var(--font-size);line-height:1.3}
+.dt-name{color:var(--text-secondary);display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding-right:20px;font-size:var(--font-size);line-height:1.3}
 .dt-name>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dt-acts{display:flex;align-items:center;gap:4px;flex:none}
 .visual.flex-fill .dt .dt-comment{display:none}
